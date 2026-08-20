@@ -1,11 +1,13 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { useGalleryStore } from '@/store/galleryStore';
-import { Folder, Image as ImageIcon, Plus, Trash2, ArrowLeft, Loader2, Upload } from 'lucide-react';
+import { Folder, Plus, ArrowLeft, Loader2, Trash2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useToast } from '@/hooks/useToast';
 import type { GalleryFolder } from '@/types';
+
+import { CollageMaker } from '@/components/CollageMaker';
 
 export default function GalleryPage() {
   const { folders, loading, uploading, fetchFolders, createFolder, deleteFolder, uploadImage, addImageToFolder, deleteImage } = useGalleryStore();
@@ -13,6 +15,7 @@ export default function GalleryPage() {
   
   const [activeFolder, setActiveFolder] = useState<GalleryFolder | null>(null);
   const [isCreateOpen, setCreateOpen] = useState(false);
+  const [isCollageOpen, setCollageOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   
   const fileRef = useRef<HTMLInputElement>(null);
@@ -63,13 +66,21 @@ export default function GalleryPage() {
             </button>
             <h1 className="text-lg font-bold text-gray-900">{activeFolder.name}</h1>
           </div>
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading}
-            className="p-2 rounded-full bg-indigo-50 text-[#5B43EE] hover:bg-indigo-100 disabled:opacity-50"
-          >
-            {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCollageOpen(true)}
+              className="px-3 py-1.5 rounded-full bg-[#5B43EE] text-white font-bold text-sm"
+            >
+              Collage
+            </button>
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="p-1.5 rounded-full bg-indigo-50 text-[#5B43EE] hover:bg-indigo-100 disabled:opacity-50"
+            >
+              {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
         
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
@@ -86,7 +97,7 @@ export default function GalleryPage() {
                 <img src={img.url} alt="Gallery" className="w-full h-full object-cover" />
                 <button
                   onClick={() => deleteImage(activeFolder.id, img.id)}
-                  className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white backdrop-blur-sm"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -94,6 +105,8 @@ export default function GalleryPage() {
             ))
           )}
         </div>
+        
+        <CollageMaker open={isCollageOpen} onClose={() => setCollageOpen(false)} />
       </div>
     );
   }
@@ -102,9 +115,14 @@ export default function GalleryPage() {
     <div className="min-h-screen bg-gray-50 pb-20 p-4 pt-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Design Gallery</h1>
-        <button onClick={() => setCreateOpen(true)} className="flex items-center gap-1 bg-[#5B43EE] text-white px-3 py-2 rounded-xl text-sm font-bold">
-          <Plus className="w-4 h-4" /> New
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setCollageOpen(true)} className="flex items-center gap-1 bg-white border border-gray-200 text-gray-700 px-3 py-2 rounded-xl text-sm font-bold shadow-sm">
+            Make Collage
+          </button>
+          <button onClick={() => setCreateOpen(true)} className="flex items-center gap-1 bg-[#5B43EE] text-white px-3 py-2 rounded-xl text-sm font-bold shadow-sm">
+            <Plus className="w-4 h-4" /> New
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -141,6 +159,7 @@ export default function GalleryPage() {
           <Button fullWidth onClick={handleCreateFolder}>Create Folder</Button>
         </div>
       </BottomSheet>
+      <CollageMaker open={isCollageOpen} onClose={() => setCollageOpen(false)} />
     </div>
   );
 }

@@ -30,19 +30,26 @@ export default function ProfilePage() {
   const orders = useOrdersStore((s) => s.orders);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const myOrders = orders.filter((o) => {
-    const orderMobile = (o.customerMobile ?? o.customer?.whatsappNumber ?? o.customer?.mobile ?? '').replace(/[^0-9]/g, '').slice(-10);
-    const targetMobile = user?.mobile.replace(/[^0-9]/g, '').slice(-10);
-    return orderMobile === targetMobile;
-  });
+  const stitchingOrders = orders.filter((o) => o.order_type !== 'SALE_ORDER');
+  const readymadeOrders = orders.filter((o) => o.order_type === 'SALE_ORDER');
 
-  const stitchingOrders = myOrders.filter((o) => o.order_type !== 'SALE_ORDER' && o.source !== 'send order request');
-  const readymadeOrders = myOrders.filter((o) => o.order_type === 'SALE_ORDER' || o.source === 'send order request');
-
-  const stitchingCompleted = stitchingOrders.filter((o) => o.status === 'Completed' || o.status === 'Delivered').length;
-  const stitchingPending = stitchingOrders.length - stitchingCompleted - stitchingOrders.filter(o => o.status === 'Cancelled').length;
+  const stitchingCompleted = stitchingOrders.filter((o) => {
+    const s = (o.status || '').toLowerCase();
+    return s === 'delivered' || s === 'completed';
+  }).length;
+  const stitchingPending = stitchingOrders.filter((o) => {
+    const s = (o.status || '').toLowerCase();
+    return s !== 'delivered' && s !== 'completed' && s !== 'cancelled';
+  }).length;
   
-  const readymadePending = readymadeOrders.filter((o) => o.status !== 'Cancelled' && o.status !== 'Delivered').length;
+  const readymadeDelivered = readymadeOrders.filter((o) => {
+    const s = (o.status || '').toLowerCase();
+    return s === 'delivered';
+  }).length;
+  const readymadePending = readymadeOrders.filter((o) => {
+    const s = (o.status || '').toLowerCase();
+    return s !== 'delivered' && s !== 'cancelled';
+  }).length;
 
   return (
     <div className="p-4 pt-6 pb-12 space-y-6">
@@ -72,11 +79,11 @@ export default function ProfilePage() {
           </div>
           <div className="flex-1 bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
             <p className="text-xl font-bold text-[#5B43EE]">{stitchingPending}</p>
-            <p className="text-[11px] font-medium text-gray-500 uppercase mt-1">Pending</p>
+            <p className="text-[11px] font-medium text-gray-500 uppercase mt-1">Active</p>
           </div>
           <div className="flex-1 bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
             <p className="text-xl font-bold text-[#5B43EE]">{stitchingCompleted}</p>
-            <p className="text-[11px] font-medium text-gray-500 uppercase mt-1">Finished</p>
+            <p className="text-[11px] font-medium text-gray-500 uppercase mt-1">Done</p>
           </div>
         </div>
 
@@ -88,9 +95,12 @@ export default function ProfilePage() {
           </div>
           <div className="flex-1 bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
             <p className="text-xl font-bold text-[#5B43EE]">{readymadePending}</p>
-            <p className="text-[11px] font-medium text-gray-500 uppercase mt-1">Pending</p>
+            <p className="text-[11px] font-medium text-gray-500 uppercase mt-1">Active</p>
           </div>
-          <div className="flex-1 hidden" />
+          <div className="flex-1 bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
+            <p className="text-xl font-bold text-[#5B43EE]">{readymadeDelivered}</p>
+            <p className="text-[11px] font-medium text-gray-500 uppercase mt-1">Delivered</p>
+          </div>
         </div>
       </div>
 
