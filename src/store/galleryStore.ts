@@ -89,7 +89,7 @@ export const useGalleryStore = create<GalleryState>()((set, get) => ({
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('key_name', 'customer_gallery_web');
+      formData.append('key_name', 'order_photos');
       const token = localStorage.getItem('sewvee_customer_token') ?? '';
       const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
       const res = await fetch(URL_UPLOAD, {

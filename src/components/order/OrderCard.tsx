@@ -39,7 +39,7 @@ export function OrderCard({ order, href, hasPendingPhoto = false }: OrderCardPro
         <div className="flex items-center justify-between mb-3">
           <div className="bg-gray-100 rounded-md px-2 py-1">
             <p className="text-[10px] font-bold text-gray-600 truncate max-w-[150px]">
-              {order.companyName || 'Sewvee Boutique'}
+              {order.boutiqueName || 'Sewvee Boutique'}
             </p>
           </div>
           <div className="flex items-center gap-1 bg-gray-50 rounded-md px-2 py-1 border border-gray-100">

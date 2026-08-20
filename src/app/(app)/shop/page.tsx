@@ -26,10 +26,10 @@ export default function ShopPage() {
   useEffect(() => {
     const bMap = new Map<string, Boutique>();
     orders.forEach((o) => {
-      if (o.companyId && o.companyName) {
-        bMap.set(o.companyId, {
-          id: o.companyId,
-          name: o.companyName,
+      if (o.boutiqueId && o.boutiqueName) {
+        bMap.set(o.boutiqueId, {
+          id: o.boutiqueId,
+          name: o.boutiqueName,
           phone: o.companyPhone,
           address: o.companyAddress,
         });

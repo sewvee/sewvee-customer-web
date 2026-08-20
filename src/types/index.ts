@@ -55,8 +55,8 @@ export interface Order {
   source?: string;
   totalAmount?: number;
   advanceAmount?: number;
-  companyId?: string;
-  companyName?: string;
+  boutiqueId?: string;
+  boutiqueName?: string;
   companyPhone?: string;
   companyAddress?: string;
   deliveryDate?: string;
