@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
-import { Scissors, Camera, Image as ImageIcon, X, Loader2, Download, Save } from 'lucide-react';
+import { Scissors, Camera, Image as ImageIcon, X, Loader2, Download, Save, Share } from 'lucide-react';
 import { BottomSheet } from './ui/BottomSheet';
 import { Button } from './ui/Button';
 import { useGalleryStore } from '@/store/galleryStore';
@@ -169,8 +169,29 @@ export function CollageMaker({ open, onClose, onSave }: CollageMakerProps) {
 
         <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleImageSelect} />
 
-        <Button fullWidth onClick={handleSave} loading={saving} disabled={images.slice(0, layout).every(img => !img)}>
-          {saving ? 'Saving Collage...' : 'Save Collage to Gallery'}
+        <div className="flex gap-2 mb-2">
+          <button 
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold disabled:opacity-50"
+            disabled={images.slice(0, layout).every(img => !img) || saving}
+            onClick={() => showToast('Download will be supported in the native app', 'info')}
+          >
+            <Download className="w-5 h-5" /> Download
+          </button>
+          <button 
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#5B43EE] text-white font-bold disabled:opacity-50"
+            disabled={images.slice(0, layout).every(img => !img) || saving}
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({ title: 'Sewvee Collage', text: 'Check out my design collage!' }).catch(() => {});
+              }
+            }}
+          >
+            <Share className="w-5 h-5" /> Share
+          </button>
+        </div>
+
+        <Button fullWidth onClick={handleSave} loading={saving} disabled={images.slice(0, layout).every(img => !img)} variant="secondary">
+          {saving ? 'Saving Collage...' : 'Save to Folder'}
         </Button>
       </div>
     </BottomSheet>

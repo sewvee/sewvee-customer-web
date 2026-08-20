@@ -14,21 +14,8 @@ export default function HomePage() {
     if (user?.mobile) fetchOrders(user.mobile);
   }, [user?.mobile, fetchOrders]);
 
-  // Filter for customer's actual orders (mobile app logic)
-  const myOrders = orders.filter((o) => {
-    const orderMobile = (
-      o.customerMobile ??
-      o.customer?.whatsappNumber ??
-      o.customer?.mobile ??
-      o.customer?.mobile_number ??
-      ''
-    ).replace(/[^0-9]/g, '').slice(-10);
-    const targetMobile = user?.mobile.replace(/[^0-9]/g, '').slice(-10);
-    return orderMobile === targetMobile;
-  });
-
   // Calculate pending photos
-  const pendingPhotoOrders = myOrders.filter((o) => {
+  const pendingPhotoOrders = orders.filter((o) => {
     if (o.status === 'Cancelled' || o.status === 'Delivered') return false;
     const items = o.outfits ?? o.items ?? [];
     return items.some(
@@ -43,9 +30,9 @@ export default function HomePage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Hello, {user?.name?.split(' ')[0] ?? 'Customer'} 👋
+          Hello, {user?.name?.split(' ')[0] ?? 'Customer'}!
         </h1>
-        <p className="text-gray-500 mt-1">Welcome to Sewvee</p>
+        <p className="text-gray-500 mt-1">Check your custom stitching orders</p>
       </div>
 
       {/* Intro Banner */}
@@ -73,11 +60,11 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {loading && myOrders.length === 0 ? (
+        {loading && orders.length === 0 ? (
           <div className="flex justify-center p-8">
             <div className="w-6 h-6 border-2 border-[#5B43EE] border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : myOrders.length === 0 ? (
+        ) : orders.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center border border-gray-100 shadow-sm">
             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
               <ShoppingBag className="w-8 h-8 text-gray-400" />
@@ -87,7 +74,7 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {myOrders.slice(0, 5).map((order) => (
+            {orders.slice(0, 5).map((order) => (
               <OrderCard
                 key={order.id}
                 order={order}
