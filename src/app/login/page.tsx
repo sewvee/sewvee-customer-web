@@ -31,6 +31,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
       <div className="w-full max-w-sm flex flex-col items-center text-center">
+        <img src="/logo.png" alt="Sewvee Logo" className="w-20 h-20 object-contain mb-4 rounded-2xl" />
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Sewvee Customer</h1>
         <p className="text-gray-500 mb-10 text-[17px]">
           Enter your phone number to track orders, share designs, and shop
