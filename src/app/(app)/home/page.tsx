@@ -20,7 +20,7 @@ export default function HomePage() {
     const items = o.outfits ?? o.items ?? [];
     return items.some(
       (outfit) =>
-        (outfit.requestedPhotosFromClient === true || String(outfit.requestedPhotosFromClient) === 'true' || outfit.requestedPhotosFromClient === 1 || String(outfit.requestedPhotosFromClient) === '1') &&
+        ((outfit.requestedPhotosFromClient && String(outfit.requestedPhotosFromClient) !== '0' && String(outfit.requestedPhotosFromClient) !== 'false') || (outfit.requested_photos_from_client && String(outfit.requested_photos_from_client) !== '0' && String(outfit.requested_photos_from_client) !== 'false')) &&
         (!outfit.photos || outfit.photos.filter((p: any) => p.category === 'REFERENCE').length === 0)
     );
   });
@@ -41,6 +41,38 @@ export default function HomePage() {
       </div>
 
       <div className="px-5 pb-24">
+        
+        {/* ACTIVE REQUESTS ALERT */}
+        {orders.flatMap(order => {
+          if (order.status === 'Cancelled' || order.status === 'Delivered' || order.order_type === 'SALE_ORDER') return [];
+          const outfits = order.outfits ?? order.items ?? [];
+          return outfits.filter(outfit => {
+            const reqFlag = outfit.requestedPhotosFromClient ?? outfit.requested_photos_from_client;
+            const isRequested = reqFlag && String(reqFlag) !== '0' && String(reqFlag) !== 'false';
+            return isRequested && (!outfit.photos || outfit.photos.filter((p: any) => p.category === 'REFERENCE').length === 0);
+          }).map((outfit, idx) => (
+            <Link
+              href={`/orders/${order.id}`}
+              key={`${order.id}-${outfit.id || idx}`}
+              className="flex items-center bg-white border border-[#FED7AA] rounded-[16px] p-4 mb-5 shadow-[0_4px_12px_rgba(249,115,22,0.1)] hover:opacity-90 transition-opacity"
+            >
+              <div className="w-[44px] h-[44px] rounded-full bg-[#FFF7ED] border border-[#FFEDD5] flex items-center justify-center mr-3.5 flex-shrink-0">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-[15px] font-bold text-[#9A3412] mb-0.5 font-inter">Photo Request</p>
+                <p className="text-[13px] text-[#C2410C] font-medium leading-[18px] font-inter">
+                  Boutique requested reference photos for your {outfit.name || outfit.type || 'Outfit'} in Order #{order.billNo || order.id}.
+                </p>
+              </div>
+              <div className="flex items-center bg-[#FFF7ED] border border-[#FFEDD5] rounded-[20px] px-2.5 py-1.5 ml-2">
+                <span className="text-[12px] font-bold text-[#F97316] mr-0.5 font-inter">Upload</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </div>
+            </Link>
+          ));
+        })}
+
         {/* ORDERS SECTION */}
         <h2 className="text-[18px] font-bold text-[#0F172A] font-inter mb-4">Your Active Orders</h2>
 
