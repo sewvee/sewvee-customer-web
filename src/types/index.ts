@@ -36,7 +36,9 @@ export interface OrderOutfit {
   name?: string;
   type?: string;
   requestedPhotosFromClient?: boolean;
+  requested_photos_from_client?: boolean;
   photos?: OrderPhoto[];
+  deliveryDate?: string;
 }
 
 export interface Order {
@@ -55,10 +57,12 @@ export interface Order {
   source?: string;
   totalAmount?: number;
   advanceAmount?: number;
-  boutiqueId?: string;
-  boutiqueName?: string;
+  companyId?: string;
+  companyName?: string;
   companyPhone?: string;
   companyAddress?: string;
+  boutiqueId?: string;
+  boutiqueName?: string;
   deliveryDate?: string;
   note?: string;
   address?: {
@@ -68,6 +72,14 @@ export interface Order {
     state?: string;
     zip?: string;
   };
+  total?: number;
+  total_amount?: number;
+  advance?: number;
+  paid_amount?: number;
+  balance?: number;
+  balance_amount?: number;
+  order_number?: string;
+  delivery_method?: string;
 }
 
 // ─── Shop / Product Types ─────────────────────────────────────────────────────
