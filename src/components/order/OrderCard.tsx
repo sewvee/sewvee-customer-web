@@ -1,15 +1,6 @@
 import Link from 'next/link';
-import { ChevronRight, Clock, CheckCircle2, AlertCircle, Package } from 'lucide-react';
-import { StatusBadge } from '@/components/ui/Badge';
+import { Clock, AlertCircle } from 'lucide-react';
 import type { Order } from '@/types';
-
-function StatusIcon({ status }: { status: string }) {
-  if (status === 'Delivered' || status === 'Completed')
-    return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-  if (status === 'Cancelled')
-    return <AlertCircle className="w-4 h-4 text-red-500" />;
-  return <Clock className="w-4 h-4 text-yellow-500" />;
-}
 
 function formatDate(dateStr?: string) {
   if (!dateStr) return '';
@@ -23,67 +14,82 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ order, href, hasPendingPhoto = false }: OrderCardProps) {
-  const displayId = order.billNo ?? order.id;
-  const isStitching = order.order_type !== 'SALE_ORDER' && order.source !== 'send order request';
+  const isSale = order.order_type === 'SALE_ORDER';
+  const orderLabel = order.billNo || (isSale ? `INV-${order.id}` : `ORD-${order.id}`);
   
-  // Calculate paid/due if amounts exist
-  const total = order.totalAmount ?? 0;
-  const advance = order.advanceAmount ?? 0;
-  const due = total - advance;
+  const outfits = order.outfits || order.items || [];
+  const deliveryDate = outfits.find((o) => o.deliveryDate)?.deliveryDate;
+  const typeLabel = isSale ? 'READY-MADE' : 'STITCHING';
+  
+  const total = order.totalAmount || order.total || (Number(order.advance || order.paid_amount || 0) + Number(order.balance || order.balance_amount || 0));
+  const advance = Number(order.advanceAmount || order.advance || order.paid_amount || 0);
+  const due = Number(order.balance || order.balance_amount || 0) || (total - advance);
 
   return (
-    <Link href={href ?? `/orders/${order.id}`}>
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-3 active:bg-gray-50 transition-colors">
-        
-        {/* Top Row: Boutique & Date */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="bg-gray-100 rounded-md px-2 py-1">
-            <p className="text-[10px] font-bold text-gray-600 truncate max-w-[150px]">
-              {order.boutiqueName || 'Sewvee Boutique'}
+    <Link
+      href={href ?? `/orders/${order.id}`}
+      className="block bg-white rounded-xl p-3 mb-2.5 shadow-[0_2px_8px_rgba(99,102,241,0.05)] border border-[#F1F5F9] active:scale-[0.99] transition-transform"
+    >
+        {/* Row 1: Boutique name (left), Date (right) */}
+        <div className="flex justify-between items-center mb-3">
+          {order.boutiqueName ? (
+            <p className="text-[15px] font-bold text-[#1E293B] flex-1 truncate font-inter">
+              {order.boutiqueName}
             </p>
-          </div>
-          <div className="flex items-center gap-1 bg-gray-50 rounded-md px-2 py-1 border border-gray-100">
-            <Clock className="w-3 h-3 text-gray-400" />
-            <p className="text-[10px] font-semibold text-gray-600">
-              {formatDate(order.date ?? order.createdAt)}
-            </p>
-          </div>
-        </div>
-
-        {/* Second Row: Order ID & Badge */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-bold text-gray-900">{displayId}</p>
-            <div className={`px-2 py-0.5 rounded ${isStitching ? 'bg-orange-100' : 'bg-indigo-100'}`}>
-              <p className={`text-[9px] font-bold ${isStitching ? 'text-orange-600' : 'text-[#5B43EE]'} uppercase tracking-wide`}>
-                {isStitching ? 'STITCHING' : 'READY-MADE'}
-              </p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-[#5B43EE]" />
-        </div>
-
-        {/* Third Row: Payments */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-          <div>
-            <p className="text-[11px] font-medium text-gray-500 mb-0.5">Paid</p>
-            <p className="text-sm font-bold text-green-500">₹{advance}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[11px] font-medium text-gray-500 mb-0.5">Due Balance</p>
-            <p className="text-sm font-bold text-red-500">₹{due}</p>
-          </div>
-        </div>
-
-        {hasPendingPhoto && (
-          <div className="mt-3 flex items-center gap-2 bg-orange-50 rounded-lg px-3 py-2 border border-orange-100">
-            <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0" />
-            <span className="text-xs font-medium text-orange-700">
-              Reference design photo needed
+          ) : (
+            <div className="flex-1" />
+          )}
+          <div className="flex items-center bg-[#F8FAFC] px-2 py-1 rounded-md border border-[#F1F5F9]">
+            <Clock className="w-3 h-3 text-[#64748B] mr-1" />
+            <span className="text-[11px] font-medium text-[#475569] font-inter">
+              {deliveryDate ? formatDate(deliveryDate) : formatDate(order.date ?? order.createdAt)}
             </span>
           </div>
+        </div>
+
+        {/* Horizontal Divider */}
+        <div className="h-[1px] bg-[#E2E8F0] mb-3" />
+
+        {/* Row 2: 4 columns with vertical dividers */}
+        <div className="flex items-center justify-between">
+          {/* Col 1: Order No */}
+          <div className="flex-1 items-start">
+            <p className="text-[10px] text-[#64748B] font-medium font-inter mb-1">Order No</p>
+            <p className="text-[13px] text-[#1E293B] font-bold font-inter">{orderLabel}</p>
+          </div>
+          
+          <div className="w-[1px] self-stretch bg-[#E2E8F0] mx-1.5" />
+          
+          {/* Col 2: Type */}
+          <div className="flex-1 flex flex-col items-center">
+            <p className="text-[10px] text-[#64748B] font-medium font-inter mb-1">Type</p>
+            <p className={`text-[11px] font-bold font-inter ${isSale ? 'text-[#4338CA]' : 'text-[#D97706]'}`}>{typeLabel}</p>
+          </div>
+
+          <div className="w-[1px] self-stretch bg-[#E2E8F0] mx-1.5" />
+
+          {/* Col 3: Total Amount */}
+          <div className="flex-1 flex flex-col items-center">
+            <p className="text-[10px] text-[#64748B] font-medium font-inter mb-1">Total Amount</p>
+            <p className="text-[13px] text-[#1E293B] font-bold font-inter">₹{total}</p>
+          </div>
+
+          <div className="w-[1px] self-stretch bg-[#E2E8F0] mx-1.5" />
+
+          {/* Col 4: Due */}
+          <div className="flex-1 flex flex-col items-end">
+            <p className="text-[10px] text-[#64748B] font-medium font-inter mb-1">Due</p>
+            <p className="text-[13px] text-[#EF4444] font-bold font-inter">₹{due}</p>
+          </div>
+        </div>
+
+        {/* PHOTO NEEDED Alert */}
+        {hasPendingPhoto && (
+          <div className="mt-3.5 w-full flex items-center justify-center bg-[#FEF2F2] px-3 py-2 rounded-lg border border-[#FECACA] shadow-[0_4px_12px_rgba(249,115,22,0.1)]">
+            <AlertCircle className="w-3.5 h-3.5 text-[#DC2626] mr-1.5" />
+            <span className="text-[12px] font-bold text-[#DC2626] font-inter tracking-wide uppercase">Photo Needed</span>
+          </div>
         )}
-      </div>
     </Link>
   );
 }

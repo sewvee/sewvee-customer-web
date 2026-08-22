@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
 import { OrderCard } from '@/components/order/OrderCard';
-import { Sparkles, ShoppingBag } from 'lucide-react';
+import { ShoppingBag, User } from 'lucide-react';
 import Link from 'next/link';
 
 export default function HomePage() {
@@ -20,67 +20,56 @@ export default function HomePage() {
     const items = o.outfits ?? o.items ?? [];
     return items.some(
       (outfit) =>
-        outfit.requestedPhotosFromClient &&
-        (!outfit.photos || outfit.photos.filter((p) => p.category === 'REFERENCE').length === 0)
+        (outfit.requestedPhotosFromClient === true || String(outfit.requestedPhotosFromClient) === 'true' || outfit.requestedPhotosFromClient === 1 || String(outfit.requestedPhotosFromClient) === '1') &&
+        (!outfit.photos || outfit.photos.filter((p: any) => p.category === 'REFERENCE').length === 0)
     );
   });
 
   return (
-    <div className="p-4 pt-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Hello, {user?.name?.split(' ')[0] ?? 'Customer'}!
-        </h1>
-        <p className="text-gray-500 mt-1">Check your custom stitching orders</p>
-      </div>
-
-      {/* Intro Banner */}
-      <div className="bg-gradient-to-r from-[#5B43EE] to-[#7C3AED] rounded-2xl p-5 text-white shadow-md relative overflow-hidden">
-        <Sparkles className="absolute -top-4 -right-4 w-24 h-24 text-white/10" />
-        <h2 className="text-lg font-bold mb-1 relative">New! Shop Readymades</h2>
-        <p className="text-sm text-indigo-100 mb-4 relative max-w-[85%]">
-          Explore the latest collections from your boutique and order online.
-        </p>
-        <Link
-          href="/shop"
-          className="inline-flex items-center gap-2 bg-white text-[#5B43EE] text-sm font-bold px-4 py-2 rounded-xl"
-        >
-          <ShoppingBag className="w-4 h-4" />
-          Shop Now
+    <div className="bg-[#F5F3FF] min-h-screen">
+      {/* Welcome Header */}
+      <div className="flex justify-between items-center px-5 pt-8 pb-4">
+        <div>
+          <h1 className="text-[24px] font-bold text-[#4F46E5] font-inter">
+            Hello, {user?.name?.split(' ')[0] || 'Customer'}!
+          </h1>
+          <p className="text-[14px] text-[#64748B] font-inter mt-1">Check your custom stitching orders</p>
+        </div>
+        <Link href="/profile" className="w-[44px] h-[44px] bg-[#EEF2FF] rounded-full border border-[#C7D2FE] flex items-center justify-center">
+          <User className="w-5 h-5 text-[#4F46E5]" />
         </Link>
       </div>
 
-      {/* Active Orders */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Active Orders</h2>
-          <Link href="/orders" className="text-sm font-semibold text-[#5B43EE]">
-            View All
-          </Link>
-        </div>
+      <div className="px-5 pb-24">
+        {/* ORDERS SECTION */}
+        <h2 className="text-[18px] font-bold text-[#0F172A] font-inter mb-4">Your Active Orders</h2>
 
-        {loading && orders.length === 0 ? (
-          <div className="flex justify-center p-8">
-            <div className="w-6 h-6 border-2 border-[#5B43EE] border-t-transparent rounded-full animate-spin" />
+        {loading ? (
+          <div className="flex justify-center py-10">
+            <div className="w-8 h-8 border-[3px] border-[#5B43EE] border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : orders.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 text-center border border-gray-100 shadow-sm">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-              <ShoppingBag className="w-8 h-8 text-gray-400" />
-            </div>
-            <p className="text-gray-900 font-bold mb-1">No active orders</p>
-            <p className="text-sm text-gray-500">Your recent orders will appear here.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {orders.slice(0, 5).map((order) => (
+        ) : orders.length > 0 ? (
+          <div className="space-y-[10px]">
+            {orders.map((order) => (
               <OrderCard
                 key={order.id}
                 order={order}
                 hasPendingPhoto={pendingPhotoOrders.some((p) => p.id === order.id)}
               />
             ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-[16px] px-6 py-10 flex flex-col items-center justify-center border border-[#F1F5F9] shadow-[0_2px_8px_rgba(0,0,0,0.02)] mt-4">
+            <div className="w-[100px] h-[100px] mb-4">
+              {/* Simulate emptyImage from mobile app */}
+              <div className="w-full h-full bg-[#E0E7FF] rounded-full flex items-center justify-center">
+                 <ShoppingBag className="w-10 h-10 text-[#4338CA]" />
+              </div>
+            </div>
+            <p className="text-[18px] text-[#0F172A] font-bold mb-2 font-inter">No Active Orders</p>
+            <p className="text-[13px] text-[#64748B] text-center leading-[20px] font-inter max-w-[280px]">
+              When you place an order with your boutique, tracking updates and styling parameters will show up here.
+            </p>
           </div>
         )}
       </div>

@@ -94,10 +94,10 @@ export default function ShopPage() {
             <p className="text-gray-500 mt-1">This boutique hasn't added any readymades.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             {products.map((p) => (
-              <div key={p.id} className="bg-white rounded-2xl p-3 border border-gray-100 shadow-sm">
-                <div className="aspect-square bg-gray-100 rounded-xl mb-3 overflow-hidden">
+              <div key={p.id} className="bg-white rounded-[20px] overflow-hidden border border-[#F1F5F9] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                <div className="h-[160px] bg-[#F8FAFC] relative">
                   {p.images?.[0] ? (
                     <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
                   ) : (
@@ -106,9 +106,16 @@ export default function ShopPage() {
                     </div>
                   )}
                 </div>
-                <h3 className="font-bold text-gray-900 text-sm line-clamp-1">{p.name}</h3>
-                <p className="text-[#5B43EE] font-bold mt-1">₹{p.price}</p>
-                <Button size="sm" fullWidth className="mt-3">Add to Cart</Button>
+                <div className="p-3">
+                  <p className="text-[11px] text-[#94A3B8] font-medium uppercase font-inter">{p.category || 'Readymade'}</p>
+                  <h3 className="text-[14px] font-bold text-[#0F172A] line-clamp-1 font-inter">{p.name}</h3>
+                  <div className="flex justify-between items-center mt-2">
+                    <p className="text-[14px] text-[#5B43EE] font-bold font-inter">₹{p.price}</p>
+                    <button className="bg-[#F5F3FF] py-1.5 px-3 rounded-[16px] border border-[#EDE9FE]">
+                      <span className="text-[11px] text-[#5B43EE] font-bold font-inter">Add</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -125,10 +132,17 @@ export default function ShopPage() {
             <button
               key={b.id}
               onClick={() => { setSelectedBoutique(b); setBoutiqueModalOpen(false); }}
-              className={`w-full text-left p-4 rounded-xl border ${selectedBoutique?.id === b.id ? 'border-[#5B43EE] bg-indigo-50' : 'border-gray-200 bg-white'}`}
+              className={`w-full flex items-center p-4 rounded-2xl border mb-3 ${selectedBoutique?.id === b.id ? 'border-[#5B43EE] bg-[#EEF2FF]' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}
             >
-              <p className="font-bold text-gray-900">{b.name}</p>
-              {b.address && <p className="text-sm text-gray-500 mt-1 line-clamp-1">{b.address}</p>}
+              <Store className={`w-5 h-5 mr-3 ${selectedBoutique?.id === b.id ? 'text-[#5B43EE]' : 'text-[#94A3B8]'}`} />
+              <p className={`flex-1 text-left text-[15px] font-inter ${selectedBoutique?.id === b.id ? 'text-[#5B43EE] font-bold' : 'text-[#0F172A] font-semibold'}`}>
+                {b.name}
+              </p>
+              {selectedBoutique?.id === b.id && (
+                <div className="w-5 h-5 rounded-full bg-[#5B43EE] flex items-center justify-center">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              )}
             </button>
           ))}
           {boutiques.length === 0 && (

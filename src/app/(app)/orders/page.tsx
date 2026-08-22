@@ -44,66 +44,148 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="p-4 pt-6 pb-20 space-y-4">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/home" className="p-2 -ml-2 rounded-full hover:bg-gray-100">
+    <div className="min-h-screen bg-[#F5F3FF] pb-20">
+      <div className="flex items-center justify-between px-4 h-14 bg-[#F5F3FF] border-b border-[#E2E8F0]">
+        <Link href="/profile" className="w-10 h-10 flex items-center justify-start">
           <ArrowLeft className="w-6 h-6 text-gray-900" />
         </Link>
-        <h1 className="text-xl font-bold text-gray-900">Requested Orders</h1>
+        <h1 className="text-[18px] font-bold text-gray-900 font-inter">My Orders (Online)</h1>
+        <div className="w-10" />
       </div>
 
-      {loading && requestedOrders.length === 0 ? (
-        <div className="flex justify-center p-8">
-          <Loader2 className="w-8 h-8 text-[#5B43EE] animate-spin" />
-        </div>
-      ) : requestedOrders.length === 0 ? (
-        <div className="bg-white rounded-3xl p-8 text-center border border-gray-100 shadow-sm mt-10">
-          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <ShoppingBag className="w-8 h-8 text-gray-400" />
+      <div className="p-4 pb-10">
+        {loading && requestedOrders.length === 0 ? (
+          <div className="flex justify-center p-8">
+            <Loader2 className="w-8 h-8 text-[#5B43EE] animate-spin" />
           </div>
-          <p className="text-gray-900 font-bold text-lg mb-1">No Orders Found</p>
-          <p className="text-sm text-gray-500 mb-6">You haven't requested any readymade orders yet.</p>
-          <Link href="/shop" className="inline-flex items-center gap-2 bg-[#5B43EE] text-white text-sm font-bold px-6 py-3 rounded-xl">
-            Go to Shop
-          </Link>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {requestedOrders.map((order) => (
-            <div key={order.id} className="relative">
-              <OrderCard order={order} />
-              {order.status === 'Pending' && (
-                <button
-                  onClick={() => setOrderToCancel(order.id)}
-                  className="absolute top-4 right-10 p-1 rounded-full bg-red-50 text-red-500 hover:bg-red-100"
-                  title="Cancel Order"
-                >
-                  <XCircle className="w-5 h-5" />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+        ) : requestedOrders.length === 0 ? (
+          <div className="flex flex-col justify-center items-center p-6 mt-10">
+            <ShoppingBag className="w-12 h-12 text-[#CBD5E1] mb-4" />
+            <p className="text-[18px] font-bold text-gray-900 mb-2 font-inter">No Orders Yet</p>
+            <p className="text-[14px] font-medium text-gray-500 text-center font-inter">
+              Your online readymade orders will appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {requestedOrders.map((item) => {
+              const statusStr = (item.status || '').toUpperCase();
+              const isCancelled = statusStr === 'CANCELLED' || String(item.status) === '4';
+              const isDelivered = statusStr === 'DELIVERED' || String(item.status) === '5';
+              const isProcessing = statusStr === 'IN_PROGRESS' || statusStr === 'PROCESSING' || String(item.status) === '2';
+              
+              let displayStatus = 'Pending';
+              let badgeColor = 'bg-[#FEF3C7]';
+              let textColor = 'text-[#D97706]';
+              
+              if (isCancelled) {
+                displayStatus = 'Cancelled';
+                badgeColor = 'bg-[#FEE2E2]';
+                textColor = 'text-[#EF4444]';
+              } else if (isDelivered) {
+                displayStatus = 'Delivered';
+                badgeColor = 'bg-[#DCFCE7]';
+                textColor = 'text-[#22C55E]';
+              } else if (isProcessing) {
+                displayStatus = 'Processing';
+                badgeColor = 'bg-[#DBEAFE]';
+                textColor = 'text-[#2563EB]';
+              }
+
+              const canCancel = !isCancelled && !isDelivered;
+
+              return (
+                <div key={item.id} className="bg-white rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)] border border-[#E2E8F0]">
+                  <div className="flex justify-between items-start mb-3 pb-3 border-b border-[#F1F5F9]">
+                    <div>
+                      <p className="text-[15px] font-bold text-gray-900 mb-1 font-inter">{item.boutiqueName || 'Boutique'}</p>
+                      <div className="flex items-center mt-1">
+                        <span className="font-medium text-[13px] text-[#5B43EE] font-inter">
+                          {item.billNo || item.order_number || (item.order_type === 'SALE_ORDER' ? `INV-${item.id}` : `ORD-${item.id}`)}
+                        </span>
+                        <span className="font-medium text-[13px] text-[#94A3B8] mx-1.5 font-inter">|</span>
+                        <span className="font-medium text-[12px] text-gray-500 font-inter">
+                          {new Date(item.date || item.createdAt || new Date()).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={`${badgeColor} px-2.5 py-1 rounded-xl`}>
+                      <span className={`text-[12px] font-bold ${textColor} font-inter`}>{displayStatus}</span>
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    {(item.items || []).map((itm: any, idx: number) => (
+                      <div key={`item-${idx}`} className="flex items-center mb-1.5">
+                        <div className="w-1 h-1 rounded-full bg-gray-500 mr-2" />
+                        <span className="flex-1 text-[13px] font-medium text-gray-900 font-inter">
+                          {itm.name || 'Ready-Made Item'}{itm.qty && itm.qty > 1 ? ` (x${itm.qty})` : ''}
+                        </span>
+                      </div>
+                    ))}
+                    {(item.outfits || []).map((outfit: any, idx: number) => (
+                      <div key={`outfit-${idx}`} className="flex items-center mb-1.5">
+                        <div className="w-1 h-1 rounded-full bg-gray-500 mr-2" />
+                        <span className="flex-1 text-[13px] font-medium text-gray-900 font-inter">
+                          {outfit.name || 'Ready-Made Item'}{outfit.quantity && outfit.quantity > 1 ? ` (x${outfit.quantity})` : ''}
+                        </span>
+                        <span className="text-[13px] font-semibold text-gray-900 font-inter">
+                          ₹{outfit.totalAmount || outfit.price || 0}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-between items-center pt-3 border-t border-[#F1F5F9]">
+                    <span className="text-[15px] font-bold text-gray-900 font-inter">
+                      Total: ₹{item.totalAmount || item.total_amount || 0}
+                    </span>
+                    {canCancel && (
+                      <button
+                        onClick={() => setOrderToCancel(item.id)}
+                        disabled={cancelling}
+                        className={`flex items-center bg-[#FEF2F2] px-3 py-1.5 rounded-lg border border-[#FECACA] ${cancelling ? 'opacity-50' : ''}`}
+                      >
+                        <XCircle className="w-4 h-4 text-[#EF4444] mr-1.5" />
+                        <span className="text-[12px] font-bold text-[#EF4444] font-inter">
+                          {cancelling && orderToCancel === item.id ? 'Cancelling...' : 'Cancel Request'}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <BottomSheet
         open={!!orderToCancel}
         onClose={() => setOrderToCancel(null)}
-        title="Cancel Order"
       >
-        <div className="text-center">
-          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <XCircle className="w-8 h-8 text-red-500" />
+        <div className="text-center p-2">
+          <div className="w-16 h-16 bg-[#FEE2E2] rounded-full flex items-center justify-center mx-auto mb-4">
+            <XCircle className="w-8 h-8 text-[#EF4444]" />
           </div>
-          <p className="text-gray-900 font-semibold mb-2">Are you sure you want to cancel this order?</p>
-          <p className="text-sm text-gray-500 mb-8">This action cannot be undone.</p>
-          <div className="flex gap-3">
-            <Button variant="secondary" fullWidth onClick={() => setOrderToCancel(null)}>
-              No, keep it
-            </Button>
-            <Button variant="danger" fullWidth loading={cancelling} onClick={handleCancel}>
-              Yes, cancel
-            </Button>
+          <h3 className="text-[20px] font-bold text-gray-900 mb-2 font-inter">Cancel Order</h3>
+          <p className="text-[15px] text-gray-500 mb-6 font-inter leading-relaxed">
+            Are you sure you want to cancel this order request? This action cannot be undone.
+          </p>
+          <div className="flex gap-3 w-full">
+            <button 
+              className="flex-1 py-3.5 rounded-xl bg-[#F3F4F6] text-[#4B5563] font-semibold text-[15px] font-inter"
+              onClick={() => setOrderToCancel(null)}
+            >
+              No, Keep it
+            </button>
+            <button 
+              className="flex-1 py-3.5 rounded-xl bg-[#EF4444] text-white font-semibold text-[15px] font-inter"
+              onClick={handleCancel}
+              disabled={cancelling}
+            >
+              {cancelling ? 'Cancelling...' : 'Yes, Cancel'}
+            </button>
           </div>
         </div>
       </BottomSheet>
