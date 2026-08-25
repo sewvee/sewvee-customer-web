@@ -25,6 +25,12 @@ export function OrderCard({ order, href, hasPendingPhoto = false }: OrderCardPro
   const advance = Number(order.advanceAmount || order.advance || order.paid_amount || 0);
   const due = Number(order.balance || order.balance_amount || 0) || (total - advance);
 
+  const isPendingPhoto = hasPendingPhoto || (!isSale && order.status !== 'Cancelled' && order.status !== 'Delivered' && outfits.some(
+    (outfit: any) =>
+      ((outfit.requestedPhotosFromClient && String(outfit.requestedPhotosFromClient) !== '0' && String(outfit.requestedPhotosFromClient) !== 'false') || (outfit.requested_photos_from_client && String(outfit.requested_photos_from_client) !== '0' && String(outfit.requested_photos_from_client) !== 'false')) &&
+      (!outfit.photos || outfit.photos.filter((p: any) => p.category === 'REFERENCE').length === 0)
+  ));
+
   return (
     <Link
       href={href ?? `/orders/${order.id}`}
@@ -33,9 +39,17 @@ export function OrderCard({ order, href, hasPendingPhoto = false }: OrderCardPro
         {/* Row 1: Boutique name (left), Date (right) */}
         <div className="flex justify-between items-center mb-3">
           {order.boutiqueName ? (
-            <p className="text-[15px] font-bold text-[#1E293B] flex-1 truncate font-inter">
-              {order.boutiqueName}
-            </p>
+            <div className="flex flex-1 items-center overflow-hidden">
+              <p className="text-[15px] font-bold text-[#1E293B] truncate font-inter">
+                {order.boutiqueName}
+              </p>
+              {order.has_unread_messages && (
+                <div className="ml-2 bg-red-50 px-1.5 py-0.5 rounded flex items-center shrink-0 border border-red-100">
+                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5 animate-pulse" />
+                  <span className="text-red-600 text-[10px] font-medium font-inter whitespace-nowrap">New message</span>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="flex-1" />
           )}
@@ -84,7 +98,7 @@ export function OrderCard({ order, href, hasPendingPhoto = false }: OrderCardPro
         </div>
 
         {/* PHOTO NEEDED Alert */}
-        {hasPendingPhoto && (
+        {isPendingPhoto && (
           <div className="mt-3.5 w-full flex items-center justify-center bg-[#FEF2F2] px-3 py-2 rounded-lg border border-[#FECACA] shadow-[0_4px_12px_rgba(249,115,22,0.1)]">
             <AlertCircle className="w-3.5 h-3.5 text-[#DC2626] mr-1.5" />
             <span className="text-[12px] font-bold text-[#DC2626] font-inter tracking-wide uppercase">Photo Needed</span>

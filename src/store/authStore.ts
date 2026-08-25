@@ -12,6 +12,7 @@ interface AuthState {
   login: (phone: string) => Promise<void>;
   logout: () => void;
   clearError: () => void;
+  setUser: (user: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -84,6 +85,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearError: () => set({ error: null }),
+
+      setUser: (updates) => set((state) => ({ user: state.user ? { ...state.user, ...updates } : null })),
     }),
     {
       name: 'sewvee_customer_user',

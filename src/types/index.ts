@@ -4,6 +4,7 @@ export interface User {
   id: string;
   name: string;
   mobile: string;
+  email?: string;
   role: 'Customer';
   lastLogin?: string;
 }
@@ -57,6 +58,7 @@ export interface Order {
   source?: string;
   totalAmount?: number;
   advanceAmount?: number;
+  has_unread_messages?: boolean;
   companyId?: string;
   companyName?: string;
   companyPhone?: string;

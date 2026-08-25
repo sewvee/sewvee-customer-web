@@ -44,8 +44,8 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F3FF] pb-20">
-      <div className="flex items-center justify-between px-4 h-14 bg-[#F5F3FF] border-b border-[#E2E8F0]">
+    <div className="min-h-screen bg-[#F8FAFC] pb-20">
+      <div className="flex items-center justify-between px-4 h-14 bg-[#F8FAFC] border-b border-[#E2E8F0]">
         <Link href="/profile" className="w-10 h-10 flex items-center justify-start">
           <ArrowLeft className="w-6 h-6 text-gray-900" />
         </Link>
@@ -138,7 +138,7 @@ export default function OrdersPage() {
 
                   <div className="flex justify-between items-center pt-3 border-t border-[#F1F5F9]">
                     <span className="text-[15px] font-bold text-gray-900 font-inter">
-                      Total: ₹{item.totalAmount || item.total_amount || 0}
+                      Total: ₹{Number((item as any).totalAmount || (item as any).total_amount || (item as any).total || (item as any).totalPrice || ((item as any).outfits || (item as any).items || []).reduce((acc: number, curr: any) => acc + Number(curr.totalAmount || curr.price || 0), 0) || 0).toFixed(2)}
                     </span>
                     {canCancel && (
                       <button

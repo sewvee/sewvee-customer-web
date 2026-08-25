@@ -68,6 +68,15 @@ export default function ProfilePage() {
 
       {/* Quick Links */}
       <div className="bg-white rounded-[14px] border border-[#E2E8F0] mb-5 overflow-hidden">
+        <Link href="/profile/settings" className="flex items-center px-4 py-3.5 active:bg-gray-50">
+          <div className="flex-1">
+            <p className="text-[14px] font-semibold text-[#0F172A] font-inter mb-0.5">My Profile</p>
+            <p className="text-[12px] text-[#94A3B8] font-inter">Name, email, phone & PIN settings</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-[#CBD5E1]" />
+        </Link>
+        <div className="h-[1px] bg-[#F1F5F9] mx-4" />
+
         <Link href="/orders" className="flex items-center px-4 py-3.5 active:bg-gray-50">
           <div className="flex-1">
             <p className="text-[14px] font-semibold text-[#0F172A] font-inter mb-0.5">My Orders</p>

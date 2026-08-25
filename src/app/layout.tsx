@@ -34,7 +34,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body className={`${inter.className} bg-[#F5F3FF] text-gray-900 antialiased`}>
+      <body className={`${inter.className} bg-[#F8FAFC] text-gray-900 antialiased`}>
         {children}
         <ToastContainer />
       </body>
