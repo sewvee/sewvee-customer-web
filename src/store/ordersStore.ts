@@ -44,9 +44,9 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
   },
 
   cancelOrder: async (orderId: string, token: string) => {
-    const { URL_ORDER_STATUS } = await import('@/lib/env');
+    const { URL_CUSTOMER_PORTAL_ORDER_STATUS } = await import('@/lib/env');
     const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-    const res = await fetch(URL_ORDER_STATUS(orderId), {
+    const res = await fetch(URL_CUSTOMER_PORTAL_ORDER_STATUS(orderId), {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

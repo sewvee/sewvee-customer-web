@@ -2,14 +2,14 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User } from '@/types';
 import api from '@/lib/api';
-import { URL_CUSTOMER_LOGIN, URL_CUSTOMER_PORTAL_ORDERS } from '@/lib/env';
+import { URL_CUSTOMER_LOGIN } from '@/lib/env';
 
 interface AuthState {
   user: User | null;
   token: string | null;
   loading: boolean;
   error: string | null;
-  login: (phone: string) => Promise<void>;
+  login: (mobile: string, pin: string) => Promise<void>;
   logout: () => void;
   clearError: () => void;
   setUser: (user: Partial<User>) => void;
@@ -23,59 +23,40 @@ export const useAuthStore = create<AuthState>()(
       loading: false,
       error: null,
 
-      login: async (phone: string) => {
+      login: async (mobile: string, pin: string) => {
         set({ loading: true, error: null });
         try {
-          // Step 1: Get a proper JWT from the backend
-          const res = await api.post(URL_CUSTOMER_LOGIN, { phone });
-          const { token, customer } = res.data.data;
+          // POST { mobile, pin } matching LoginAppCustomerDto
+          const res = await api.post(URL_CUSTOMER_LOGIN, { mobile, pin });
+          
+          // Depending on if there's a global response interceptor
+          const data = res.data.data || res.data;
+          const { accessToken, token, customer } = data;
+          
+          const finalToken = accessToken || token;
+
+          if (!finalToken || !customer) {
+            throw new Error('Invalid response from server');
+          }
 
           const user: User = {
-            id: customer.id,
-            name: customer.name,
-            mobile: customer.mobile ?? phone,
+            id: customer.id || `cust_${Date.now()}`,
+            name: customer.name || 'Customer',
+            mobile: customer.mobile ?? mobile,
             role: 'Customer',
             lastLogin: new Date().toISOString(),
           };
 
           // Persist token for Axios interceptor
-          localStorage.setItem('sewvee_customer_token', token);
+          localStorage.setItem('sewvee_customer_token', finalToken);
 
-          set({ user, token, loading: false, error: null });
-        } catch (err: unknown) {
-          // Fallback: if backend login endpoint doesn't exist yet,
-          // try fetching orders to validate the phone and extract name
-          try {
-            const ordersRes = await fetch(
-              `${URL_CUSTOMER_PORTAL_ORDERS}?phone=${phone}&limit=1`,
-            );
-            const ordersJson = await ordersRes.json();
-
-            if (ordersJson.success && ordersJson.data?.length > 0) {
-              const first = ordersJson.data[0];
-              const user: User = {
-                id: first.customerId ?? `cust_${Date.now()}`,
-                name: first.customerName ?? 'Customer',
-                mobile: phone,
-                role: 'Customer',
-                lastLogin: new Date().toISOString(),
-              };
-              // Use a temporary token placeholder until backend login is ready
-              const tempToken = 'customer_demo_token';
-              localStorage.setItem('sewvee_customer_token', tempToken);
-              set({ user, token: tempToken, loading: false, error: null });
-            } else {
-              set({
-                loading: false,
-                error: 'No orders found for this number. Please contact your boutique.',
-              });
-            }
-          } catch {
-            set({
-              loading: false,
-              error: 'Unable to connect. Please check your internet connection.',
-            });
-          }
+          set({ user, token: finalToken, loading: false, error: null });
+        } catch (err: any) {
+          const message = err.response?.data?.message || err.message || 'Invalid mobile number or PIN';
+          set({
+            loading: false,
+            error: typeof message === 'string' ? message : message[0],
+          });
         }
       },
 

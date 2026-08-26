@@ -2,7 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useOrdersStore } from '@/store/ordersStore';
 import { useAuthStore } from '@/store/authStore';
-import { ArrowLeft, ShoppingBag, Shirt, Calendar, Scissors, Image as ImageIcon, Download, Camera, Palette, X, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Shirt, Calendar, Scissors, Image as ImageIcon, Download, Camera, Palette, X, AlertCircle, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { URL_ORDER_INVOICE_DOWNLOAD, URL_CUSTOMER_PORTAL_ORDERS, URL_UPLOAD } from '@/lib/env';
@@ -22,6 +22,32 @@ export default function OrderDetailPage() {
   const [activeOutfitIndex, setActiveOutfitIndex] = useState(0);
   const [collageOpen, setCollageOpen] = useState(false);
   const [activeOutfitForCollage, setActiveOutfitForCollage] = useState<any | null>(null);
+  const [confirmDrawerVisible, setConfirmDrawerVisible] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [selectedOutfitForConfirm, setSelectedOutfitForConfirm] = useState<any | null>(null);
+
+  const handleConfirmOutfitPhotos = async () => {
+    if (!selectedOutfitForConfirm || !order) return;
+    const oId = selectedOutfitForConfirm.id || selectedOutfitForConfirm.order_outfit_id;
+    setSubmittingOutfitId(oId);
+    try {
+      const urls = pendingPhotos[oId] || [];
+      for (const u of urls) {
+        await fetch(`${URL_CUSTOMER_PORTAL_ORDERS}/${order.id.toString()}/outfits/${oId}/requests`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('sewvee_customer_token')}` },
+          body: JSON.stringify({ attachment_url: u, message: 'Uploaded via Customer Web', phone: user?.mobile ?? '' })
+        });
+      }
+      setPendingPhotos(prev => { const n={...prev}; delete n[oId]; return n; });
+      fetchOrders(user?.mobile ?? '');
+      setConfirmDrawerVisible(false);
+    } catch(e) {
+      console.error(e);
+    } finally {
+      setSubmittingOutfitId(null);
+    }
+  };
   
   const [pendingPhotos, setPendingPhotos] = useState<Record<string, string[]>>({});
   const [submittingOutfitId, setSubmittingOutfitId] = useState<string | null>(null);
@@ -45,7 +71,20 @@ export default function OrderDetailPage() {
 
   const isSale = order.order_type === 'SALE_ORDER';
   const displayId = order.billNo || order.id;
-  const outfits = order.outfits || order.items || [];
+  
+  const rawOutfits = order.outfits || order.items || [];
+  const outfits: any[] = [];
+  rawOutfits.forEach((o: any) => {
+    const qty = o.quantity || 1;
+    if (qty > 1) {
+      for (let i = 0; i < qty; i++) {
+        outfits.push({ ...o, _expandedIndex: i });
+      }
+    } else {
+      outfits.push(o);
+    }
+  });
+
   
   const activeOutfit = outfits[activeOutfitIndex] || outfits[0];
 
@@ -226,7 +265,7 @@ export default function OrderDetailPage() {
         {activeTab === 'details' && (
           <>
             {outfits.length > 0 && (
-              <div className="flex overflow-x-auto gap-2 mb-6 hide-scrollbar">
+              <div className="flex overflow-x-auto gap-2 mb-4 hide-scrollbar" style={{ minHeight: '40px' }}>
                 {outfits.map((o: any, idx: number) => (
                   <button
                     key={o.id || idx}
@@ -364,26 +403,11 @@ export default function OrderDetailPage() {
                       
                       {(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).length > 0 && (
                         <button
-                          onClick={async () => {
-                            const oId = activeOutfit.id || activeOutfit.order_outfit_id;
-                            setSubmittingOutfitId(oId);
-                            try {
-                              const urls = pendingPhotos[oId] || [];
-                              for (const u of urls) {
-                                await fetch(`${URL_CUSTOMER_PORTAL_ORDERS}/${order.id}/outfits/${oId}/requests`, {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('sewvee_customer_token')}` },
-                                  body: JSON.stringify({ attachment_url: u, message: 'Uploaded via Customer Web', phone: user?.mobile ?? '' })
-                                });
-                              }
-                              setPendingPhotos(prev => { const n={...prev}; delete n[oId]; return n; });
-                              fetchOrders(user?.mobile ?? '');
-                            } catch(e) {
-                              console.error(e);
-                            } finally {
-                              setSubmittingOutfitId(null);
-                            }
-                          }}
+                          onClick={() => {
+                          setSelectedOutfitForConfirm(activeOutfit);
+                          setAgreedToTerms(false);
+                          setConfirmDrawerVisible(true);
+                        }}
                           className="flex-1 py-3 bg-[#10B981] rounded-xl flex items-center justify-center gap-2 shadow-sm"
                         >
                           {submittingOutfitId === (activeOutfit.id || activeOutfit.order_outfit_id) ? (
@@ -435,22 +459,91 @@ export default function OrderDetailPage() {
           if (!uploadRes.ok) throw new Error(`Upload failed: ${JSON.stringify(uploadJson)}`);
 
           const fileUrl: string = uploadJson.file_url ?? uploadJson.data?.file_url ?? uploadJson.data?.full_url ?? uploadJson.data?.url ?? uploadJson.full_url ?? uploadJson.url ?? '';
+          console.log('[DEBUG] Collage upload response:', uploadJson, '-> Extracted URL:', fileUrl);
+          
           if (!fileUrl) throw new Error('No URL returned from upload server');
 
           const outfitId = activeOutfitForCollage.id || activeOutfitForCollage.order_outfit_id;
+          console.log('[DEBUG] Saving to outfitId:', outfitId, 'activeOutfitForCollage:', activeOutfitForCollage);
           
-          setPendingPhotos(prev => ({
-            ...prev,
-            [outfitId]: [...(prev[outfitId] || []), fileUrl]
-          }));
+          setPendingPhotos(prev => {
+            const nextState = {
+              ...prev,
+              [outfitId]: [...(prev[outfitId] || []), fileUrl]
+            };
+            console.log('[DEBUG] pendingPhotos updating from', prev, 'to', nextState);
+            return nextState;
+          });
 
+          setCollageOpen(false);
+          setActiveOutfitForCollage(null);
         } catch (e) {
           console.error('Failed to submit collage:', e);
+          throw e; // Rethrow to let CollageMaker catch it and show an error toast
         }
-        setCollageOpen(false);
-        setActiveOutfitForCollage(null);
       }}
     />
+
+      {confirmDrawerVisible && selectedOutfitForConfirm && (
+        <div className="fixed inset-0 z-[60] flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/45" onClick={() => setConfirmDrawerVisible(false)} />
+          <div className="relative bg-white rounded-t-3xl p-6 pb-10">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 rounded-full bg-[#FEF2F2] flex items-center justify-center mr-3">
+                <AlertCircle size={20} color="#EF4444" />
+              </div>
+              <h3 className="text-[17px] font-bold text-[#1E293B] flex-1">Confirm Photos</h3>
+              <button onClick={() => setConfirmDrawerVisible(false)} className="p-1">
+                <X size={20} color="#64748B" />
+              </button>
+            </div>
+
+            <p className="text-[14px] font-medium text-[#475569] mb-6 leading-relaxed">
+              Are you sure you want to confirm these photos? Once submitted, you cannot change them and they will be sent directly to the boutique for reference.
+            </p>
+
+            <button 
+              className="flex items-start mb-6 text-left w-full cursor-pointer"
+              onClick={() => setAgreedToTerms(!agreedToTerms)}
+            >
+              <div className={`w-5 h-5 rounded-md border-2 mr-3 flex items-center justify-center shrink-0 mt-0.5 ${agreedToTerms ? 'bg-[#5B43EE] border-[#5B43EE]' : 'border-[#CBD5E1] bg-transparent'}`}>
+                {agreedToTerms && <Check size={14} color="#FFF" strokeWidth={3} />}
+              </div>
+              <div className="flex-1">
+                <p className="text-[14px] font-semibold text-[#1E293B] mb-1.5">
+                  I agree with the terms and conditions
+                </p>
+                <div className="bg-[#F8FAFC] p-3 rounded-lg border border-[#F1F5F9]">
+                  <p className="text-[12px] font-medium text-[#64748B] leading-relaxed whitespace-pre-line">
+                    {order?.company?.invoice_terms || order?.company?.termsAndConditions || order?.boutiqueTerms || 'No Refund / No Exchange / No Cancellation\nE & O.E.'}
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            <div className="flex gap-3">
+              <button 
+                className="flex-1 py-3.5 rounded-xl bg-[#F1F5F9] text-[#64748B] font-bold text-[15px]"
+                onClick={() => setConfirmDrawerVisible(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className={`flex-1 py-3.5 rounded-xl font-bold text-[15px] flex items-center justify-center ${agreedToTerms ? 'bg-[#5B43EE] text-white' : 'bg-[#94A3B8] text-white opacity-70'}`}
+                disabled={!agreedToTerms || submittingOutfitId !== null}
+                onClick={handleConfirmOutfitPhotos}
+              >
+                {submittingOutfitId ? (
+                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  'Confirm'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </>
   );
 }

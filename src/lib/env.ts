@@ -7,7 +7,8 @@ const API_DOMAIN =
 export const BASE_URL = `${API_DOMAIN}/mobile/`;
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
-export const URL_CUSTOMER_LOGIN = `${BASE_URL}customer-portal/auth/login`;
+export const URL_CUSTOMER_LOGIN = `${BASE_URL}customer-auth/login`;
+export const URL_CUSTOMER_REGISTER = `${BASE_URL}customer-auth/register`;
 
 // ─── Customer Portal ─────────────────────────────────────────────────────────
 export const URL_CUSTOMER_PORTAL_ORDERS = `${BASE_URL}customer-portal/orders`;
@@ -29,6 +30,7 @@ export const URL_UPLOAD = `${API_DOMAIN}/upload/mobile`;
 // ─── Orders ───────────────────────────────────────────────────────────────────
 export const URL_ORDERS = `${BASE_URL}orders`;
 export const URL_ORDER_STATUS = (id: string) => `${URL_ORDERS}/${id}/status`;
+export const URL_CUSTOMER_PORTAL_ORDER_STATUS = (id: string) => `${URL_CUSTOMER_PORTAL_ORDERS}/${id}/status`;
 export const URL_ORDER_INVOICE_DOWNLOAD = (id: string) =>
   `${URL_ORDERS}/${id}/invoice/download`;
 export const URL_ORDER_TAILORING_COPY_DOWNLOAD = (id: string) =>
