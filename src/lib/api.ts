@@ -30,7 +30,9 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      if (typeof window !== 'undefined') {
+      // Do not force redirect if the 401 came from the login endpoint itself
+      const isLoginRequest = error.config?.url?.includes('login');
+      if (!isLoginRequest && typeof window !== 'undefined') {
         localStorage.removeItem('sewvee_customer_token');
         localStorage.removeItem('sewvee_customer_user');
         window.location.href = '/login';
