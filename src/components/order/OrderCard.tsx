@@ -27,8 +27,7 @@ export function OrderCard({ order, href, hasPendingPhoto = false }: OrderCardPro
 
   const isPendingPhoto = hasPendingPhoto || (!isSale && order.status !== 'Cancelled' && order.status !== 'Delivered' && outfits.some(
     (outfit: any) =>
-      ((outfit.requestedPhotosFromClient && String(outfit.requestedPhotosFromClient) !== '0' && String(outfit.requestedPhotosFromClient) !== 'false') || (outfit.requested_photos_from_client && String(outfit.requested_photos_from_client) !== '0' && String(outfit.requested_photos_from_client) !== 'false')) &&
-      (!outfit.photos || outfit.photos.filter((p: any) => p.category === 'REFERENCE').length === 0)
+      !!(outfit.requestedPhotosFromClient || outfit.requested_photos_from_client)
   ));
 
   return (
