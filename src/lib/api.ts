@@ -14,7 +14,25 @@ const api = axios.create({
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined') {
-      const raw = localStorage.getItem('sewvee_customer_token');
+      let raw = localStorage.getItem('sewvee_customer_token');
+      
+      // Fallback: Read directly from Zustand state if standalone token is missing
+      if (!raw) {
+        try {
+          const authStorage = localStorage.getItem('sewvee_customer_user');
+          if (authStorage) {
+            const parsed = JSON.parse(authStorage);
+            if (parsed?.state?.token) {
+              raw = parsed.state.token;
+              // Restore the standalone token to keep them in sync
+              localStorage.setItem('sewvee_customer_token', raw as string);
+            }
+          }
+        } catch (e) {
+          // ignore parsing errors
+        }
+      }
+
       if (raw) {
         const token = raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
         config.headers.Authorization = token;
