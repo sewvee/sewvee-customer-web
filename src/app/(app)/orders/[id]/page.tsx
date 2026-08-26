@@ -226,12 +226,12 @@ export default function OrderDetailPage() {
               <span className="text-[14px]">Download Invoice</span>
             </a>
 
-            {((order.payments && order.payments.length > 0)) && (
+            {(((order as any).payments && (order as any).payments.length > 0)) && (
               <div className="mt-6 space-y-4">
                 <h2 className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide px-1">Transaction Logs</h2>
                 <div className="bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm overflow-hidden">
-                  {order.payments.map((payment: any, pIdx: number) => (
-                    <div key={'payment-' + pIdx} className={`p-4 ${pIdx !== order.payments.length - 1 ? 'border-b border-[#F1F5F9]' : ''}`}>
+                  {(order as any).payments.map((payment: any, pIdx: number) => (
+                    <div key={'payment-' + pIdx} className={`p-4 ${pIdx !== (order as any).payments.length - 1 ? 'border-b border-[#F1F5F9]' : ''}`}>
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2 mb-1.5">
@@ -293,7 +293,7 @@ export default function OrderDetailPage() {
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold text-[#94A3B8] font-inter tracking-wide mb-1.5 uppercase">URGENCY</span>
-                      <span className="text-[13px] font-bold text-[#0F172A] font-inter uppercase">{activeOutfit.urgency || order.urgency || 'NORMAL'}</span>
+                      <span className="text-[13px] font-bold text-[#0F172A] font-inter uppercase">{activeOutfit.urgency || (order as any).urgency || 'NORMAL'}</span>
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold text-[#94A3B8] font-inter tracking-wide mb-1.5 uppercase">TRIAL DATE</span>
@@ -515,7 +515,7 @@ export default function OrderDetailPage() {
                 </p>
                 <div className="bg-[#F8FAFC] p-3 rounded-lg border border-[#F1F5F9]">
                   <p className="text-[12px] font-medium text-[#64748B] leading-relaxed whitespace-pre-line">
-                    {order?.company?.invoice_terms || order?.company?.termsAndConditions || order?.boutiqueTerms || 'No Refund / No Exchange / No Cancellation\nE & O.E.'}
+                    {(order as any)?.company?.invoice_terms || (order as any)?.company?.termsAndConditions || (order as any)?.boutiqueTerms || 'No Refund / No Exchange / No Cancellation\nE & O.E.'}
                   </p>
                 </div>
               </div>
