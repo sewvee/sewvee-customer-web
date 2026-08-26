@@ -64,7 +64,7 @@ function SlotView({ i, images, activeSlot, activeTool, onSlotClick, onDeleteSlot
   return (
     <div
       key={i}
-      className={`relative flex-1 overflow-hidden rounded-lg cursor-pointer border-2 ${isActive?'border-[#5B43EE]':'border-transparent'} bg-[#D1D5DB]`}
+      className={`relative flex flex-col flex-1 overflow-hidden rounded-lg cursor-pointer border-2 ${isActive?'border-[#5B43EE]':'border-transparent'} bg-[#D1D5DB]`}
       onClick={() => onSlotClick(i)}
     >
       {images[i] ? (
@@ -269,7 +269,7 @@ export function CollageMaker({ open, onClose, onSave }: CollageMakerProps) {
       <SlotView key={i} i={i} images={images} activeSlot={activeSlot} activeTool={activeTool} onSlotClick={handleSlotClick} onDeleteSlot={handleDeleteSlot} />
     );
     const g='gap-1';
-    if (layout.id==='1_single') return <div className="w-full h-full">{slot(0)}</div>;
+    if (layout.id==='1_single') return <div className="w-full h-full flex flex-col">{slot(0)}</div>;
     if (layout.id==='2_vertical') return <div className={`w-full h-full flex flex-row ${g}`}>{[0,1].map(slot)}</div>;
     if (layout.id==='2_horizontal') return <div className={`w-full h-full flex flex-col ${g}`}>{[0,1].map(slot)}</div>;
     if (layout.id==='3_grid') return <div className={`w-full h-full flex flex-row ${g}`}>{slot(0)}<div className={`flex-1 flex flex-col ${g}`}>{[1,2].map(slot)}</div></div>;

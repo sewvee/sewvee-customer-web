@@ -51,9 +51,9 @@ export default function OrderDetailPage() {
 
   return (
     <>
-    <div className={`min-h-screen bg-white ${activeTab === 'requests' ? 'pb-0' : 'pb-24'}`}>
+    <div className="h-[100dvh] flex flex-col bg-white overflow-hidden">
       {/* Navbar */}
-      <div className="flex flex-col pt-4 pb-2 border-b border-gray-100 bg-white">
+      <div className="flex flex-col pt-4 pb-2 border-b border-gray-100 bg-white shrink-0">
         <div className="flex items-center px-4 mb-4">
           <Link href="/home" className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full">
             <ArrowLeft className="w-5 h-5 text-[#0F172A]" />
@@ -77,7 +77,7 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      <div className={`bg-[#F8FAFC] min-h-[calc(100vh-140px)] flex flex-col ${activeTab === 'requests' ? '' : 'px-4 py-6'}`}>
+      <div className={`bg-[#F8FAFC] flex-1 flex flex-col ${activeTab === 'requests' ? 'overflow-hidden' : 'px-4 py-6 overflow-y-auto pb-24'}`}>
         {activeTab === 'requests' && <CustomerRequestsTab order={order} />}
         
         
@@ -88,9 +88,10 @@ export default function OrderDetailPage() {
             <div className="bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm overflow-hidden">
               {outfits.map((outfit: any, idx: number) => {
                 const outfitName = outfit.outfit_name || outfit.name || 'Outfit';
+                const isLast = idx === outfits.length - 1;
                 return (
-                  <div key={'billing-' + (outfit.id || idx)} className="pb-4">
-                    <p className="text-[11px] font-bold text-[#5B43EE] px-4 pt-4 pb-2 uppercase tracking-wide">
+                  <div key={'billing-' + (outfit.id || idx)} className={`pb-3 ${!isLast ? 'border-b border-[#F1F5F9]' : ''}`}>
+                    <p className="text-[11px] font-bold text-[#5B43EE] px-4 pt-3 pb-1.5 uppercase tracking-wide">
                       {outfitName}
                     </p>
                     
@@ -101,24 +102,47 @@ export default function OrderDetailPage() {
                       </div>
                     ) : (
                       <>
-                        {(outfit.services || []).map((service: any, sIdx: number) => (
-                          <div key={'srv-' + sIdx} className="flex justify-between items-center px-4 mb-2">
-                            <div className="flex items-center">
-                              <Scissors className="w-3 h-3 text-[#94A3B8] mr-2" />
-                              <span className="text-[13px] font-medium text-[#475569]">{service.service_name || service.name || 'Stitching'}</span>
-                            </div>
-                            <span className="text-[13px] font-bold text-[#0F172A]">₹{Number(service.price || 0).toFixed(2)}</span>
-                          </div>
-                        ))}
-                        {(!outfit.services || outfit.services.length === 0) && (
-                          <div className="flex justify-between items-center px-4 mb-2">
-                            <div className="flex items-center">
-                              <Scissors className="w-3 h-3 text-[#94A3B8] mr-2" />
-                              <span className="text-[13px] font-medium text-[#475569]">Stitching</span>
-                            </div>
-                            <span className="text-[13px] font-bold text-[#0F172A]">₹{Number(outfit.totalAmount || outfit.total_amount || outfit.price || 0).toFixed(2)}</span>
-                          </div>
-                        )}
+                        {(() => {
+                          let services = outfit.services || outfit.order_outfit_services || outfit.order_services || [];
+                          if (services.length === 0 && outfit.items) {
+                            const svcItems = outfit.items.filter((i: any) => i.item_type === 'SERVICE' || (!i.item_type && i.service_id));
+                            if (svcItems.length > 0) services = svcItems;
+                          }
+                          
+                          if (services.length > 0) {
+                            return services.map((service: any, sIdx: number) => {
+                              const sName = service.service_name || service.name || service.service?.name || 'Stitching';
+                              const isEmbroidery = sName.toLowerCase().includes('embroidery');
+                              const Icon = isEmbroidery ? Palette : Scissors;
+                              
+                              return (
+                                <div key={'srv-' + sIdx} className="flex justify-between items-center px-4 mb-2">
+                                  <div className="flex items-center">
+                                    <Icon className="w-3 h-3 text-[#94A3B8] mr-2" />
+                                    <span className="text-[13px] font-medium text-[#475569]">
+                                      {sName}
+                                    </span>
+                                  </div>
+                                  <span className="text-[13px] font-bold text-[#0F172A]">
+                                    ₹{Number(service.price || service.amount || service.total_amount || 0).toFixed(2)}
+                                  </span>
+                                </div>
+                              );
+                            });
+                          } else {
+                            return (
+                              <div className="flex justify-between items-center px-4 mb-2">
+                                <div className="flex items-center">
+                                  <Scissors className="w-3 h-3 text-[#94A3B8] mr-2" />
+                                  <span className="text-[13px] font-medium text-[#475569]">Stitching</span>
+                                </div>
+                                <span className="text-[13px] font-bold text-[#0F172A]">
+                                  ₹{Number(outfit.totalAmount || outfit.total_amount || outfit.price || 0).toFixed(2)}
+                                </span>
+                              </div>
+                            );
+                          }
+                        })()}
                         {(outfit.items || []).filter((i: any) => i.item_type === 'MATERIAL').map((mat: any, mIdx: number) => (
                           <div key={'mat-' + mIdx} className="flex justify-between items-center px-4 mb-2">
                             <span className="text-[13px] font-medium text-[#475569] pl-5">{mat.material_name || mat.name || 'Material'}</span>
@@ -169,17 +193,26 @@ export default function OrderDetailPage() {
                 <div className="bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm overflow-hidden">
                   {order.payments.map((payment: any, pIdx: number) => (
                     <div key={'payment-' + pIdx} className={`p-4 ${pIdx !== order.payments.length - 1 ? 'border-b border-[#F1F5F9]' : ''}`}>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-[15px] font-bold text-[#0F172A]">₹{Number(payment.amount).toFixed(2)}</span>
-                        <div className="bg-[#EEF2FF] px-2 py-0.5 rounded border border-[#C7D2FE]">
-                          <span className="text-[10px] font-bold text-[#4F46E5] uppercase">{payment.payment_mode || 'PAID'}</span>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-[14px] font-bold text-[#0F172A]">₹{Number(payment.amount).toFixed(2)}</span>
+                            <div className="bg-[#EEF2FF] px-2 py-0.5 rounded border border-[#C7D2FE]">
+                              <span className="text-[10px] font-bold text-[#4F46E5] uppercase">{payment.payment_mode || 'PAID'}</span>
+                            </div>
+                          </div>
+                          <span className="text-[12px] font-medium text-[#64748B] flex items-center">
+                            <Calendar className="w-3 h-3 mr-1.5" />
+                            {new Date(payment.payment_date || payment.createdAt || new Date()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
                         </div>
                       </div>
-                      <span className="text-[12px] font-medium text-[#64748B]">
-                        Date: {new Date(payment.payment_date || payment.createdAt || new Date()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </span>
                       {payment.transaction_id && (
-                        <p className="text-[11px] font-medium text-[#94A3B8] mt-1">Txn ID: {payment.transaction_id}</p>
+                        <div className="mt-2 bg-[#F8FAFC] rounded-lg p-2 border border-[#F1F5F9]">
+                          <p className="text-[11px] font-medium text-[#64748B]">
+                            <span className="font-bold text-[#475569]">Txn ID:</span> {payment.transaction_id}
+                          </p>
+                        </div>
                       )}
                     </div>
                   ))}
