@@ -49,7 +49,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (selectedBoutiqueId) {
-      fetch(`${URL_CUSTOMER_PORTAL_SHOP}?company_id=${selectedBoutiqueId}&limit=5`)
+      fetch(`${URL_CUSTOMER_PORTAL_SHOP}?companyId=${selectedBoutiqueId}&limit=5`)
         .then(res => res.json())
         .then(data => {
           if (data.success && Array.isArray(data.data)) {
@@ -115,12 +115,25 @@ export default function HomePage() {
       </div>
 
       <div className="pb-24">
-        {/* BANNERS */}
-        {banners.length > 0 && (
+        {/* STRIP BANNER */}
+        {banners.filter(b => b.type === "STRIP").length > 0 && (
+          <div 
+            className="w-full flex items-center justify-between px-4 py-2 text-xs font-semibold"
+            style={{ 
+              backgroundColor: banners.filter(b => b.type === "STRIP")[0].bg_color || '#4F46E5',
+              color: banners.filter(b => b.type === "STRIP")[0].text_color || '#FFFFFF'
+            }}
+          >
+            <p className="truncate flex-1 pr-4">{banners.filter(b => b.type === "STRIP")[0].title}</p>
+          </div>
+        )}
+
+        {/* INLINE BANNERS */}
+        {banners.filter(b => b.type === "INLINE").length > 0 && (
           <div className="mt-4 px-5">
             <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-2">
-              {banners.map((banner, idx) => (
-                <div key={idx} className="snap-center shrink-0 w-[90%] md:w-[400px] h-[160px] rounded-[16px] overflow-hidden bg-gray-200 relative border border-gray-200">
+              {banners.filter(b => b.type === "INLINE").map((banner, idx) => (
+                <div key={idx} className="snap-center shrink-0 w-[90%] md:w-[400px] h-[160px] rounded-[16px] overflow-hidden bg-gray-200 relative border border-gray-200 shadow-sm cursor-pointer" onClick={() => banner.cta_action_value && window.open(banner.cta_action_value, '_blank')}>
                   <img src={formatImageUrl(banner.image_url) || banner.image_url} alt={banner.title || 'Banner'} className="w-full h-full object-cover" />
                 </div>
               ))}
