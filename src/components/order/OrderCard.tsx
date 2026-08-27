@@ -11,9 +11,10 @@ interface OrderCardProps {
   order: Order;
   href?: string;
   hasPendingPhoto?: boolean;
+  onCancel?: (e: React.MouseEvent) => void;
 }
 
-export function OrderCard({ order, href, hasPendingPhoto = false }: OrderCardProps) {
+export function OrderCard({ order, href, hasPendingPhoto = false, onCancel }: OrderCardProps) {
   const isSale = order.order_type === 'SALE_ORDER';
   const orderLabel = order.billNo || (isSale ? `INV-${order.id}` : `ORD-${order.id}`);
   
@@ -102,6 +103,20 @@ export function OrderCard({ order, href, hasPendingPhoto = false }: OrderCardPro
             <AlertCircle className="w-3.5 h-3.5 text-[#DC2626] mr-1.5" />
             <span className="text-[12px] font-bold text-[#DC2626] font-inter tracking-wide uppercase">Photo Needed</span>
           </div>
+        )}
+
+        {/* Cancel Button */}
+        {onCancel && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onCancel(e);
+            }}
+            className="mt-3.5 w-full flex items-center justify-center bg-[#FEF2F2] px-3 py-2 rounded-lg border border-[#FECACA]"
+          >
+            <span className="text-[12px] font-bold text-[#EF4444] font-inter uppercase tracking-wide">Cancel Request</span>
+          </button>
         )}
     </Link>
   );
