@@ -1,7 +1,7 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, Store, MessageSquarePlus } from 'lucide-react';
+import { ChevronLeft, MessageSquarePlus, ShoppingBag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -9,12 +9,16 @@ import { useOrdersStore } from '@/store/ordersStore';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 
 interface ChatThread {
+  order_id: number;
+  order_number: string;
+  order_type: string;
   boutique_id: number;
   boutique_name: string;
   profile_icon_url: string | null;
   latest_message_text: string | null;
   latest_message_attachment: string | null;
   latest_message_timestamp: string;
+  unread_count?: number;
 }
 
 export default function ChatListPage() {
@@ -45,25 +49,12 @@ export default function ChatListPage() {
     fetchThreads();
   }, [user?.mobile]);
 
-  // Load orders to derive boutiques for new chat
+  // Load orders to derive orders for new chat
   useEffect(() => {
     if (user?.mobile && orders.length === 0) {
       fetchOrders(user.mobile);
     }
   }, [user?.mobile, orders.length, fetchOrders]);
-
-  // Extract unique boutiques from orders
-  const availableBoutiques = useMemo(() => {
-    const map = new Map<number, { id: number; name: string }>();
-    orders.forEach(o => {
-      const bId = Number(o.boutiqueId || (o as any).company_id);
-      const bName = o.boutiqueName || (o as any).company?.name || 'Boutique';
-      if (bId && !map.has(bId)) {
-        map.set(bId, { id: bId, name: bName });
-      }
-    });
-    return Array.from(map.values());
-  }, [orders]);
 
   const formatTime = (isoStr: string) => {
     if (!isoStr) return '';
@@ -93,18 +84,18 @@ export default function ChatListPage() {
           </div>
         ) : threads.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-gray-400 px-6">
-            <Store className="w-12 h-12 mb-4 opacity-20" />
+            <ShoppingBag className="w-12 h-12 mb-4 opacity-20" />
             <p className="text-[16px] font-bold text-gray-500 font-inter mb-1">No chats yet</p>
             <p className="text-[14px] text-center">
-              When you interact with a boutique, your messages will appear here.
+              When you message about an order, it will appear here.
             </p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
             {threads.map((t) => (
               <Link 
-                key={t.boutique_id} 
-                href={`/chat/${t.boutique_id}`}
+                key={t.order_id} 
+                href={`/chat/\${t.order_id}`}
                 className="flex items-center px-4 py-4 hover:bg-gray-50 transition-colors"
               >
                 {/* Avatar */}
@@ -112,23 +103,35 @@ export default function ChatListPage() {
                   {t.profile_icon_url ? (
                     <img src={t.profile_icon_url} alt={t.boutique_name} className="w-full h-full object-cover" />
                   ) : (
-                    <Store className="w-6 h-6 text-indigo-400" />
+                    <ShoppingBag className="w-6 h-6 text-indigo-400" />
                   )}
                 </div>
                 
                 {/* Content */}
                 <div className="ml-3 flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-0.5">
-                    <h3 className="text-[16px] font-bold text-[#0F172A] truncate">
-                      {t.boutique_name}
+                    <h3 className="text-[15px] font-bold text-[#0F172A] truncate">
+                      {t.order_number}
                     </h3>
                     <span className="text-[12px] text-gray-400 whitespace-nowrap ml-2">
                       {formatTime(t.latest_message_timestamp)}
                     </span>
                   </div>
-                  <p className="text-[14px] text-gray-500 truncate">
-                    {t.latest_message_text || (t.latest_message_attachment ? '📷 Image' : 'Started a conversation')}
-                  </p>
+                  <div className="flex items-center mb-1">
+                     <span className="bg-[#F1F5F9] text-[#475569] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">
+                        {t.boutique_name}
+                     </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className={`text-[13px] truncate ${t.unread_count ? 'text-[#0F172A] font-medium' : 'text-gray-500'}`}>
+                      {t.latest_message_text || (t.latest_message_attachment ? '📷 Image' : 'Started a conversation')}
+                    </p>
+                    {t.unread_count ? (
+                      <span className="bg-[#5B43EE] text-white text-[11px] font-bold h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full ml-2 shrink-0">
+                        {t.unread_count}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
               </Link>
             ))}
@@ -148,24 +151,27 @@ export default function ChatListPage() {
       <BottomSheet open={newChatDrawerOpen} onClose={() => setNewChatDrawerOpen(false)}>
         <div className="p-2 pb-6">
           <h3 className="text-[18px] font-bold text-[#0F172A] mb-2 px-2">New Chat</h3>
-          <p className="text-[13px] text-gray-500 mb-4 px-2">Select a boutique you have ordered from to start a conversation.</p>
+          <p className="text-[13px] text-gray-500 mb-4 px-2">Select an order to start a conversation.</p>
           
-          {availableBoutiques.length === 0 ? (
+          {orders.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-[14px] text-gray-400">You haven't ordered from any boutiques yet.</p>
+              <p className="text-[14px] text-gray-400">You don't have any active orders.</p>
             </div>
           ) : (
             <div className="space-y-1 max-h-[350px] overflow-y-auto">
-              {availableBoutiques.map(b => (
+              {orders.map(o => (
                 <button
-                  key={b.id}
-                  onClick={() => router.push(`/chat/${b.id}`)}
+                  key={o.id}
+                  onClick={() => router.push(`/chat/\${o.id}`)}
                   className="w-full text-left px-4 py-4 hover:bg-gray-50 rounded-xl flex items-center transition-colors border border-transparent hover:border-gray-200"
                 >
                   <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center mr-3 shrink-0">
-                    <Store className="w-5 h-5 text-indigo-400" />
+                    <ShoppingBag className="w-5 h-5 text-indigo-400" />
                   </div>
-                  <span className="text-[15px] font-bold text-[#0F172A]">{b.name}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[15px] font-bold text-[#0F172A] block">{o.order_number}</span>
+                    <span className="text-[12px] text-gray-500 block truncate">{o.boutiqueName || 'Boutique'}</span>
+                  </div>
                 </button>
               ))}
             </div>

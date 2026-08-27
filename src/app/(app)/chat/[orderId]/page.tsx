@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { ChevronLeft, Send, Store, Image as ImageIcon, Loader2, MessageCircle } from 'lucide-react';
+import { ChevronLeft, Send, ShoppingBag, Image as ImageIcon, Loader2, MessageCircle } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -21,96 +21,88 @@ interface ChatMessage {
 export default function ChatDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const boutiqueId = parseInt(params.boutiqueId as string);
+  const orderId = parseInt(params.orderId as string);
   const user = useAuthStore(s => s.user);
   
-  // Orders logic for the dropdown
   const { orders, fetchOrders } = useOrdersStore();
-  const [contextSelected, setContextSelected] = useState<string>(''); // format: "orderId_outfitId"
+  const order = orders.find(o => o.id.toString() === orderId.toString());
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [boutiqueName, setBoutiqueName] = useState('Boutique Chat');
   const [loading, setLoading] = useState(true);
   
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   
+  // Topic selection if the order has multiple outfits
+  const [contextOutfitId, setContextOutfitId] = useState<string>('');
+  
   const endRef = useRef<HTMLDivElement>(null);
 
-  // Filter orders to only this boutique
-  const boutiqueOrders = orders.filter(o => Number(o.boutiqueId || (o as any).company_id) === boutiqueId);
-
+  // Fetch Orders if missing
   useEffect(() => {
-    if (user?.mobile && orders.length === 0) fetchOrders(user.mobile);
+    if (user?.mobile && (!order || orders.length === 0)) {
+      useOrdersStore.getState().refreshOrders(user.mobile);
+    }
   }, [user, orders.length, fetchOrders]);
 
+  // Default topic selection
   useEffect(() => {
+    if (order && !contextOutfitId) {
+      const outfits = order.outfits || order.items || [];
+      if (outfits.length > 0) {
+        const outf = outfits[0] as any;
+        setContextOutfitId((outf.id || outf.order_outfit_id)?.toString() || '');
+      }
+    }
+  }, [order, contextOutfitId]);
+
+  // Load chat messages for this order
+  useEffect(() => {
+    console.log("LOAD CHAT CALLED", { userMobile: user?.mobile, orderId });
     async function loadChat() {
-      if (!user?.mobile || !boutiqueId) return;
+      if (!orderId) { setLoading(false); return; }
       try {
-        const res = await api.get(`/customer-portal/chat/${boutiqueId}/messages`, {
-          params: { phone: user.mobile }
+        const res = await api.get(`/customer-portal/orders/\${orderId}/requests`, {
+          /* no params needed */
         });
         const data = res.data?.data || res.data;
         setMessages(Array.isArray(data) ? data : []);
-        
-        // Try to derive the boutique name from our local orders list if possible
-        const orderMatch = orders.find(o => Number(o.boutiqueId || (o as any).company_id) === boutiqueId);
-        if (orderMatch && orderMatch.boutiqueName) {
-          setBoutiqueName(orderMatch.boutiqueName);
-        }
+        if (contextOutfitId) { api.post(`/customer-portal/orders/${orderId}/outfits/${contextOutfitId}/requests/read`).catch(console.error); }
       } catch (err) {
         console.error('Failed to load messages:', err);
       } finally {
+        console.log("SETTING LOADING FALSE");
         setLoading(false);
       }
     }
     loadChat();
-  }, [boutiqueId, user?.mobile, orders]);
+  }, [orderId, user?.mobile]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Set default context if available
-  useEffect(() => {
-    if (!contextSelected && boutiqueOrders.length > 0) {
-      const firstOrder = boutiqueOrders[0];
-      const outfits = firstOrder.outfits || firstOrder.items || [];
-      if (outfits.length > 0) {
-        const outf = outfits[0] as any;
-        setContextSelected(`${firstOrder.id}_${outf.id || outf.order_outfit_id}`);
-      }
-    }
-  }, [boutiqueOrders, contextSelected]);
-
   const handleSend = async () => {
-    if (!inputText.trim() || !contextSelected || sending) return;
+    if (!inputText.trim() || !contextOutfitId || sending) return;
     
-    const [orderId, outfitId] = contextSelected.split('_');
     setSending(true);
-    
     try {
-      const res = await api.post(`/customer-portal/orders/${orderId}/outfits/${outfitId}/requests`, {
+      const res = await api.post(`/customer-portal/orders/\${orderId}/outfits/\${contextOutfitId}/requests`, {
         message: inputText.trim()
       });
       
-      const newMsg = res.data?.data || res.data;
-      
-      // Optimistically append (or refetch). Let's append manually to be fast.
-      const order = boutiqueOrders.find(o => o.id.toString() === orderId);
-      const outfit = (order?.outfits || order?.items || []).find((o: any) => (o.id || o.order_outfit_id)?.toString() === outfitId) as any;
+      const outfit = (order?.outfits || order?.items || []).find((o: any) => (o.id || o.order_outfit_id)?.toString() === contextOutfitId) as any;
       
       const chatMsg: ChatMessage = {
-        id: newMsg.id || Date.now(),
-        order_id: parseInt(orderId),
-        order_outfit_id: parseInt(outfitId),
+        id: Date.now(),
+        order_id: orderId,
+        order_outfit_id: parseInt(contextOutfitId),
         sender_type: 'CUSTOMER',
         message: inputText.trim(),
         attachment_url: null,
         created_at: new Date().toISOString(),
         order_number: order?.order_number || '',
-        outfit_name: outfit?.name || 'Outfit'
+        outfit_name: outfit?.name || outfit?.outfit_type || 'Outfit'
       };
       
       setMessages(prev => [...prev, chatMsg]);
@@ -125,6 +117,10 @@ export default function ChatDetailPage() {
   const formatTime = (iso: string) => {
     return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+  
+  const headerTitle = order ? `\${order.order_number}` : 'Order Chat';
+  const headerSubtitle = order?.boutiqueName || '';
+  const outfits = order?.outfits || order?.items || [];
 
   return (
     <div className="bg-[#F8FAFC] min-h-screen flex flex-col h-screen max-h-screen">
@@ -134,33 +130,30 @@ export default function ChatDetailPage() {
           <ChevronLeft className="w-6 h-6 text-white" />
         </button>
         <div className="w-[36px] h-[36px] bg-white/20 rounded-full flex items-center justify-center mr-3">
-          <Store className="w-5 h-5 text-white" />
+          <ShoppingBag className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-[16px] font-bold text-white truncate">{boutiqueName}</h1>
-          <p className="text-[12px] text-indigo-200">Tap to view info</p>
+          <h1 className="text-[16px] font-bold text-white truncate">{headerTitle}</h1>
+          {headerSubtitle && <p className="text-[12px] text-indigo-200 truncate">{headerSubtitle}</p>}
         </div>
       </div>
 
       {/* Context Selector */}
-      {boutiqueOrders.length > 0 && (
+      {outfits.length > 0 && (
         <div className="bg-white px-4 py-2 border-b border-gray-200 shrink-0 shadow-sm z-10 flex items-center gap-2">
           <span className="text-[12px] font-bold text-gray-500 uppercase shrink-0">Topic:</span>
           <select 
             className="flex-1 bg-gray-50 border border-gray-200 rounded-lg text-[13px] py-1.5 px-2 outline-none text-[#0F172A] font-medium"
-            value={contextSelected}
-            onChange={e => setContextSelected(e.target.value)}
+            value={contextOutfitId}
+            onChange={e => setContextOutfitId(e.target.value)}
           >
-            {boutiqueOrders.map(order => {
-              const outfits = order.outfits || order.items || [];
-              return outfits.map((outf: any) => {
-                const oid = outf.id || outf.order_outfit_id;
-                return (
-                  <option key={`${order.id}_${oid}`} value={`${order.id}_${oid}`}>
-                    {order.order_number} - {outf.name || 'Outfit'}
-                  </option>
-                );
-              });
+            {outfits.map((outf: any) => {
+              const oid = outf.id || outf.order_outfit_id;
+              return (
+                <option key={oid} value={oid}>
+                  {outf.name || outf.outfit_type || 'Outfit'}
+                </option>
+              );
             })}
           </select>
         </div>
@@ -189,13 +182,13 @@ export default function ChatDetailPage() {
                 {showContext && (
                   <div className="flex justify-center mb-3 mt-2">
                     <span className="bg-white border border-gray-200 text-gray-500 text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
-                      {msg.order_number} • {msg.outfit_name}
+                      {msg.outfit_name || 'Outfit'}
                     </span>
                   </div>
                 )}
                 
-                <div className={`flex ${isCustomer ? 'justify-end' : 'justify-start'} mb-2`}>
-                  <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${
+                <div className={`flex \${isCustomer ? 'justify-end' : 'justify-start'} mb-2`}>
+                  <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm \${
                     isCustomer 
                       ? 'bg-[#5B43EE] text-white rounded-tr-sm' 
                       : 'bg-white border border-gray-100 text-[#0F172A] rounded-tl-sm'
@@ -206,11 +199,11 @@ export default function ChatDetailPage() {
                       </div>
                     )}
                     {msg.message && (
-                      <p className={`text-[14px] leading-relaxed ${isCustomer ? 'text-white' : 'text-[#334155]'}`}>
+                      <p className={`text-[14px] leading-relaxed \${isCustomer ? 'text-white' : 'text-[#334155]'}`}>
                         {msg.message}
                       </p>
                     )}
-                    <div className={`text-[10px] mt-1 text-right ${isCustomer ? 'text-indigo-200' : 'text-gray-400'}`}>
+                    <div className={`text-[10px] mt-1 text-right \${isCustomer ? 'text-indigo-200' : 'text-gray-400'}`}>
                       {formatTime(msg.created_at)}
                     </div>
                   </div>
@@ -231,8 +224,8 @@ export default function ChatDetailPage() {
           <textarea 
             value={inputText}
             onChange={e => setInputText(e.target.value)}
-            placeholder={contextSelected ? "Type a message..." : "Select a topic first..."}
-            disabled={!contextSelected || sending}
+            placeholder={((order?.outfits?.length ?? 0) > 1 || (order?.items?.length ?? 0) > 1) && !contextOutfitId ? "Select a topic first..." : "Type a message..."}
+            disabled={!contextOutfitId || sending}
             rows={1}
             className="w-full max-h-[100px] min-h-[44px] bg-transparent resize-none outline-none py-3 px-4 text-[14px] text-[#0F172A] disabled:opacity-50"
             onKeyDown={(e) => {
@@ -245,7 +238,7 @@ export default function ChatDetailPage() {
         </div>
         <button 
           onClick={handleSend}
-          disabled={!inputText.trim() || !contextSelected || sending}
+          disabled={!inputText.trim() || !contextOutfitId || sending}
           className="p-3 bg-[#5B43EE] text-white rounded-full disabled:opacity-50 disabled:bg-gray-300 transition-colors shrink-0"
         >
           {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-0.5" />}
