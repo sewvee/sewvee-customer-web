@@ -248,7 +248,11 @@ export default function StitchingPage() {
                   onClick={() => setMeasurementDrawerOpen(true)}
                   className="w-full py-3 bg-white border border-indigo-200 rounded-lg text-indigo-600 font-bold text-[14px]"
                 >
-                  {formData.selected_past_order_id ? `Selected Order: ${formData.selected_past_order_id}` : 'View Past Orders'}
+                  {(() => {
+                    if (!formData.selected_past_order_id) return 'View Past Orders';
+                    const selectedOrder = pastStitchingOrders.find(o => o.id.toString() === formData.selected_past_order_id);
+                    return `Selected Order: ${selectedOrder ? (selectedOrder.billNo || `ORD-${selectedOrder.id}`) : formData.selected_past_order_id}`;
+                  })()}
                 </button>
               </div>
             )}
