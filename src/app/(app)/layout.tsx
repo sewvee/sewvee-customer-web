@@ -20,7 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!isClient || !token) return null;
 
-  const isMainTab = ['/home', '/gallery', '/shop', '/profile'].includes(pathname);
+  const isMainTab = ['/home', '/orders', '/chat', '/shop', '/profile'].includes(pathname);
 
   return (
     <div className={`min-h-[100dvh] flex flex-col ${isMainTab ? 'pb-20' : ''}`}>
