@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useBoutiquesStore } from '@/store/boutiquesStore';
 import { useOrdersStore } from '@/store/ordersStore';
 import { ArrowLeft, CheckCircle, UploadCloud, X, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check } from 'lucide-react';
-import { URL_ORDERS } from '@/lib/env';
+import { URL_ORDERS, URL_CUSTOMER_PORTAL_ORDERS, URL_UPLOAD } from '@/lib/env';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useToast } from '@/hooks/useToast';
 
@@ -71,6 +71,28 @@ export default function StitchingPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('sewvee_customer_token') ?? '';
+      const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+      
+      // Upload images first
+      const uploadedUrls: string[] = [];
+      for (const file of images) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('key_name', 'order_reference');
+        
+        const uploadRes = await fetch(URL_UPLOAD, {
+          method: 'POST',
+          headers: { Authorization: formattedToken },
+          body: formData,
+        });
+        
+        if (uploadRes.ok) {
+          const json = await uploadRes.json();
+          const url = json.file_url ?? json.data?.file_url ?? json.url ?? json.data?.url;
+          if (url) uploadedUrls.push(url);
+        }
+      }
+
       const payload = {
         order_type: 'STITCHING_REQUEST',
         customer_mobile: user?.mobile,
@@ -80,7 +102,8 @@ export default function StitchingPage() {
           description: formData.description,
           measurement_option: formData.measurement_option,
           reference_order_id: formData.selected_past_order_id,
-          delivery_date: formData.delivery_date
+          delivery_date: formData.delivery_date,
+          photos: uploadedUrls
         }
       };
 
@@ -88,7 +111,7 @@ export default function StitchingPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: token.startsWith('Bearer ') ? token : `Bearer ${token}`
+          Authorization: formattedToken
         },
         body: JSON.stringify(payload)
       });

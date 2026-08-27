@@ -1,75 +1,60 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { ShoppingBag, Search, ChevronDown, Store, X, Plus, Minus } from 'lucide-react';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
-import { URL_CUSTOMER_PORTAL_SHOP, URL_CUSTOMER_PORTAL_ORDERS, BASE_URL, URL_CUSTOMER_STORE_CATALOGUE } from '@/lib/env';
-import { ShoppingBag, MapPin, Store, ChevronDown, X, Plus, Minus, Trash2 } from 'lucide-react';
-import type { Product, Boutique } from '@/types';
-import { Button } from '@/components/ui/Button';
+import { useBoutiquesStore } from '@/store/boutiquesStore';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { URL_CUSTOMER_STORE_CATALOGUE, URL_CUSTOMER_PORTAL_SHOP, URL_CUSTOMER_PORTAL_ORDERS, BASE_URL } from '@/lib/env';
 import { useToast } from '@/hooks/useToast';
+import { Button } from '@/components/ui/Button';
+import { BoutiqueDrawer } from '@/components/home/BoutiqueDrawer';
 
-// Helper to format image URL from the API response (same as mobile)
-const formatImageUrl = (urlStr: string) => {
+const formatImageUrl = (urlStr: string | null) => {
   if (!urlStr) return null;
-  const rootUrl = BASE_URL.replace('/mobile/', '/');
-  let firstUrl = urlStr.split(',')[0].trim();
-  if (firstUrl.startsWith('http')) return encodeURI(firstUrl);
-  if (firstUrl.startsWith('/')) return encodeURI(rootUrl + firstUrl.substring(1));
-  return encodeURI(rootUrl + firstUrl);
+  const firstUrl = urlStr.split(',')[0];
+  if (firstUrl.startsWith('http')) return firstUrl;
+  return `${BASE_URL.replace('/api/v1/', '')}/${firstUrl}`;
 };
 
 export default function ShopPage() {
   const { user, token } = useAuthStore();
-  const { orders } = useOrdersStore();
-  const { showToast } = useToast();
+  
+  // Use Global Boutiques Store
+  const { boutiques, selectedBoutiqueId, fetchBoutiques } = useBoutiquesStore();
 
-  const [boutiques, setBoutiques] = useState<Boutique[]>([]);
-  const [selectedBoutique, setSelectedBoutique] = useState<Boutique | null>(null);
+  const [shopMode, setShopMode] = useState<'DIRECT'|'BOUTIQUE'>('DIRECT');
   const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [shopMode, setShopMode] = useState<'DIRECT' | 'BOUTIQUE'>('DIRECT');
+  const [loading, setLoading] = useState(true);
   
-  const [isBoutiqueModalOpen, setBoutiqueModalOpen] = useState(false);
+  const [isBoutiqueDrawerOpen, setIsBoutiqueDrawerOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   
-  // Cart state
+  // Cart
   const [cart, setCart] = useState<any[]>([]);
-  const [isCartModalOpen, setCartModalOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   
-  const [deliveryMethod, setDeliveryMethod] = useState<'STORE_PICKUP' | 'COURIER'>('STORE_PICKUP');
+  // Checkout
+  const [deliveryMethod, setDeliveryMethod] = useState<'PICKUP'|'COURIER'>('PICKUP');
   const [shippingAddress, setShippingAddress] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Product Details Modal state
-  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const { showToast } = useToast();
 
-  // Extract boutiques from past orders
   useEffect(() => {
-    const bMap = new Map<string, Boutique>();
-    orders.forEach((o) => {
-      if (o.boutiqueId && o.boutiqueName) {
-        bMap.set(o.boutiqueId, {
-          id: o.boutiqueId,
-          name: o.boutiqueName,
-          phone: o.companyPhone,
-          address: o.companyAddress,
-        });
-      }
-    });
-    const bList = Array.from(bMap.values());
-    setBoutiques(bList);
-    if (bList.length > 0 && !selectedBoutique) {
-      setSelectedBoutique(bList[0]);
-    }
-  }, [orders, selectedBoutique]);
+    fetchBoutiques();
+  }, [fetchBoutiques]);
 
   useEffect(() => {
     if (shopMode === 'DIRECT') {
       fetchProducts();
-    } else if (selectedBoutique) {
-      fetchProducts(selectedBoutique.id);
+    } else if (selectedBoutiqueId) {
+      fetchProducts(selectedBoutiqueId.toString());
+    } else {
+      setProducts([]);
+      setLoading(false);
     }
-  }, [shopMode, selectedBoutique]);
+  }, [shopMode, selectedBoutiqueId]);
 
   const fetchProducts = async (companyId?: string) => {
     setLoading(true);
@@ -90,35 +75,23 @@ export default function ShopPage() {
       const json = await res.json();
       if (json.success) {
         const data = shopMode === 'DIRECT' ? json.products : json.data;
-        const mapped = (data ?? []).map((p: any) => ({
-          ...p,
-          id: p.id,
-          name: p.name,
-          category: p.readymade_category?.name || p.category?.name || 'Uncategorized',
-          price: p.selling_price || 0,
-          image: formatImageUrl(p.image_url),
-          description: p.description || 'No description available',
-          stock: Number(p.current_stock || 0)
-        }));
-        setProducts(mapped);
-      } else {
-        setProducts([]);
+        setProducts(data || []);
       }
-    } catch {
-      showToast('Failed to load products', 'error');
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
-  const addToCart = (product: any, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setCart((prev) => {
-      const existing = prev.find(p => p.id === product.id);
-      if (existing) {
+  const addToCart = (product: any, e: any) => {
+    e.stopPropagation();
+    setCart(prev => {
+      const ex = prev.find(p => p.id === product.id);
+      if (ex) {
         return prev.map(p => p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p);
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { ...product, quantity: 1, price: product.selling_price || product.price }];
     });
     showToast(`${product.name} added to cart`, 'success');
   };
@@ -139,7 +112,7 @@ export default function ShopPage() {
 
   const handlePlaceOrder = async () => {
     if (cart.length === 0 || !user || !token) return;
-    if (shopMode === 'BOUTIQUE' && !selectedBoutique) return;
+    if (shopMode === 'BOUTIQUE' && !selectedBoutiqueId) return;
     if (deliveryMethod === 'COURIER' && !shippingAddress.trim()) {
       showToast('Please enter a shipping address', 'error');
       return;
@@ -159,7 +132,7 @@ export default function ShopPage() {
           customer_id: (user as any).customer_id || user.id,
           customer_mobile: user.mobile,
           customer_name: user.name || 'App Customer',
-          company_id: shopMode === 'BOUTIQUE' ? selectedBoutique?.id : undefined,
+          company_id: shopMode === 'BOUTIQUE' ? selectedBoutiqueId : undefined,
           is_sewvee_direct: shopMode === 'DIRECT',
           order_type: 'SALE_ORDER',
           order_date: new Date().toISOString(),
@@ -183,34 +156,35 @@ export default function ShopPage() {
           }))
         })
       });
-      const json = await res.json();
-      if (json.success) {
-        showToast('Order Request Sent Successfully!', 'success');
+
+      if (res.ok) {
+        showToast('Order placed successfully!', 'success');
         setCart([]);
-        setCartModalOpen(false);
+        setIsCartOpen(false);
       } else {
-        showToast(json.message || 'Failed to place order', 'error');
+        showToast('Failed to place order', 'error');
       }
-    } catch (e) {
+    } catch (err) {
+      console.error(err);
       showToast('Error placing order', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const cartTotal = cart.reduce((acc, c) => acc + (Number(c.price) * (c.quantity || 1)), 0);
   const cartCount = cart.reduce((acc, c) => acc + (c.quantity || 1), 0);
+  const cartTotal = cart.reduce((acc, c) => acc + (Number(c.price) * (c.quantity || 1)), 0);
+
+  const selectedBoutique = boutiques.find(b => b.id === selectedBoutiqueId);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 relative">
+    <div className="bg-[#F8FAFC] min-h-screen pb-20">
       {/* Header */}
-      <div className="bg-white px-4 py-3 sticky top-0 z-10 border-b border-gray-100">
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-lg font-bold text-gray-900">Shop</div>
-          
-          {/* Cart Icon in Header */}
-          <button className="relative p-2" onClick={() => setCartModalOpen(true)}>
-            <ShoppingBag className="w-6 h-6 text-gray-700" />
+      <div className="bg-white px-4 pt-6 pb-4 sticky top-0 z-20 border-b border-gray-100">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">Shop</h1>
+          <button onClick={() => setIsCartOpen(true)} className="relative p-2 text-gray-700 bg-gray-50 rounded-full">
+            <ShoppingBag className="w-6 h-6" />
             {cartCount > 0 && (
               <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">
                 {cartCount}
@@ -238,19 +212,19 @@ export default function ShopPage() {
         {/* Boutique Selector (Only shown if BOUTIQUE mode) */}
         {shopMode === 'BOUTIQUE' && (
           <button
-            onClick={() => setBoutiqueModalOpen(true)}
+            onClick={() => setIsBoutiqueDrawerOpen(true)}
             className="flex items-center gap-2 max-w-[100%] w-full mt-3 bg-gray-50 p-2 rounded-xl border border-gray-200"
           >
-            <div className="bg-indigo-50 p-2 rounded-full">
+            <div className="bg-indigo-50 p-2 rounded-full shrink-0">
               <Store className="w-5 h-5 text-[#5B43EE]" />
             </div>
             <div className="text-left flex-1 min-w-0">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Shopping At</p>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 overflow-hidden pr-2">
                 <p className="text-sm font-bold text-gray-900 truncate">
-                  {selectedBoutique?.name ?? 'Select Boutique'}
+                  {selectedBoutique ? (selectedBoutique.boutique_name || selectedBoutique.name) : 'Select Boutique'}
                 </p>
-                <ChevronDown className="w-4 h-4 text-gray-500" />
+                <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
               </div>
             </div>
           </button>
@@ -269,38 +243,32 @@ export default function ShopPage() {
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {products.map((p) => {
-              const isOut = p.stock <= 0;
+              const img = formatImageUrl(p.image_url);
               return (
                 <div 
                   key={p.id} 
-                  className="bg-white rounded-[20px] overflow-hidden border border-[#F1F5F9] shadow-[0_2px_8px_rgba(0,0,0,0.04)] cursor-pointer"
+                  className="bg-white rounded-2xl overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col cursor-pointer"
                   onClick={() => setSelectedProduct(p)}
                 >
-                  <div className="h-[160px] bg-[#F8FAFC] relative">
-                    {p.image ? (
-                      <img src={p.image} alt={p.name} className={`w-full h-full object-cover ${isOut ? 'opacity-50' : ''}`} />
+                  <div className="h-40 bg-gray-50 w-full relative">
+                    {img ? (
+                      <img src={img} alt={p.name} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ShoppingBag className="w-8 h-8 text-gray-300" />
-                      </div>
-                    )}
-                    {isOut && (
-                      <div className="absolute top-[45%] left-0 right-0 bg-[#0F172A]/70 py-1.5 flex items-center justify-center">
-                        <span className="text-white text-[10px] font-bold tracking-widest">OUT OF STOCK</span>
+                      <div className="w-full h-full flex items-center justify-center text-gray-300">
+                        <ShoppingBag className="w-8 h-8" />
                       </div>
                     )}
                   </div>
-                  <div className="p-3">
-                    <p className="text-[11px] text-[#94A3B8] font-medium uppercase font-inter">{p.category}</p>
-                    <h3 className="text-[14px] font-bold text-[#0F172A] line-clamp-1 font-inter">{p.name}</h3>
-                    <div className="flex justify-between items-center mt-2">
-                      <p className="text-[14px] text-[#5B43EE] font-bold font-inter">₹{p.price}</p>
+                  <div className="p-3 flex flex-col flex-1">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase">{p.readymade_category?.name || p.category_name || 'RAW SILK'}</p>
+                    <p className="font-bold text-[#0F172A] text-sm mt-0.5 line-clamp-1">{p.name}</p>
+                    <div className="mt-auto pt-3 flex items-center justify-between">
+                      <span className="font-bold text-[#5B43EE]">₹{p.selling_price || p.price}</span>
                       <button 
-                        className="bg-[#F8FAFC] py-1.5 px-3 rounded-[16px] border border-[#EDE9FE] disabled:opacity-50"
                         onClick={(e) => addToCart(p, e)}
-                        disabled={isOut}
+                        className="px-3 py-1.5 border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#5B43EE] hover:bg-indigo-50"
                       >
-                        <span className="text-[11px] text-[#5B43EE] font-bold font-inter">Add</span>
+                        Add
                       </button>
                     </div>
                   </div>
@@ -311,99 +279,88 @@ export default function ShopPage() {
         )}
       </div>
 
-      {/* Floating Cart Button */}
-      {cart.length > 0 && (
-        <div className="fixed bottom-24 right-4 z-20">
-          <button 
-            onClick={() => setCartModalOpen(true)}
-            className="bg-[#5B43EE] text-white px-5 py-3 rounded-full font-bold shadow-lg flex items-center gap-2 border-2 border-white transition-transform active:scale-95"
-          >
-            <ShoppingBag className="w-5 h-5" />
-            View Cart ({cartCount})
-          </button>
-        </div>
-      )}
-
       {/* Cart Modal */}
       <BottomSheet
-        open={isCartModalOpen}
-        onClose={() => setCartModalOpen(false)}
+        open={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
         title="Your Cart"
       >
-        <div className="flex flex-col max-h-[80vh]">
-          {cart.length === 0 ? (
-            <div className="text-center py-10">
-              <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-[16px] font-bold text-gray-900">Your cart is empty</p>
-            </div>
-          ) : (
-            <div className="flex-1 overflow-y-auto hide-scrollbar pb-6">
-              <div className="space-y-4 mb-6">
+        <div className="flex flex-col min-h-[400px]">
+          <div className="flex-1 overflow-y-auto pb-4">
+            {cart.length === 0 ? (
+              <div className="text-center py-20">
+                <ShoppingBag className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                <p className="text-gray-500">Your cart is empty.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
                 {cart.map((item) => (
-                  <div key={item.id} className="flex gap-3 items-center border-b border-[#F1F5F9] pb-4">
-                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-[#F8FAFC] shrink-0 border border-[#E2E8F0]">
-                      {item.image ? (
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                  <div key={item.id} className="py-4 flex gap-4">
+                    <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden shrink-0">
+                      {item.image_url ? (
+                        <img src={formatImageUrl(item.image_url)} alt={item.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ShoppingBag className="w-6 h-6 text-gray-300" />
-                        </div>
+                        <div className="w-full h-full flex items-center justify-center"><ShoppingBag className="w-6 h-6 text-gray-300" /></div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-bold text-[#0F172A] truncate">{item.name}</p>
-                      <p className="text-[13px] text-[#5B43EE] font-bold mt-0.5">₹{item.price}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => updateQuantity(item.id, -1)} className="w-7 h-7 bg-[#F1F5F9] rounded-full flex items-center justify-center active:bg-[#E2E8F0]">
-                        <Minus className="w-4 h-4 text-[#64748B]" />
-                      </button>
-                      <span className="text-[14px] font-bold w-4 text-center">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.id, 1)} className="w-7 h-7 bg-[#F1F5F9] rounded-full flex items-center justify-center active:bg-[#E2E8F0]">
-                        <Plus className="w-4 h-4 text-[#64748B]" />
-                      </button>
+                      <div className="flex justify-between items-start">
+                        <p className="font-bold text-[#0F172A] text-sm truncate pr-2">{item.name}</p>
+                        <button onClick={() => removeFromCart(item.id)} className="p-1 text-gray-400 hover:text-red-500">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <p className="text-[#5B43EE] font-bold text-sm mt-1">₹{item.price}</p>
+                      
+                      <div className="flex items-center gap-3 mt-2">
+                        <button onClick={() => updateQuantity(item.id, -1)} className="w-7 h-7 bg-gray-50 border border-gray-200 rounded-full flex items-center justify-center">
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="font-bold text-sm w-4 text-center">{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item.id, 1)} className="w-7 h-7 bg-gray-50 border border-gray-200 rounded-full flex items-center justify-center text-[#5B43EE]">
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-              
-              <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#E2E8F0] mb-6">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-[13px] text-[#64748B]">Subtotal</span>
-                  <span className="text-[13px] font-bold text-[#0F172A]">₹{cartTotal}</span>
-                </div>
-                <div className="flex justify-between items-center border-t border-[#E2E8F0] pt-2 mt-2">
-                  <span className="text-[15px] font-bold text-[#0F172A]">Total</span>
-                  <span className="text-[16px] font-bold text-[#5B43EE]">₹{cartTotal}</span>
-                </div>
+            )}
+          </div>
+          
+          {cart.length > 0 && (
+            <div className="border-t border-gray-100 pt-4 mt-auto space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">Subtotal</span>
+                <span className="font-bold">₹{cartTotal}</span>
               </div>
-
-              <div className="mb-6">
-                <h3 className="text-[14px] font-bold text-[#0F172A] mb-3">Delivery Method</h3>
-                <div className="flex gap-3">
+              
+              <div>
+                <p className="text-sm font-bold text-gray-900 mb-2">Delivery Method</p>
+                <div className="flex gap-2">
                   <button 
-                    onClick={() => setDeliveryMethod('STORE_PICKUP')}
-                    className={`flex-1 py-3 px-2 rounded-xl border font-bold text-[13px] transition-colors ${deliveryMethod === 'STORE_PICKUP' ? 'bg-[#5B43EE] text-white border-[#5B43EE]' : 'bg-white text-[#64748B] border-[#E2E8F0]'}`}
+                    onClick={() => setDeliveryMethod('PICKUP')}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold border ${deliveryMethod === 'PICKUP' ? 'bg-indigo-50 border-[#5B43EE] text-[#5B43EE]' : 'bg-white border-gray-200 text-gray-500'}`}
                   >
                     Store Pickup
                   </button>
                   <button 
                     onClick={() => setDeliveryMethod('COURIER')}
-                    className={`flex-1 py-3 px-2 rounded-xl border font-bold text-[13px] transition-colors ${deliveryMethod === 'COURIER' ? 'bg-[#5B43EE] text-white border-[#5B43EE]' : 'bg-white text-[#64748B] border-[#E2E8F0]'}`}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold border ${deliveryMethod === 'COURIER' ? 'bg-indigo-50 border-[#5B43EE] text-[#5B43EE]' : 'bg-white border-gray-200 text-gray-500'}`}
                   >
-                    Courier / Delivery
+                    Courier
                   </button>
                 </div>
               </div>
               
               {deliveryMethod === 'COURIER' && (
-                <div className="mb-6">
-                  <h3 className="text-[14px] font-bold text-[#0F172A] mb-2">Shipping Address</h3>
-                  <textarea 
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Enter full shipping address..."
                     value={shippingAddress}
                     onChange={(e) => setShippingAddress(e.target.value)}
-                    placeholder="Enter your complete delivery address..."
-                    className="w-full bg-[#F1F5F9] border border-[#E2E8F0] rounded-xl p-3 text-[14px] outline-none focus:border-[#5B43EE] min-h-[80px] resize-none"
+                    className="w-full p-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#5B43EE]"
                   />
                 </div>
               )}
@@ -424,35 +381,11 @@ export default function ShopPage() {
         </div>
       </BottomSheet>
 
-      {/* Select Boutique Modal */}
-      <BottomSheet
-        open={isBoutiqueModalOpen}
-        onClose={() => setBoutiqueModalOpen(false)}
-        title="Select Boutique"
-      >
-        <div className="space-y-3">
-          {boutiques.map((b) => (
-            <button
-              key={b.id}
-              onClick={() => { setSelectedBoutique(b); setBoutiqueModalOpen(false); }}
-              className={`w-full flex items-center p-4 rounded-2xl border mb-3 ${selectedBoutique?.id === b.id ? 'border-[#5B43EE] bg-[#EEF2FF]' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}
-            >
-              <Store className={`w-5 h-5 mr-3 ${selectedBoutique?.id === b.id ? 'text-[#5B43EE]' : 'text-[#94A3B8]'}`} />
-              <p className={`flex-1 text-left text-[15px] font-inter ${selectedBoutique?.id === b.id ? 'text-[#5B43EE] font-bold' : 'text-[#0F172A] font-semibold'}`}>
-                {b.name}
-              </p>
-              {selectedBoutique?.id === b.id && (
-                <div className="w-5 h-5 rounded-full bg-[#5B43EE] flex items-center justify-center">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-              )}
-            </button>
-          ))}
-          {boutiques.length === 0 && (
-            <p className="text-center text-gray-500 py-4">No boutiques found in your order history.</p>
-          )}
-        </div>
-      </BottomSheet>
+      {/* GLOBAL BOUTIQUE DRAWER */}
+      <BoutiqueDrawer
+        open={isBoutiqueDrawerOpen}
+        onClose={() => setIsBoutiqueDrawerOpen(false)}
+      />
 
       {/* Product Details Modal */}
       <BottomSheet
@@ -462,39 +395,26 @@ export default function ShopPage() {
       >
         {selectedProduct && (
           <div className="pb-6">
-            <div className="w-full h-[260px] rounded-[20px] overflow-hidden bg-[#F8FAFC] mb-4">
-              {selectedProduct.image ? (
-                <img src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-full object-cover" />
+            <div className="w-full h-64 bg-gray-50 rounded-2xl mb-4 overflow-hidden relative">
+              {selectedProduct.image_url ? (
+                <img src={formatImageUrl(selectedProduct.image_url)} alt={selectedProduct.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <ShoppingBag className="w-12 h-12 text-gray-300" />
                 </div>
               )}
             </div>
+            <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">{selectedProduct.readymade_category?.name || selectedProduct.category_name}</p>
+            <h2 className="text-2xl font-bold text-gray-900 mt-1">{selectedProduct.name}</h2>
             
-            <p className="text-[12px] font-bold text-[#5B43EE] uppercase tracking-wide mb-1">{selectedProduct.category}</p>
-            <div className="flex justify-between items-start mb-4">
-              <h2 className="text-[18px] font-bold text-[#0F172A] flex-1 mr-4">{selectedProduct.name}</h2>
-              <span className="text-[18px] font-bold text-[#5B43EE]">₹{selectedProduct.price}</span>
-            </div>
+            {selectedProduct.description && (
+              <p className="text-gray-500 mt-3 text-sm leading-relaxed">{selectedProduct.description}</p>
+            )}
             
-            <div className="mb-6">
-              <h3 className="text-[14px] font-bold text-[#0F172A] mb-2">Description</h3>
-              <p className="text-[13px] text-[#64748B] leading-relaxed">
-                {selectedProduct.description}
-              </p>
-            </div>
-            
-            <div className="pt-4 border-t border-[#F1F5F9]">
-              <Button 
-                onClick={() => {
-                  addToCart(selectedProduct);
-                  setSelectedProduct(null);
-                }}
-                disabled={selectedProduct.stock <= 0}
-                className="w-full py-4 text-[15px] rounded-xl font-bold"
-              >
-                {selectedProduct.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+            <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
+              <span className="text-2xl font-bold text-[#5B43EE]">₹{selectedProduct.selling_price || selectedProduct.price}</span>
+              <Button onClick={(e) => { addToCart(selectedProduct, e); setSelectedProduct(null); }} className="px-8 rounded-xl font-bold">
+                Add to Cart
               </Button>
             </div>
           </div>
