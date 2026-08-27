@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { ChevronLeft, Send, ShoppingBag, Image as ImageIcon, Loader2, MessageCircle } from 'lucide-react';
+import { ChevronLeft, Send, ShoppingBag, Image as ImageIcon, Loader2, MessageCircle, MoreVertical, Mic, Edit2, Trash2 } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -78,6 +78,7 @@ export default function ChatDetailPage() {
   
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
+  const [selectedMessageForOptions, setSelectedMessageForOptions] = useState<any>(null);
   
   // Topic selection if the order has multiple outfits
   const [contextOutfitId, setContextOutfitId] = useState<string>('');
@@ -208,6 +209,12 @@ export default function ChatDetailPage() {
           <h1 className="text-[16px] font-bold text-white truncate">{headerTitle}</h1>
           {headerSubtitle && <p className="text-[12px] text-indigo-200 truncate">{headerSubtitle}</p>}
         </div>
+        <Link 
+          href={`/orders/${orderId}`}
+          className="ml-2 flex items-center justify-center px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-full text-[11px] font-bold text-white transition-colors whitespace-nowrap"
+        >
+          View Order
+        </Link>
       </div>
 
       {/* Context Selector */}
@@ -289,6 +296,15 @@ export default function ChatDetailPage() {
                       {formatTime(msg.created_at)}
                     </div>
                   </div>
+                  {isCustomer && (
+                    <button 
+                      onClick={() => setSelectedMessageForOptions(msg)}
+                      className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all shrink-0"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                  )}
+                  </div>
                 </div>
               </div>
             );
@@ -319,14 +335,42 @@ export default function ChatDetailPage() {
             }}
           />
         </div>
-        <button 
-          onClick={handleSend}
-          disabled={!inputText.trim() || !contextOutfitId || sending}
-          className="p-3 bg-[#5B43EE] text-white rounded-full disabled:opacity-50 disabled:bg-gray-300 transition-colors shrink-0"
-        >
-          {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-0.5" />}
-        </button>
+        {inputText.trim() ? (
+          <button 
+            onClick={handleSend}
+            disabled={!contextOutfitId || sending}
+            className="p-3 bg-[#5B43EE] text-white rounded-full disabled:opacity-50 transition-colors shrink-0"
+          >
+            {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-0.5" />}
+          </button>
+        ) : (
+          <button 
+            disabled={!contextOutfitId || sending}
+            className="p-3 bg-[#5B43EE] text-white rounded-full disabled:opacity-50 transition-colors shrink-0"
+          >
+            <Mic className="w-5 h-5" />
+          </button>
+        )}
       </div>
+
+      {/* Message Options Drawer */}
+      <BottomSheet open={!!selectedMessageForOptions} onClose={() => setSelectedMessageForOptions(null)}>
+        <div className="p-2 pb-6">
+          <div className="px-4 mb-4">
+            <p className="text-[14px] text-gray-500 truncate">"{selectedMessageForOptions?.message}"</p>
+          </div>
+          <div className="space-y-1">
+            <button onClick={() => setSelectedMessageForOptions(null)} className="w-full flex items-center px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors text-left">
+              <Edit2 className="w-5 h-5 text-gray-400 mr-3" />
+              <span className="text-[15px] font-medium text-gray-700">Edit message</span>
+            </button>
+            <button onClick={() => setSelectedMessageForOptions(null)} className="w-full flex items-center px-4 py-3.5 hover:bg-red-50 rounded-xl transition-colors text-left">
+              <Trash2 className="w-5 h-5 text-red-500 mr-3" />
+              <span className="text-[15px] font-medium text-red-600">Delete message</span>
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   );
 }

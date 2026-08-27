@@ -1,6 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useChatStore } from '@/store/chatStore';
+import { useAuthStore } from '@/store/authStore';
+import { useEffect } from 'react';
 import { LayoutGrid, ClipboardList, ShoppingBag, User, MessageCircle } from 'lucide-react';
 
 const TABS = [
@@ -13,6 +16,15 @@ const TABS = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const user = useAuthStore(s => s.user);
+  const { unreadCount, fetchThreads } = useChatStore();
+  
+  useEffect(() => {
+    if (user?.mobile) {
+      fetchThreads(user.mobile);
+    }
+  }, [user?.mobile, fetchThreads]);
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#1E293B] border-t border-[#334155] safe-area-bottom">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
@@ -29,10 +41,17 @@ export function BottomNav() {
                   active ? 'bg-[#5B43EE]' : 'bg-transparent'
                 }`}
               >
-                <Icon
-                  size={22}
-                  className={active ? 'text-white' : 'text-slate-400'}
-                />
+                <div className="relative">
+                  <Icon
+                    size={22}
+                    className={active ? 'text-white' : 'text-slate-400'}
+                  />
+                  {href === '/chat' && unreadCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-[#EF4444] text-white text-[9px] font-bold h-4 min-w-[16px] px-1 flex items-center justify-center rounded-full border border-white">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </div>
               </div>
               <span
                 className={`text-[11px] font-semibold ${

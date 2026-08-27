@@ -1,11 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, MessageSquarePlus, ShoppingBag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MessageSquarePlus, ShoppingBag, MoreVertical, Pin, Star, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
+import { useChatStore } from '@/store/chatStore';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 
 interface ChatThread {
@@ -24,30 +25,18 @@ interface ChatThread {
 export default function ChatListPage() {
   const router = useRouter();
   const user = useAuthStore(s => s.user);
-  const [threads, setThreads] = useState<ChatThread[]>([]);
-  const [loading, setLoading] = useState(true);
+    const { threads, loading, fetchThreads } = useChatStore();
 
   // New Chat Bottom Sheet State
   const [newChatDrawerOpen, setNewChatDrawerOpen] = useState(false);
+  const [selectedThreadForOptions, setSelectedThreadForOptions] = useState<any>(null);
   const { orders, fetchOrders } = useOrdersStore();
 
   useEffect(() => {
-    async function fetchThreads() {
-      if (!user?.mobile) return;
-      try {
-        const res = await api.get('/customer-portal/chat/threads', {
-          params: { phone: user.mobile }
-        });
-        const data = res.data?.data || res.data;
-        setThreads(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error('Failed to fetch chat threads:', err);
-      } finally {
-        setLoading(false);
-      }
+    if (user?.mobile) {
+      fetchThreads(user.mobile);
     }
-    fetchThreads();
-  }, [user?.mobile]);
+  }, [user?.mobile, fetchThreads]);
 
   // Load orders to derive orders for new chat
   useEffect(() => {
@@ -122,9 +111,17 @@ export default function ChatListPage() {
                         #{t.order_number}
                       </span>
                     </div>
-                    <span className={`text-[12px] whitespace-nowrap ml-2 ${t.unread_count > 0 ? 'text-[#5B43EE] font-medium' : 'text-gray-400'}`}>
-                      {formatTime(t.latest_message_timestamp)}
-                    </span>
+                    <div className="flex items-center ml-2 shrink-0">
+                      <span className={`text-[12px] whitespace-nowrap mr-1 ${t.unread_count > 0 ? 'text-[#5B43EE] font-medium' : 'text-gray-400'}`}>
+                        {formatTime(t.latest_message_timestamp)}
+                      </span>
+                      <button 
+                        onClick={(e) => { e.preventDefault(); setSelectedThreadForOptions(t); }}
+                        className="p-1 -mr-1 rounded-full hover:bg-gray-100 text-gray-400"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                   
                   <div className="flex justify-between items-center">
@@ -191,6 +188,40 @@ export default function ChatListPage() {
               })}
             </div>
           )}
+        </div>
+      </BottomSheet>
+
+      {/* Thread Options Drawer */}
+      <BottomSheet open={!!selectedThreadForOptions} onClose={() => setSelectedThreadForOptions(null)}>
+        <div className="p-2 pb-6">
+          <div className="flex items-center gap-3 mb-6 px-2">
+            <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center shrink-0">
+              {selectedThreadForOptions?.profile_icon_url ? (
+                <img src={selectedThreadForOptions.profile_icon_url} alt="" className="w-full h-full object-cover rounded-full" />
+              ) : (
+                <ShoppingBag className="w-5 h-5 text-indigo-400" />
+              )}
+            </div>
+            <div>
+              <h3 className="text-[16px] font-bold text-[#0F172A]">{selectedThreadForOptions?.boutique_name}</h3>
+              <p className="text-[12px] text-gray-500">#{selectedThreadForOptions?.order_number}</p>
+            </div>
+          </div>
+          
+          <div className="space-y-1">
+            <button onClick={() => setSelectedThreadForOptions(null)} className="w-full flex items-center px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors text-left">
+              <CheckCircle className="w-5 h-5 text-gray-400 mr-3" />
+              <span className="text-[15px] font-medium text-gray-700">Mark as {selectedThreadForOptions?.unread_count ? 'read' : 'unread'}</span>
+            </button>
+            <button onClick={() => setSelectedThreadForOptions(null)} className="w-full flex items-center px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors text-left">
+              <Pin className="w-5 h-5 text-gray-400 mr-3" />
+              <span className="text-[15px] font-medium text-gray-700">Pin chat</span>
+            </button>
+            <button onClick={() => setSelectedThreadForOptions(null)} className="w-full flex items-center px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors text-left">
+              <Star className="w-5 h-5 text-gray-400 mr-3" />
+              <span className="text-[15px] font-medium text-gray-700">Add to favorites</span>
+            </button>
+          </div>
         </div>
       </BottomSheet>
     </div>
