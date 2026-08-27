@@ -133,6 +133,17 @@ export default function HomePage() {
   const [featuredShop, setFeaturedShop] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [dismissedPopup, setDismissedPopup] = useState(false);
+  const [dismissedBannerId, setDismissedBannerId] = useState<number | null>(null);
+  
+  useEffect(() => {
+    // Check localStorage for previously dismissed banner
+    if (typeof window !== 'undefined') {
+      const dismissedId = localStorage.getItem('sewvee_dismissed_popup');
+      if (dismissedId) {
+        setDismissedBannerId(parseInt(dismissedId, 10));
+      }
+    }
+  }, []);
   const { addToCart } = useShopStore();
   
   const [cancelling, setCancelling] = useState(false);
@@ -385,7 +396,7 @@ export default function HomePage() {
         title={selectedProduct?.name || 'Product Details'}
       >
         {selectedProduct && (
-          <div className="px-4 pt-2 pb-safe">
+          <div className="pb-safe">
             <div className="w-full h-[220px] bg-gray-50 rounded-[16px] mb-5 overflow-hidden relative shadow-sm border border-gray-100">
               {selectedProduct.image_url ? (
                 <img src={formatImageUrl(selectedProduct.image_url.split(',')[0]) || undefined} alt={selectedProduct.name} className="w-full h-full object-cover" />
@@ -429,12 +440,19 @@ export default function HomePage() {
       </BottomSheet>
 
       {/* Promotional Popup Banner */}
-      {banners.find(b => b.type === "POPUP") && !dismissedPopup && (
+      {banners.find(b => b.type === "POPUP" && b.id !== dismissedBannerId) && !dismissedPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-sm rounded-[24px] overflow-hidden relative shadow-2xl animate-in zoom-in-95 duration-200">
             {banners.find(b => b.type === "POPUP")?.is_dismissible && (
               <button 
-                onClick={() => setDismissedPopup(true)}
+                onClick={() => {
+                setDismissedPopup(true);
+                const popup = banners.find(b => b.type === "POPUP");
+                if (popup && typeof window !== 'undefined') {
+                  localStorage.setItem('sewvee_dismissed_popup', popup.id.toString());
+                  setDismissedBannerId(popup.id);
+                }
+              }}
                 className="absolute top-3 right-3 w-8 h-8 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors z-10"
               >
                 <XCircle className="w-5 h-5" />

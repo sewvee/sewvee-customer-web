@@ -406,7 +406,7 @@ export default function ShopPage() {
         title={selectedProduct?.name || 'Product Details'}
       >
         {selectedProduct && (
-          <div className="px-4 pt-2 pb-safe">
+          <div className="pb-safe">
             <div className="w-full h-[220px] bg-gray-50 rounded-[16px] mb-5 overflow-hidden relative shadow-sm border border-gray-100">
               {selectedProduct.image_url ? (
                 <img src={formatImageUrl(selectedProduct.image_url) || undefined} alt={selectedProduct.name} className="w-full h-full object-cover" />

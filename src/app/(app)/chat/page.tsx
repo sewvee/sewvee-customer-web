@@ -111,7 +111,7 @@ export default function ChatListPage() {
                 <div className="ml-3 flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-0.5">
                     <div className="flex items-center gap-2 min-w-0">
-                      <h3 className="text-[14.5px] font-semibold text-[#334155] truncate">
+                      <h3 className={`text-[14.5px] truncate ${t.unread_count > 0 ? 'font-bold text-[#0F172A]' : 'font-medium text-[#475569]'}`}>
                         {t.boutique_name}
                       </h3>
                       <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
@@ -122,13 +122,13 @@ export default function ChatListPage() {
                         #{t.order_number}
                       </span>
                     </div>
-                    <span className="text-[12px] text-gray-400 whitespace-nowrap ml-2">
+                    <span className={`text-[12px] whitespace-nowrap ml-2 ${t.unread_count > 0 ? 'text-[#5B43EE] font-medium' : 'text-gray-400'}`}>
                       {formatTime(t.latest_message_timestamp)}
                     </span>
                   </div>
                   
                   <div className="flex justify-between items-center">
-                    <p className={`text-[13px] truncate ${t.unread_count ? 'text-[#0F172A] font-medium' : 'text-gray-500'}`}>
+                    <p className={`text-[13px] truncate ${t.unread_count > 0 ? 'text-[#1E293B] font-semibold' : 'text-[#64748B]'}`}>
                       {t.latest_message_text || (t.latest_message_attachment ? '📷 Image' : 'Started a conversation')}
                     </p>
                     {t.unread_count ? (
