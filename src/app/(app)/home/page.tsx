@@ -18,44 +18,6 @@ const formatImageUrl = (urlStr: string) => {
   return `${BASE_URL.replace('/api/v1/', '')}/${urlStr}`;
 };
 
-
-// ─── Strip Banners Component ────────────────────────────────────────────────────────────
-function StripBanners({ strips }: { strips: any[] }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    if (strips.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % strips.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [strips.length]);
-
-  if (strips.length === 0) return null;
-  const activeBanner = strips[currentIndex];
-
-  return (
-    <div
-      style={{ backgroundColor: activeBanner.bg_color || '#4F46E5' }}
-      className="w-full flex items-center justify-between px-4 md:px-6 py-2.5 gap-3 transition-all duration-500 cursor-pointer"
-      onClick={() => activeBanner.cta_action_value && window.open(activeBanner.cta_action_value, '_blank')}
-    >
-      <div style={{ color: activeBanner.text_color || '#FFFFFF' }} className="flex items-center gap-2 flex-1 min-w-0 text-xs overflow-hidden relative font-semibold">
-        {strips.length > 1 && (
-          <div className="flex gap-1 mr-1 flex-shrink-0 relative z-10 p-1 rounded">
-            {strips.map((_, i) => (
-              <button key={i} onClick={(e) => { e.stopPropagation(); setCurrentIndex(i); }}
-                className={`w-1.5 h-1.5 rounded-full transition-all ${currentIndex === i ? 'bg-white opacity-100 scale-110' : 'bg-white opacity-40 hover:opacity-60'}`}
-              />
-            ))}
-          </div>
-        )}
-        <p className="truncate flex-1 pr-4">{activeBanner.title}</p>
-      </div>
-    </div>
-  );
-}
-
 export default function HomePage() {
   const user = useAuthStore(s => s.user);
   const token = useAuthStore(s => s.token);
@@ -79,13 +41,10 @@ export default function HomePage() {
     api.get('marketing/banners?platform=WEB&target_app=CUSTOMER_APP')
       .then(res => {
         const data = res.data;
-        console.log("BANNERS FETCHED:", data);
         if (data.banners) setBanners(data.banners);
         else if (Array.isArray(data)) setBanners(data);
       })
-      .catch(err => {
-        console.error("BANNERS FETCH ERROR:", err);
-      });
+      .catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -156,9 +115,110 @@ export default function HomePage() {
       </div>
 
       <div className="pb-24">
-        
         {/* STRIP BANNER */}
-        <StripBanners strips={banners.filter(b => b.type === "STRIP")} />
+        {banners.filter(b => b.type === "STRIP").length > 0 && (
+          <div 
+            className="w-full flex items-center justify-between px-4 py-2 text-xs font-semibold"
+            style={{ 
+              backgroundColor: banners.filter(b => b.type === "STRIP")[0].bg_color || '#4F46E5',
+              color: banners.filter(b => b.type === "STRIP")[0].text_color || '#FFFFFF'
+            }}
+          >
+            <p className="truncate flex-1 pr-4">{banners.filter(b => b.type === "STRIP")[0].title}</p>
+          </div>
+        )}
+
+        {/* INLINE BANNERS */}
+        {banners.filter(b => b.type === "INLINE").length > 0 && (
+          <div className="mt-4 px-5">
+            <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-2">
+              {banners.filter(b => b.type === "INLINE").map((banner, idx) => (
+                <div key={idx} className="snap-center shrink-0 w-[90%] md:w-[400px] h-[160px] rounded-[16px] overflow-hidden bg-gray-200 relative border border-gray-200 shadow-sm cursor-pointer" onClick={() => banner.cta_action_value && window.open(banner.cta_action_value, '_blank')}>
+                  <img src={formatImageUrl(banner.image_url) || banner.image_url} alt={banner.title || 'Banner'} className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* QUICK ACTIONS */}
+        <div className="px-5 mt-6">
+          <h2 className="text-[18px] font-bold text-[#0F172A] font-inter mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-3 gap-3">
+            <Link href="/stitching" className="flex flex-col items-center p-4 bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm">
+              <div className="w-10 h-10 bg-[#EEF2FF] rounded-full flex items-center justify-center mb-2">
+                <Scissors className="w-5 h-5 text-[#4F46E5]" />
+              </div>
+              <span className="text-[12px] font-bold text-[#0F172A]">Stitching</span>
+            </Link>
+            <Link href="/shop" className="flex flex-col items-center p-4 bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm">
+              <div className="w-10 h-10 bg-[#FEF3C7] rounded-full flex items-center justify-center mb-2">
+                <ShoppingBag className="w-5 h-5 text-[#D97706]" />
+              </div>
+              <span className="text-[12px] font-bold text-[#0F172A]">Readymade</span>
+            </Link>
+            <Link href="/gallery" className="flex flex-col items-center p-4 bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm">
+              <div className="w-10 h-10 bg-[#ECFDF5] rounded-full flex items-center justify-center mb-2">
+                <Camera className="w-5 h-5 text-[#059669]" />
+              </div>
+              <span className="text-[12px] font-bold text-[#0F172A]">My Designs</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* FEATURED IN SHOP */}
+        {featuredShop.length > 0 && (
+          <div className="mt-8 px-5">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-[18px] font-bold text-[#0F172A] font-inter">Featured in Shop</h2>
+              <Link href="/shop" className="text-[13px] font-bold text-[#4F46E5] flex items-center">
+                View All <ArrowRight className="w-4 h-4 ml-1" />
+              </Link>
+            </div>
+            <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-2">
+              {featuredShop.map(item => (
+                <Link key={item.id} href="/shop" className="snap-start shrink-0 w-[140px] bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden shadow-sm block">
+                  <div className="h-[140px] bg-gray-100 relative">
+                    {item.image_url ? (
+                      <img src={formatImageUrl(item.image_url.split(',')[0]) || ''} alt={item.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center"><ShoppingBag className="w-8 h-8 text-gray-300" /></div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-[12px] font-bold text-[#0F172A] truncate mb-1">{item.name}</p>
+                    <p className="text-[13px] font-bold text-[#5B43EE]">₹{item.selling_price || item.price}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ORDERS SECTION */}
+        <div className="px-5 mt-8">
+          <h2 className="text-[18px] font-bold text-[#0F172A] font-inter mb-4">Your Active Orders</h2>
+
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <div className="w-8 h-8 border-[3px] border-[#5B43EE] border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : displayedOrders.length > 0 ? (
+            <div className="space-y-[10px]">
+              {displayedOrders.map((order) => {
+                const statusStr = (order.status || '').toUpperCase();
+                const isCancelled = statusStr === 'CANCELLED' || String(order.status) === '4';
+                const isDelivered = statusStr === 'DELIVERED' || String(order.status) === '5';
+                const canCancel = !isCancelled && !isDelivered && (order.source === 'send order request' || order.order_type === 'STITCHING_REQUEST' || order.source === 'ONLINE');
+                
+                return (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    onCancel={canCancel ? () => setOrderToCancel(order.id.toString()) : undefined}
+                  />
+                );
+              })}
             </div>
           ) : (
             <div className="bg-white rounded-[16px] px-6 py-10 flex flex-col items-center justify-center border border-[#F1F5F9] shadow-[0_2px_8px_rgba(0,0,0,0.02)] mt-4">
