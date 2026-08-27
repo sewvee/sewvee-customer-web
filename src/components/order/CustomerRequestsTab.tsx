@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Send, MessageCircle, MessageSquare, ChevronLeft, ChevronRight, X, Trash2, MoreVertical, Edit2 } from 'lucide-react';
-import { URL_CUSTOMER_PORTAL_ORDERS } from '@/lib/env';
+import { URL_CUSTOMER_PORTAL_ORDERS, BASE_URL } from '@/lib/env';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
+import { useOrderChat } from '@/hooks/useOrderChat';
 
 interface CustomerRequestsTabProps {
   order: any;
@@ -26,7 +27,8 @@ export default function CustomerRequestsTab({ order, onUpdateStatus, onChatState
   const { showToast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  
+  // Initialize Socket.IO connection
+  const { socketMessages, addMessageLocally } = useOrderChat(order?.id, BASE_URL);
 
   const getToken = () => {
     return token ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`) : '';
@@ -49,9 +51,25 @@ export default function CustomerRequestsTab({ order, onUpdateStatus, onChatState
 
   useEffect(() => {
     fetchRequests();
-    const interval = setInterval(fetchRequests, 2000);
+    // Fallback sync: polling reduced from 2s to 15s since we now have real-time sockets
+    const interval = setInterval(fetchRequests, 15000);
     return () => clearInterval(interval);
   }, [order?.id]);
+
+  // Merge socket messages with fetched REST messages
+  useEffect(() => {
+    if (socketMessages.length > 0) {
+      setRequests((prev) => {
+        const newReqs = [...prev];
+        socketMessages.forEach(sm => {
+          if (!newReqs.find(r => r.id === sm.id)) {
+            newReqs.push(sm);
+          }
+        });
+        return newReqs.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      });
+    }
+  }, [socketMessages]);
 
   useEffect(() => {
     if (onChatStateChange) {

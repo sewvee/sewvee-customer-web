@@ -11,15 +11,8 @@ export default function ProfilePage() {
   const initials = (user?.name || 'C').split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
 
   const allOrders = orders || [];
-  const totalCompleted = allOrders.filter((o) => {
-    const s = (o.status || '').toLowerCase();
-    return s === 'delivered' || s === 'completed';
-  }).length;
-
-  const totalActive = allOrders.filter((o) => {
-    const s = (o.status || '').toLowerCase();
-    return s !== 'delivered' && s !== 'completed' && s !== 'cancelled';
-  }).length;
+  const totalStitching = allOrders.filter((o) => o.order_type !== 'SALE_ORDER').length;
+  const totalReadymade = allOrders.filter((o) => o.order_type === 'SALE_ORDER').length;
 
   return (
     <div className="bg-[#F8FAFC] min-h-screen px-4 pt-6 pb-24">
@@ -46,7 +39,7 @@ export default function ProfilePage() {
 
         {/* All Orders Stats */}
         <h3 className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-[0.6px] font-inter self-start mb-3.5">
-          My Orders
+          Order Insights
         </h3>
         <div className="flex items-center w-full">
           <div className="flex-1 flex flex-col items-center">
@@ -55,13 +48,13 @@ export default function ProfilePage() {
           </div>
           <div className="w-[1px] h-8 bg-[#E2E8F0]" />
           <div className="flex-1 flex flex-col items-center">
-            <span className="text-[22px] font-bold text-[#F59E0B] font-inter">{totalActive}</span>
-            <span className="text-[11px] text-[#94A3B8] font-inter mt-0.5">Active</span>
+            <span className="text-[22px] font-bold text-[#F59E0B] font-inter">{totalStitching}</span>
+            <span className="text-[11px] text-[#94A3B8] font-inter mt-0.5">Stitching</span>
           </div>
           <div className="w-[1px] h-8 bg-[#E2E8F0]" />
           <div className="flex-1 flex flex-col items-center">
-            <span className="text-[22px] font-bold text-[#10B981] font-inter">{totalCompleted}</span>
-            <span className="text-[11px] text-[#94A3B8] font-inter mt-0.5">Done</span>
+            <span className="text-[22px] font-bold text-[#10B981] font-inter">{totalReadymade}</span>
+            <span className="text-[11px] text-[#94A3B8] font-inter mt-0.5">Readymade</span>
           </div>
         </div>
       </div>

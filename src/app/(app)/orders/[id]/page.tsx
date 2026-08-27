@@ -25,6 +25,7 @@ export default function OrderDetailPage() {
   const [confirmDrawerVisible, setConfirmDrawerVisible] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [selectedOutfitForConfirm, setSelectedOutfitForConfirm] = useState<any | null>(null);
+  const [isOutfitChatActive, setIsOutfitChatActive] = useState(false);
 
   const handleConfirmOutfitPhotos = async () => {
     if (!selectedOutfitForConfirm || !order) return;
@@ -92,32 +93,35 @@ export default function OrderDetailPage() {
     <>
     <div className="h-[100dvh] flex flex-col bg-white overflow-hidden">
       {/* Navbar */}
-      <div className="flex flex-col pt-4 pb-2 border-b border-gray-100 bg-white shrink-0">
-        <div className="flex items-center px-4 mb-4">
-          <Link href="/home" className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full">
-            <ArrowLeft className="w-5 h-5 text-[#0F172A]" />
-          </Link>
-          <div className="flex-1 pl-4">
-            <h1 className="text-[18px] font-bold text-[#0F172A] font-inter">
-              {displayId}
-            </h1>
-            <p className="text-xs text-gray-500 font-semibold tracking-wider uppercase mt-0.5">{order.order_type === 'SALE_ORDER' ? 'SALE ORDER' : 'CUSTOM STITCHING'}</p>
+      {!isOutfitChatActive && (
+        <div className="flex flex-col pt-4 pb-2 border-b border-gray-100 bg-white shrink-0">
+          <div className="flex items-center px-4 mb-4">
+            <Link href="/home" className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full">
+              <ArrowLeft className="w-5 h-5 text-[#0F172A]" />
+            </Link>
+            <div className="flex-1 pl-4">
+              <h1 className="text-[18px] font-bold text-[#0F172A] font-inter">
+                {displayId}
+              </h1>
+              <p className="text-xs text-gray-500 font-semibold tracking-wider uppercase mt-0.5">{order.order_type === 'SALE_ORDER' ? 'SALE ORDER' : 'CUSTOM STITCHING'}</p>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex w-full">
+            <button onClick={() => setActiveTab('details')} className={`flex-1 pb-3 text-[14px] font-bold outline-none border-b-2 ${activeTab === 'details' ? 'text-[#5B43EE] border-[#5B43EE]' : 'text-[#64748B] border-transparent'}`}>Details</button>
+            <button onClick={() => setActiveTab('requests')} className={`flex-1 pb-3 text-[14px] font-bold outline-none border-b-2 flex items-center justify-center ${activeTab === 'requests' ? 'text-[#5B43EE] border-[#5B43EE]' : 'text-[#64748B] border-transparent'}`}>
+              Requests
+              {order?.has_unread_messages ? <span className="ml-1.5 inline-block w-2 h-2 rounded-full bg-red-500"></span> : null}
+            </button>
+            <button onClick={() => setActiveTab('payments')} className={`flex-1 pb-3 text-[14px] font-bold outline-none border-b-2 ${activeTab === 'payments' ? 'text-[#5B43EE] border-[#5B43EE]' : 'text-[#64748B] border-transparent'}`}>Payments</button>
           </div>
         </div>
+      )}
 
-        {/* Tabs */}
-        <div className="flex w-full">
-          <button onClick={() => setActiveTab('details')} className={`flex-1 pb-3 text-[14px] font-bold outline-none border-b-2 ${activeTab === 'details' ? 'text-[#5B43EE] border-[#5B43EE]' : 'text-[#64748B] border-transparent'}`}>Details</button>
-          <button onClick={() => setActiveTab('requests')} className={`flex-1 pb-3 text-[14px] font-bold outline-none border-b-2 flex items-center justify-center ${activeTab === 'requests' ? 'text-[#5B43EE] border-[#5B43EE]' : 'text-[#64748B] border-transparent'}`}>
-            Requests
-            {order?.has_unread_messages ? <span className="ml-1.5 inline-block w-2 h-2 rounded-full bg-red-500"></span> : null}
-          </button>
-          <button onClick={() => setActiveTab('payments')} className={`flex-1 pb-3 text-[14px] font-bold outline-none border-b-2 ${activeTab === 'payments' ? 'text-[#5B43EE] border-[#5B43EE]' : 'text-[#64748B] border-transparent'}`}>Payments</button>
-        </div>
-      </div>
-
+      {/* Content */}
       <div className={`bg-[#F8FAFC] flex-1 flex flex-col ${activeTab === 'requests' ? 'overflow-hidden' : 'px-4 py-6 overflow-y-auto pb-24'}`}>
-        {activeTab === 'requests' && <CustomerRequestsTab order={order} />}
+        {activeTab === 'requests' && <CustomerRequestsTab order={order} onChatStateChange={setIsOutfitChatActive} />}
         
         
         {activeTab === 'payments' && (

@@ -1,11 +1,11 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Folder, ShoppingBag, User } from 'lucide-react';
+import { LayoutGrid, Camera, ShoppingBag, User } from 'lucide-react';
 
 const TABS = [
   { href: '/home', label: 'Home', Icon: LayoutGrid },
-  { href: '/gallery', label: 'Gallery', Icon: Folder },
+  { href: '/gallery', label: 'Designs', Icon: Camera },
   { href: '/shop', label: 'Shop', Icon: ShoppingBag },
   { href: '/profile', label: 'Profile', Icon: User },
 ];
