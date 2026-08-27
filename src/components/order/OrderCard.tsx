@@ -20,7 +20,7 @@ export function OrderCard({ order, href, hasPendingPhoto = false, onCancel }: Or
   
   const outfits = order.outfits || order.items || [];
   const deliveryDate = outfits.find((o) => o.deliveryDate)?.deliveryDate;
-  const typeLabel = isSale ? 'READY-MADE' : 'STITCHING';
+  const typeLabel = isSale ? 'READY-MADE' : (order.order_type === 'STITCHING_REQUEST' ? 'PRE-ORDER' : 'STITCHING');
   
   const total = order.totalAmount || order.total || (Number(order.advance || order.paid_amount || 0) + Number(order.balance || order.balance_amount || 0));
   const advance = Number(order.advanceAmount || order.advance || order.paid_amount || 0);

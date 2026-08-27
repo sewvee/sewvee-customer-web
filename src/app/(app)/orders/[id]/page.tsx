@@ -103,7 +103,7 @@ export default function OrderDetailPage() {
               <h1 className="text-[18px] font-bold text-[#0F172A] font-inter">
                 {displayId}
               </h1>
-              <p className="text-xs text-gray-500 font-semibold tracking-wider uppercase mt-0.5">{order.order_type === 'SALE_ORDER' ? 'SALE ORDER' : 'CUSTOM STITCHING'}</p>
+              <p className="text-xs text-gray-500 font-semibold tracking-wider uppercase mt-0.5">{order.order_type === 'SALE_ORDER' ? 'SALE ORDER' : (order.order_type === 'STITCHING_REQUEST' ? 'PRE-ORDER INQUIRY' : 'CUSTOM STITCHING')}</p>
             </div>
           </div>
 
@@ -293,7 +293,7 @@ export default function OrderDetailPage() {
                   <div className="p-4 grid grid-cols-2 gap-y-4">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold text-[#94A3B8] font-inter tracking-wide mb-1.5 uppercase">ORDER TYPE</span>
-                      <span className="text-[13px] font-bold text-[#0F172A] font-inter">STITCHING</span>
+                      <span className="text-[13px] font-bold text-[#0F172A] font-inter">{order.order_type === 'STITCHING_REQUEST' ? 'PRE-ORDER' : 'STITCHING'}</span>
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold text-[#94A3B8] font-inter tracking-wide mb-1.5 uppercase">URGENCY</span>
@@ -319,6 +319,18 @@ export default function OrderDetailPage() {
                     </div>
                   </div>
                 </div>
+
+                
+                {order.order_type === 'STITCHING_REQUEST' && activeOutfit.customerNotes && (
+                  <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                    <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#F1F5F9]">
+                      <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide uppercase">REQUEST DETAILS</h2>
+                    </div>
+                    <div className="p-4">
+                      <p className="text-[13px] text-[#475569] whitespace-pre-line leading-relaxed font-inter">{activeOutfit.customerNotes}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* STITCHING SPECIFICATIONS */}
                 <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">

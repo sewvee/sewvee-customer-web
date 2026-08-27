@@ -97,6 +97,17 @@ export default function StitchingPage() {
         order_type: 'STITCHING_REQUEST',
         customer_mobile: user?.mobile,
         company_id: selectedBoutiqueId,
+        outfits: [
+          {
+            name: `Stitching Request - ${formData.category}`,
+            quantity: 1,
+            total_amount: 0,
+            customer_notes: `Category: ${formData.category}\nDescription: ${formData.description}\nMeasurement: ${formData.measurement_option}\nExpected Date: ${formData.delivery_date}`,
+            photos: uploadedUrls.map(url => ({ file_url: url })),
+            items: [] // required to pass validation
+          }
+        ],
+        // keep details just in case any other logic uses it
         details: {
           category: formData.category,
           description: formData.description,

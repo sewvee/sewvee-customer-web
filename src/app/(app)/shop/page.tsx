@@ -222,7 +222,7 @@ export default function ShopPage() {
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Shopping At</p>
               <div className="flex items-center gap-1 overflow-hidden pr-2">
                 <p className="text-sm font-bold text-gray-900 truncate">
-                  {selectedBoutique ? (selectedBoutique.boutique_name || selectedBoutique.name) : 'Select Boutique'}
+                  {selectedBoutique ? (selectedBoutique.boutique_name || (selectedBoutique as any).name) : 'Select Boutique'}
                 </p>
                 <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
               </div>
@@ -252,7 +252,7 @@ export default function ShopPage() {
                 >
                   <div className="h-40 bg-gray-50 w-full relative">
                     {img ? (
-                      <img src={img} alt={p.name} className="w-full h-full object-cover" />
+                      <img src={img || undefined} alt={p.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-300">
                         <ShoppingBag className="w-8 h-8" />
@@ -264,12 +264,30 @@ export default function ShopPage() {
                     <p className="font-bold text-[#0F172A] text-sm mt-0.5 line-clamp-1">{p.name}</p>
                     <div className="mt-auto pt-3 flex items-center justify-between">
                       <span className="font-bold text-[#5B43EE]">₹{p.selling_price || p.price}</span>
-                      <button 
-                        onClick={(e) => addToCart(p, e)}
-                        className="px-3 py-1.5 border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#5B43EE] hover:bg-indigo-50"
-                      >
-                        Add
-                      </button>
+                      {(() => {
+                        const cartItem = cart.find(c => c.id === p.id);
+                        if (cartItem) {
+                          return (
+                            <div className="flex items-center gap-1 border border-[#5B43EE] rounded-xl p-0.5" onClick={(e) => e.stopPropagation()}>
+                              <button onClick={() => updateQuantity(p.id, -1)} className="w-6 h-6 flex items-center justify-center text-[#5B43EE] hover:bg-indigo-50 rounded-lg transition-colors">
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <span className="text-xs font-bold w-4 text-center text-[#5B43EE]">{cartItem.quantity}</span>
+                              <button onClick={() => updateQuantity(p.id, 1)} className="w-6 h-6 flex items-center justify-center text-[#5B43EE] hover:bg-indigo-50 rounded-lg transition-colors">
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                          );
+                        }
+                        return (
+                          <button 
+                            onClick={(e) => addToCart(p, e)}
+                            className="px-4 py-1.5 border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#5B43EE] hover:bg-indigo-50 transition-colors"
+                          >
+                            Add
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -298,7 +316,7 @@ export default function ShopPage() {
                   <div key={item.id} className="py-4 flex gap-4">
                     <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden shrink-0">
                       {item.image_url ? (
-                        <img src={formatImageUrl(item.image_url)} alt={item.name} className="w-full h-full object-cover" />
+                        <img src={formatImageUrl(item.image_url) || undefined} alt={item.name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center"><ShoppingBag className="w-6 h-6 text-gray-300" /></div>
                       )}
@@ -397,7 +415,7 @@ export default function ShopPage() {
           <div className="pb-6">
             <div className="w-full h-64 bg-gray-50 rounded-2xl mb-4 overflow-hidden relative">
               {selectedProduct.image_url ? (
-                <img src={formatImageUrl(selectedProduct.image_url)} alt={selectedProduct.name} className="w-full h-full object-cover" />
+                <img src={formatImageUrl(selectedProduct.image_url) || undefined} alt={selectedProduct.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <ShoppingBag className="w-12 h-12 text-gray-300" />
