@@ -67,7 +67,7 @@ export default function ChatDetailPage() {
         });
         const data = res.data?.data || res.data;
         setMessages(Array.isArray(data) ? data : []);
-        if (contextOutfitId) { api.post(`/customer-portal/orders/${orderId}/outfits/${contextOutfitId}/requests/read`).catch(console.error); }
+        
       } catch (err) {
         console.error('Failed to load messages:', err);
       } finally {

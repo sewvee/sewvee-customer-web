@@ -11,11 +11,13 @@ import { useToast } from '@/hooks/useToast';
 import { Button } from '@/components/ui/Button';
 import { BoutiqueDrawer } from '@/components/home/BoutiqueDrawer';
 
-const formatImageUrl = (urlStr: string | null) => {
-  if (!urlStr) return null;
+const formatImageUrl = (urlStr: string | null): string | undefined => {
+  if (!urlStr) return undefined;
   const firstUrl = urlStr.split(',')[0];
   if (firstUrl.startsWith('http')) return firstUrl;
-  return `${BASE_URL.replace('/api/v1/', '')}/${firstUrl}`;
+  const apiDomain = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.sewvee.com';
+  const cleanUrl = firstUrl.startsWith('/') ? firstUrl.slice(1) : firstUrl;
+  return `${apiDomain}/${cleanUrl}`;
 };
 
 export default function ShopPage() {
@@ -331,11 +333,11 @@ export default function ShopPage() {
                       <p className="text-[#5B43EE] font-bold text-sm mt-1">₹{item.price}</p>
                       
                       <div className="flex items-center gap-3 mt-2">
-                        <button onClick={() => updateQuantity(item.id, -1)} className="w-7 h-7 bg-gray-50 border border-gray-200 rounded-full flex items-center justify-center">
+                        <button onClick={() => updateQuantity(item.id, -1)} className="w-7 h-7 bg-gray-50 border border-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">
                           <Minus className="w-3 h-3" />
                         </button>
-                        <span className="font-bold text-sm w-4 text-center">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.id, 1)} className="w-7 h-7 bg-gray-50 border border-gray-200 rounded-full flex items-center justify-center text-[#5B43EE]">
+                        <span className="font-bold text-sm w-4 text-center text-gray-900">{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item.id, 1)} className="w-7 h-7 bg-gray-50 border border-gray-200 rounded-full flex items-center justify-center text-[#5B43EE] hover:bg-indigo-50 transition-colors">
                           <Plus className="w-3 h-3" />
                         </button>
                       </div>
@@ -350,7 +352,7 @@ export default function ShopPage() {
             <div className="border-t border-gray-100 pt-4 mt-auto space-y-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">Subtotal</span>
-                <span className="font-bold">₹{cartTotal}</span>
+                <span className="font-bold text-gray-900">₹{cartTotal}</span>
               </div>
               
               <div>
@@ -378,7 +380,7 @@ export default function ShopPage() {
                     placeholder="Enter full shipping address..."
                     value={shippingAddress}
                     onChange={(e) => setShippingAddress(e.target.value)}
-                    className="w-full p-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#5B43EE]"
+                    className="w-full p-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#5B43EE] text-gray-900 placeholder:text-gray-400 bg-white"
                   />
                 </div>
               )}

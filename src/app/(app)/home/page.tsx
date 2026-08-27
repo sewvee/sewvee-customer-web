@@ -15,9 +15,89 @@ import { useToast } from '@/hooks/useToast';
 const formatImageUrl = (urlStr: string) => {
   if (!urlStr) return null;
   if (urlStr.startsWith('http')) return urlStr;
-  return `${BASE_URL.replace('/api/v1/', '')}/${urlStr}`;
+  let apiDomain = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.sewvee.com';
+  // If running locally, fall back to production domain for static images to prevent broken links
+  if (apiDomain.includes('localhost')) {
+    apiDomain = 'https://api.sewvee.com';
+  }
+  // Strip leading slash if urlStr has one, to avoid double slashes
+  const cleanUrl = urlStr.startsWith('/') ? urlStr.slice(1) : urlStr;
+  return `${apiDomain}/${cleanUrl}`;
 };
 
+
+function StripBanners({ strips }: { strips: any[] }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (strips.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % strips.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [strips.length]);
+
+  if (strips.length === 0) return null;
+  const activeBanner = strips[currentIndex];
+  
+  const handleCta = (e: any) => {
+    e.stopPropagation();
+    if (activeBanner.cta_action_value) {
+      window.open(activeBanner.cta_action_value, '_blank');
+    }
+  };
+
+  return (
+    <div
+      style={{ backgroundColor: activeBanner.bg_color || '#4F46E5' }}
+      className="w-full flex items-center justify-between px-4 md:px-6 py-2 gap-3 transition-all duration-500 cursor-pointer overflow-hidden"
+      onClick={handleCta}
+    >
+      <div style={{ color: activeBanner.text_color || '#FFFFFF' }} className="flex items-center gap-2 flex-1 min-w-0 text-[12px] font-semibold h-[24px]">
+        {strips.length > 1 && (
+          <div className="flex gap-1 mr-1 flex-shrink-0 z-10 p-1 rounded">
+            {strips.map((_, i) => (
+              <button key={i} onClick={(e) => { e.stopPropagation(); setCurrentIndex(i); }}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${currentIndex === i ? 'bg-white opacity-100 scale-110' : 'bg-white opacity-40 hover:opacity-60'}`}
+              />
+            ))}
+          </div>
+        )}
+        
+        {/* Container for text */}
+        <div className="flex-1 h-full flex items-center relative overflow-hidden group">
+           {activeBanner.is_scrollable ? (
+              <div className="absolute whitespace-nowrap animate-[marquee_15s_linear_infinite] group-hover:[animation-play-state:paused]">
+                 {activeBanner.title}
+                 <span className="inline-block w-10"></span>
+                 {activeBanner.title}
+              </div>
+           ) : (
+              <p className="truncate absolute w-full pr-4">{activeBanner.title}</p>
+           )}
+        </div>
+      </div>
+      
+      {/* Call to Action Button */}
+      {activeBanner.cta_label && (
+        <button 
+           className="bg-white text-black px-3 py-1 rounded-full text-[10px] uppercase font-bold shrink-0 transition-transform hover:scale-105 shadow-sm"
+           onClick={handleCta}
+           style={{ color: activeBanner.bg_color || '#000' }}
+        >
+           {activeBanner.cta_label}
+        </button>
+      )}
+      
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes marquee {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-50%); }
+        }
+      `}} />
+    </div>
+  );
+}
 export default function HomePage() {
   const user = useAuthStore(s => s.user);
   const token = useAuthStore(s => s.token);
@@ -115,18 +195,8 @@ export default function HomePage() {
       </div>
 
       <div className="pb-24">
-        {/* STRIP BANNER */}
-        {banners.filter(b => b.type === "STRIP").length > 0 && (
-          <div 
-            className="w-full flex items-center justify-between px-4 py-2 text-xs font-semibold"
-            style={{ 
-              backgroundColor: banners.filter(b => b.type === "STRIP")[0].bg_color || '#4F46E5',
-              color: banners.filter(b => b.type === "STRIP")[0].text_color || '#FFFFFF'
-            }}
-          >
-            <p className="truncate flex-1 pr-4">{banners.filter(b => b.type === "STRIP")[0].title}</p>
-          </div>
-        )}
+                {/* STRIP BANNER */}
+        <StripBanners strips={banners.filter(b => b.type === "STRIP")} />
 
         {/* INLINE BANNERS */}
         {banners.filter(b => b.type === "INLINE").length > 0 && (
@@ -134,7 +204,12 @@ export default function HomePage() {
             <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-2">
               {banners.filter(b => b.type === "INLINE").map((banner, idx) => (
                 <div key={idx} className="snap-center shrink-0 w-[90%] md:w-[400px] h-[160px] rounded-[16px] overflow-hidden bg-gray-200 relative border border-gray-200 shadow-sm cursor-pointer" onClick={() => banner.cta_action_value && window.open(banner.cta_action_value, '_blank')}>
-                  <img src={formatImageUrl(banner.image_url) || banner.image_url} alt={banner.title || 'Banner'} className="w-full h-full object-cover" />
+                  <img 
+                    src={formatImageUrl(banner.image_url) || banner.image_url} 
+                    alt={banner.title || 'Banner'} 
+                    className="w-full h-full object-cover" 
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
                 </div>
               ))}
             </div>

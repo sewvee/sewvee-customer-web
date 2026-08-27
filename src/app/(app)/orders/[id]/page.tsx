@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { URL_ORDER_INVOICE_DOWNLOAD, URL_CUSTOMER_PORTAL_ORDERS, URL_UPLOAD } from '@/lib/env';
 import { CollageMaker } from '@/components/CollageMaker';
-import CustomerRequestsTab from '@/components/order/CustomerRequestsTab';
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -18,14 +17,13 @@ export default function OrderDetailPage() {
   
   const order = orders.find((o) => o.id === id);
 
-  const [activeTab, setActiveTab] = useState<'details' | 'requests' | 'payments'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'payments'>('details');
   const [activeOutfitIndex, setActiveOutfitIndex] = useState(0);
   const [collageOpen, setCollageOpen] = useState(false);
   const [activeOutfitForCollage, setActiveOutfitForCollage] = useState<any | null>(null);
   const [confirmDrawerVisible, setConfirmDrawerVisible] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [selectedOutfitForConfirm, setSelectedOutfitForConfirm] = useState<any | null>(null);
-  const [isOutfitChatActive, setIsOutfitChatActive] = useState(false);
 
   const handleConfirmOutfitPhotos = async () => {
     if (!selectedOutfitForConfirm || !order) return;
@@ -93,8 +91,7 @@ export default function OrderDetailPage() {
     <>
     <div className="h-[100dvh] flex flex-col bg-white overflow-hidden">
       {/* Navbar */}
-      {!isOutfitChatActive && (
-        <div className="flex flex-col pt-4 pb-2 border-b border-gray-100 bg-white shrink-0">
+      <div className="flex flex-col pt-4 border-b border-gray-100 bg-white shrink-0">
           <div className="flex items-center px-4 mb-4">
             <Link href="/home" className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full">
               <ArrowLeft className="w-5 h-5 text-[#0F172A]" />
@@ -108,21 +105,14 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex w-full">
+          <div className="flex w-full -mb-[1px]">
             <button onClick={() => setActiveTab('details')} className={`flex-1 pb-3 text-[14px] font-bold outline-none border-b-2 ${activeTab === 'details' ? 'text-[#5B43EE] border-[#5B43EE]' : 'text-[#64748B] border-transparent'}`}>Details</button>
-            <button onClick={() => setActiveTab('requests')} className={`flex-1 pb-3 text-[14px] font-bold outline-none border-b-2 flex items-center justify-center ${activeTab === 'requests' ? 'text-[#5B43EE] border-[#5B43EE]' : 'text-[#64748B] border-transparent'}`}>
-              Requests
-              {order?.has_unread_messages ? <span className="ml-1.5 inline-block w-2 h-2 rounded-full bg-red-500"></span> : null}
-            </button>
             <button onClick={() => setActiveTab('payments')} className={`flex-1 pb-3 text-[14px] font-bold outline-none border-b-2 ${activeTab === 'payments' ? 'text-[#5B43EE] border-[#5B43EE]' : 'text-[#64748B] border-transparent'}`}>Payments</button>
           </div>
         </div>
-      )}
 
       {/* Content */}
-      <div className={`bg-[#F8FAFC] flex-1 flex flex-col ${activeTab === 'requests' ? 'overflow-hidden' : 'px-4 py-6 overflow-y-auto pb-24'}`}>
-        {activeTab === 'requests' && <CustomerRequestsTab order={order} onChatStateChange={setIsOutfitChatActive} />}
-        
+      <div className="bg-[#F8FAFC] flex-1 flex flex-col px-4 pt-4 overflow-y-auto pb-24">
         
         {activeTab === 'payments' && (
           <div className="space-y-4">
@@ -269,12 +259,12 @@ export default function OrderDetailPage() {
         {activeTab === 'details' && (
           <>
             {outfits.length > 0 && (
-              <div className="flex overflow-x-auto gap-2 mb-4 hide-scrollbar" style={{ minHeight: '40px' }}>
+              <div className="flex overflow-x-auto gap-2 mb-4 hide-scrollbar min-h-[44px]">
                 {outfits.map((o: any, idx: number) => (
                   <button
                     key={o.id || idx}
                     onClick={() => setActiveOutfitIndex(idx)}
-                    className={`shrink-0 px-4 py-2 rounded-full text-[13px] font-bold border ${activeOutfitIndex === idx ? 'bg-[#5B43EE] text-white border-[#5B43EE]' : 'bg-white text-[#64748B] border-[#E2E8F0]'}`}
+                    className={`shrink-0 px-4 h-[38px] inline-flex items-center justify-center rounded-full text-[13px] font-bold border ${activeOutfitIndex === idx ? 'bg-[#5B43EE] text-white border-[#5B43EE]' : 'bg-white text-[#64748B] border-[#E2E8F0]'}`}
                   >
                     Outfit {idx + 1}: {o.type || o.name || 'Item'}
                   </button>
@@ -286,7 +276,7 @@ export default function OrderDetailPage() {
               <div className="mb-6">
                 {/* OUTFIT DETAILS */}
                 <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                  <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#F1F5F9]">
+                  <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
                     <Shirt className="w-3.5 h-3.5 text-[#5B43EE] mr-2" />
                     <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide">OUTFIT DETAILS</h2>
                   </div>
@@ -323,7 +313,7 @@ export default function OrderDetailPage() {
                 
                 {order.order_type === 'STITCHING_REQUEST' && activeOutfit.customerNotes && (
                   <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                    <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#F1F5F9]">
+                    <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
                       <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide uppercase">REQUEST DETAILS</h2>
                     </div>
                     <div className="p-4">
@@ -334,7 +324,7 @@ export default function OrderDetailPage() {
 
                 {/* STITCHING SPECIFICATIONS */}
                 <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                  <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#F1F5F9]">
+                  <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
                     <Scissors className="w-3.5 h-3.5 text-[#5B43EE] mr-2" />
                     <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide">STITCHING SPECIFICATIONS</h2>
                   </div>
@@ -360,7 +350,7 @@ export default function OrderDetailPage() {
 
                 {/* DESIGN PHOTOS & SKETCHES */}
                 <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                  <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#F1F5F9]">
+                  <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
                     <ImageIcon className="w-3.5 h-3.5 text-[#5B43EE] mr-2" />
                     <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide">DESIGN PHOTOS & SKETCHES</h2>
                   </div>
