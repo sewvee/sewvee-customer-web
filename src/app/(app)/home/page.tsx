@@ -4,32 +4,37 @@ import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
 import { useBoutiquesStore } from '@/store/boutiquesStore';
 import { OrderCard } from '@/components/order/OrderCard';
-import { ShoppingBag, MessageCircle, Store, ChevronDown, Bell, Scissors, Camera, ArrowRight } from 'lucide-react';
+import { ShoppingBag, MessageCircle, Store, ChevronDown, Bell, Scissors, Camera, ArrowRight, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { BoutiqueDrawer } from '@/components/home/BoutiqueDrawer';
 import { BASE_URL, URL_CUSTOMER_PORTAL_SHOP } from '@/lib/env';
 import api from '@/lib/api';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import { useToast } from '@/hooks/useToast';
 
 const formatImageUrl = (urlStr: string) => {
   if (!urlStr) return null;
-  const rootUrl = BASE_URL.replace('/mobile/', '/');
-  let firstUrl = urlStr.split(',')[0].trim();
-  if (firstUrl.startsWith('http')) return encodeURI(firstUrl);
-  if (firstUrl.startsWith('/')) return encodeURI(rootUrl + firstUrl.substring(1));
-  return encodeURI(rootUrl + firstUrl);
+  if (urlStr.startsWith('http')) return urlStr;
+  return `${BASE_URL.replace('/api/v1/', '')}/${urlStr}`;
 };
 
 export default function HomePage() {
-  const user = useAuthStore((s) => s.user);
-  const { orders, loading, fetchOrders } = useOrdersStore();
-  const { boutiques, selectedBoutiqueId, fetchBoutiques, setSelectedBoutiqueId } = useBoutiquesStore();
+  const user = useAuthStore(s => s.user);
+  const token = useAuthStore(s => s.token);
+  const { orders, loading, fetchOrders, cancelOrder, refreshOrders } = useOrdersStore();
+  const { boutiques, selectedBoutiqueId, setSelectedBoutiqueId, fetchBoutiques } = useBoutiquesStore();
+  const { showToast } = useToast();
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [banners, setBanners] = useState<any[]>([]);
   const [featuredShop, setFeaturedShop] = useState<any[]>([]);
+  
+  const [cancelling, setCancelling] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user?.mobile) fetchOrders(user.mobile);
     fetchBoutiques();
+    if (user?.mobile) fetchOrders(user.mobile);
   }, [user?.mobile, fetchOrders, fetchBoutiques]);
 
   useEffect(() => {
@@ -44,7 +49,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (selectedBoutiqueId) {
-      fetch(`${URL_CUSTOMER_PORTAL_SHOP}?companyId=${selectedBoutiqueId}`)
+      fetch(`${URL_CUSTOMER_PORTAL_SHOP}?company_id=${selectedBoutiqueId}&limit=5`)
         .then(res => res.json())
         .then(data => {
           if (data.success && Array.isArray(data.data)) {
@@ -60,7 +65,6 @@ export default function HomePage() {
   }, [selectedBoutiqueId]);
 
   useEffect(() => {
-    // Default to the most recent order's boutique if none is selected
     if (selectedBoutiqueId === null && orders.length > 0) {
       const recentId = orders[0].boutiqueId || (orders[0] as any).company_id;
       if (recentId) setSelectedBoutiqueId(Number(recentId));
@@ -68,16 +72,29 @@ export default function HomePage() {
   }, [selectedBoutiqueId, orders, setSelectedBoutiqueId]);
 
   const selectedBoutique = boutiques.find(b => b.id === selectedBoutiqueId);
-
-  // Filter orders by selected boutique if one is selected
   const displayedOrders = selectedBoutiqueId 
     ? orders.filter(o => Number(o.boutiqueId || (o as any).company_id) === selectedBoutiqueId)
     : orders;
 
+  const handleCancel = async () => {
+    if (!orderToCancel || !token) return;
+    setCancelling(true);
+    try {
+      await cancelOrder(orderToCancel, token);
+      showToast('Order cancelled successfully', 'success');
+      setOrderToCancel(null);
+      if (user?.mobile) refreshOrders(user.mobile);
+    } catch {
+      showToast('Failed to cancel order. Try again.', 'error');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   return (
     <div className="bg-[#F8FAFC] min-h-screen">
       {/* Clean Header with Boutique Selection */}
-      <div className="flex items-center px-5 pt-8 pb-4 bg-white border-b border-gray-100">
+      <div className="flex items-center px-5 py-4 bg-white border-b border-gray-100">
         <button 
           onClick={() => setDrawerOpen(true)}
           className="flex-1 flex items-center text-left"
@@ -95,14 +112,6 @@ export default function HomePage() {
             </div>
           </div>
         </button>
-        <div className="flex items-center gap-2">
-          <Link href="/notifications" className="w-[44px] h-[44px] bg-[#F8FAFC] rounded-full border border-gray-200 flex items-center justify-center shrink-0">
-            <Bell className="w-5 h-5 text-gray-500" />
-          </Link>
-          <Link href="/chat" className="w-[44px] h-[44px] bg-[#F8FAFC] rounded-full border border-gray-200 flex items-center justify-center shrink-0">
-            <MessageCircle className="w-5 h-5 text-gray-500" />
-          </Link>
-        </div>
       </div>
 
       <div className="pb-24">
@@ -155,7 +164,7 @@ export default function HomePage() {
             </div>
             <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-2">
               {featuredShop.map(item => (
-                <div key={item.id} className="snap-start shrink-0 w-[140px] bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden shadow-sm">
+                <Link key={item.id} href="/shop" className="snap-start shrink-0 w-[140px] bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden shadow-sm block">
                   <div className="h-[140px] bg-gray-100 relative">
                     {item.image_url ? (
                       <img src={formatImageUrl(item.image_url) || ''} alt={item.name} className="w-full h-full object-cover" />
@@ -167,7 +176,7 @@ export default function HomePage() {
                     <p className="text-[12px] font-bold text-[#0F172A] truncate mb-1">{item.name}</p>
                     <p className="text-[13px] font-bold text-[#5B43EE]">₹{item.selling_price || item.price}</p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -183,12 +192,20 @@ export default function HomePage() {
             </div>
           ) : displayedOrders.length > 0 ? (
             <div className="space-y-[10px]">
-              {displayedOrders.map((order) => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                />
-              ))}
+              {displayedOrders.map((order) => {
+                const statusStr = (order.status || '').toUpperCase();
+                const isCancelled = statusStr === 'CANCELLED' || String(order.status) === '4';
+                const isDelivered = statusStr === 'DELIVERED' || String(order.status) === '5';
+                const canCancel = !isCancelled && !isDelivered && (order.source === 'send order request' || order.order_type === 'STITCHING_REQUEST' || order.source === 'ONLINE');
+                
+                return (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    onCancel={canCancel ? () => setOrderToCancel(order.id.toString()) : undefined}
+                  />
+                );
+              })}
             </div>
           ) : (
             <div className="bg-white rounded-[16px] px-6 py-10 flex flex-col items-center justify-center border border-[#F1F5F9] shadow-[0_2px_8px_rgba(0,0,0,0.02)] mt-4">
@@ -210,6 +227,36 @@ export default function HomePage() {
         open={drawerOpen} 
         onClose={() => setDrawerOpen(false)} 
       />
+
+      <BottomSheet
+        open={!!orderToCancel}
+        onClose={() => setOrderToCancel(null)}
+      >
+        <div className="text-center p-2">
+          <div className="w-16 h-16 bg-[#FEE2E2] rounded-full flex items-center justify-center mx-auto mb-4">
+            <XCircle className="w-8 h-8 text-[#EF4444]" />
+          </div>
+          <h3 className="text-[20px] font-bold text-gray-900 mb-2 font-inter">Cancel Order</h3>
+          <p className="text-[15px] text-gray-500 mb-6 font-inter leading-relaxed">
+            Are you sure you want to cancel this order request? This action cannot be undone.
+          </p>
+          <div className="flex gap-3 w-full">
+            <button 
+              className="flex-1 py-3.5 rounded-xl bg-[#F3F4F6] text-[#4B5563] font-semibold text-[15px] font-inter"
+              onClick={() => setOrderToCancel(null)}
+            >
+              No, Keep it
+            </button>
+            <button 
+              className="flex-1 py-3.5 rounded-xl bg-[#EF4444] text-white font-semibold text-[15px] font-inter"
+              onClick={handleCancel}
+              disabled={cancelling}
+            >
+              {cancelling ? 'Cancelling...' : 'Yes, Cancel'}
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   );
 }
