@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
 import { useBoutiquesStore } from '@/store/boutiquesStore';
+import { useShopStore } from '@/store/shopStore';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { URL_CUSTOMER_STORE_CATALOGUE, URL_CUSTOMER_PORTAL_SHOP, URL_CUSTOMER_PORTAL_ORDERS, BASE_URL } from '@/lib/env';
 import { useToast } from '@/hooks/useToast';
@@ -34,7 +35,7 @@ export default function ShopPage() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   
   // Cart
-  const [cart, setCart] = useState<any[]>([]);
+  const { cart, addToCart: storeAddToCart, updateQuantity: storeUpdateQuantity, clearCart } = useShopStore();
   const [isCartOpen, setIsCartOpen] = useState(false);
   
   // Checkout

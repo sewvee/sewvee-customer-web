@@ -11,19 +11,41 @@ import { BASE_URL, URL_CUSTOMER_PORTAL_SHOP } from '@/lib/env';
 import api from '@/lib/api';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useToast } from '@/hooks/useToast';
+import { useShopStore } from '@/store/shopStore';
+import { Button } from '@/components/ui/Button';
 
 const formatImageUrl = (urlStr: string) => {
   if (!urlStr) return null;
+  // If it's already an absolute URL (including localhost), return as-is
+  // Local uploads (localhost:3021/uploads/...) must be served from the local backend
   if (urlStr.startsWith('http')) return urlStr;
-  let apiDomain = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.sewvee.com';
-  // If running locally, fall back to production domain for static images to prevent broken links
-  if (apiDomain.includes('localhost')) {
-    apiDomain = 'https://api.sewvee.com';
-  }
-  // Strip leading slash if urlStr has one, to avoid double slashes
+  // Relative path — prepend the API domain
+  const apiDomain = process.env.NEXT_PUBLIC_API_URL ?? 'https://api-stage.sewvee.com';
   const cleanUrl = urlStr.startsWith('/') ? urlStr.slice(1) : urlStr;
   return `${apiDomain}/${cleanUrl}`;
 };
+
+function SafeImage({ src, alt, className }: { src: string | null; alt: string; className?: string }) {
+  const [error, setError] = useState(false);
+  
+  useEffect(() => {
+    setError(false);
+  }, [src]);
+
+  if (!src || error) {
+    return <div className="w-full h-full bg-gray-200" />;
+  }
+
+  return (
+    <img 
+      src={src} 
+      alt={alt} 
+      className={className} 
+      onError={() => setError(true)}
+    />
+  );
+}
+
 
 
 function StripBanners({ strips }: { strips: any[] }) {
@@ -95,7 +117,8 @@ function StripBanners({ strips }: { strips: any[] }) {
           100% { transform: translateX(-50%); }
         }
       `}} />
-    </div>
+
+          </div>
   );
 }
 export default function HomePage() {
@@ -108,6 +131,9 @@ export default function HomePage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [banners, setBanners] = useState<any[]>([]);
   const [featuredShop, setFeaturedShop] = useState<any[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const { addToCart } = useShopStore();
+  const { showToast } = useToast();
   
   const [cancelling, setCancelling] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
@@ -202,16 +228,18 @@ export default function HomePage() {
         {banners.filter(b => b.type === "INLINE").length > 0 && (
           <div className="mt-4 px-5">
             <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-2">
-              {banners.filter(b => b.type === "INLINE").map((banner, idx) => (
-                <div key={idx} className="snap-center shrink-0 w-[90%] md:w-[400px] h-[160px] rounded-[16px] overflow-hidden bg-gray-200 relative border border-gray-200 shadow-sm cursor-pointer" onClick={() => banner.cta_action_value && window.open(banner.cta_action_value, '_blank')}>
-                  <img 
-                    src={formatImageUrl(banner.image_url) || banner.image_url} 
-                    alt={banner.title || 'Banner'} 
-                    className="w-full h-full object-cover" 
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                  />
-                </div>
-              ))}
+              {banners.filter(b => b.type === "INLINE").map((banner, idx) => {
+                const imgUrl = banner.image_url || banner.mobile_image_url;
+                return (
+                  <div key={idx} className="snap-center shrink-0 w-[90%] md:w-[400px] h-[160px] rounded-[16px] overflow-hidden bg-gray-200 relative border border-gray-200 shadow-sm cursor-pointer" onClick={() => banner.cta_action_value && window.open(banner.cta_action_value, '_blank')}>
+                    <SafeImage 
+                      src={formatImageUrl(imgUrl) || imgUrl} 
+                      alt={banner.title || 'Banner'} 
+                      className="w-full h-full object-cover" 
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -252,10 +280,14 @@ export default function HomePage() {
             </div>
             <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-2">
               {featuredShop.map(item => (
-                <Link key={item.id} href="/shop" className="snap-start shrink-0 w-[140px] bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden shadow-sm block">
+                <button key={item.id} onClick={() => setSelectedProduct(item)} className="snap-start shrink-0 w-[140px] bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden shadow-sm text-left block">
                   <div className="h-[140px] bg-gray-100 relative">
                     {item.image_url ? (
-                      <img src={formatImageUrl(item.image_url.split(',')[0]) || ''} alt={item.name} className="w-full h-full object-cover" />
+                      <SafeImage 
+                        src={formatImageUrl(item.image_url.split(',')[0]) || ''} 
+                        alt={item.name} 
+                        className="w-full h-full object-cover" 
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center"><ShoppingBag className="w-8 h-8 text-gray-300" /></div>
                     )}
@@ -264,7 +296,7 @@ export default function HomePage() {
                     <p className="text-[12px] font-bold text-[#0F172A] truncate mb-1">{item.name}</p>
                     <p className="text-[13px] font-bold text-[#5B43EE]">₹{item.selling_price || item.price}</p>
                   </div>
-                </Link>
+                </button>
               ))}
             </div>
           </div>
@@ -344,6 +376,44 @@ export default function HomePage() {
             </button>
           </div>
         </div>
+      </BottomSheet>
+
+      {/* Product Details Modal */}
+      <BottomSheet
+        open={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        title={selectedProduct?.name || 'Product Details'}
+      >
+        {selectedProduct && (
+          <div className="pb-6">
+            <div className="w-full h-64 bg-gray-50 rounded-2xl mb-4 overflow-hidden relative">
+              {selectedProduct.image_url ? (
+                <img src={formatImageUrl(selectedProduct.image_url.split(',')[0]) || undefined} alt={selectedProduct.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <ShoppingBag className="w-12 h-12 text-gray-300" />
+                </div>
+              )}
+            </div>
+            <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">{selectedProduct.readymade_category?.name || selectedProduct.category_name}</p>
+            <h2 className="text-2xl font-bold text-gray-900 mt-1">{selectedProduct.name}</h2>
+            
+            {selectedProduct.description && (
+              <p className="text-gray-500 mt-3 text-sm leading-relaxed">{selectedProduct.description}</p>
+            )}
+            
+            <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
+              <span className="text-2xl font-bold text-[#5B43EE]">₹{selectedProduct.selling_price || selectedProduct.price}</span>
+              <Button onClick={(e) => { 
+                addToCart(selectedProduct); 
+                showToast(`${selectedProduct.name} added to cart`, 'success');
+                setSelectedProduct(null); 
+              }} className="px-8 rounded-xl font-bold">
+                Add to Cart
+              </Button>
+            </div>
+          </div>
+        )}
       </BottomSheet>
     </div>
   );
