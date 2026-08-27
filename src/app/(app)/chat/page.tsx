@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, MessageSquarePlus, ShoppingBag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MessageSquarePlus, ShoppingBag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -95,7 +95,7 @@ export default function ChatListPage() {
             {threads.map((t) => (
               <Link 
                 key={t.order_id} 
-                href={`/chat/\${t.order_id}`}
+                href={'/chat/' + t.order_id}
                 className="flex items-center px-4 py-4 hover:bg-gray-50 transition-colors"
               >
                 {/* Avatar */}
@@ -110,18 +110,23 @@ export default function ChatListPage() {
                 {/* Content */}
                 <div className="ml-3 flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-0.5">
-                    <h3 className="text-[15px] font-bold text-[#0F172A] truncate">
-                      {t.order_number}
-                    </h3>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <h3 className="text-[14.5px] font-semibold text-[#334155] truncate">
+                        {t.boutique_name}
+                      </h3>
+                      <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
+                        t.order_number?.startsWith('ENQ-')
+                          ? 'bg-orange-50 text-orange-600 border border-orange-100'
+                          : 'bg-slate-100 text-slate-600 border border-slate-200'
+                      }`}>
+                        #{t.order_number}
+                      </span>
+                    </div>
                     <span className="text-[12px] text-gray-400 whitespace-nowrap ml-2">
                       {formatTime(t.latest_message_timestamp)}
                     </span>
                   </div>
-                  <div className="flex items-center mb-1">
-                     <span className="bg-[#F1F5F9] text-[#475569] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">
-                        {t.boutique_name}
-                     </span>
-                  </div>
+                  
                   <div className="flex justify-between items-center">
                     <p className={`text-[13px] truncate ${t.unread_count ? 'text-[#0F172A] font-medium' : 'text-gray-500'}`}>
                       {t.latest_message_text || (t.latest_message_attachment ? '📷 Image' : 'Started a conversation')}
@@ -150,30 +155,40 @@ export default function ChatListPage() {
       {/* New Chat Selection Drawer */}
       <BottomSheet open={newChatDrawerOpen} onClose={() => setNewChatDrawerOpen(false)}>
         <div className="p-2 pb-6">
-          <h3 className="text-[18px] font-bold text-[#0F172A] mb-2 px-2">New Chat</h3>
-          <p className="text-[13px] text-gray-500 mb-4 px-2">Select an order to start a conversation.</p>
+          <div className="flex items-center justify-between px-2 mb-4">
+            <h3 className="text-[18px] font-bold text-[#0F172A]">New Chat</h3>
+          </div>
           
           {orders.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-[14px] text-gray-400">You don't have any active orders.</p>
             </div>
           ) : (
-            <div className="space-y-1 max-h-[350px] overflow-y-auto">
-              {orders.map(o => (
-                <button
-                  key={o.id}
-                  onClick={() => router.push(`/chat/\${o.id}`)}
-                  className="w-full text-left px-4 py-4 hover:bg-gray-50 rounded-xl flex items-center transition-colors border border-transparent hover:border-gray-200"
-                >
-                  <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center mr-3 shrink-0">
-                    <ShoppingBag className="w-5 h-5 text-indigo-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[15px] font-bold text-[#0F172A] block">{o.order_number}</span>
-                    <span className="text-[12px] text-gray-500 block truncate">{o.boutiqueName || 'Boutique'}</span>
-                  </div>
-                </button>
-              ))}
+            <div className="space-y-2 max-h-[400px] overflow-y-auto px-2">
+              {orders.map(o => {
+                const orderType = (o as any).order_type || '';
+                const typeLabel = orderType === 'TAILORING' || orderType === 'STITCHING_REQUEST' ? 'Stitching' : orderType === 'SALE_ORDER' ? 'Readymade' : 'Pre-order';
+                const typeColor = typeLabel === 'Stitching' ? 'bg-purple-50 text-purple-700' : typeLabel === 'Readymade' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700';
+                return (
+                  <button
+                    key={o.id}
+                    onClick={() => { router.push('/chat/' + o.id); setNewChatDrawerOpen(false); }}
+                    className="w-full text-left px-4 py-3.5 bg-white hover:bg-[#F8FAFC] rounded-2xl flex items-center transition-colors border border-[#E2E8F0] hover:border-[#5B43EE]/30 hover:shadow-sm"
+                  >
+                    <div className="w-11 h-11 bg-[#EEF2FF] rounded-full flex items-center justify-center mr-3 shrink-0">
+                      <ShoppingBag className="w-5 h-5 text-[#5B43EE]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[15px] font-bold text-[#0F172A]">{o.order_number || o.billNo || ('Order #' + o.id)}</span>
+                        <span className={'text-[10px] font-bold px-2 py-0.5 rounded-full ' + typeColor}>{typeLabel}</span>
+                      </div>
+                      <span className="text-[12px] text-[#64748B] truncate block">{o.boutiqueName || 'Boutique'}</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-300 shrink-0 ml-2" />
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

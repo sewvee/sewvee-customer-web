@@ -132,8 +132,8 @@ export default function HomePage() {
   const [banners, setBanners] = useState<any[]>([]);
   const [featuredShop, setFeaturedShop] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [dismissedPopup, setDismissedPopup] = useState(false);
   const { addToCart } = useShopStore();
-  const { showToast } = useToast();
   
   const [cancelling, setCancelling] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
@@ -385,8 +385,8 @@ export default function HomePage() {
         title={selectedProduct?.name || 'Product Details'}
       >
         {selectedProduct && (
-          <div className="pb-6">
-            <div className="w-full h-64 bg-gray-50 rounded-2xl mb-4 overflow-hidden relative">
+          <div className="px-4 pt-2 pb-safe">
+            <div className="w-full h-[220px] bg-gray-50 rounded-[16px] mb-5 overflow-hidden relative shadow-sm border border-gray-100">
               {selectedProduct.image_url ? (
                 <img src={formatImageUrl(selectedProduct.image_url.split(',')[0]) || undefined} alt={selectedProduct.name} className="w-full h-full object-cover" />
               ) : (
@@ -395,26 +395,78 @@ export default function HomePage() {
                 </div>
               )}
             </div>
-            <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">{selectedProduct.readymade_category?.name || selectedProduct.category_name}</p>
-            <h2 className="text-2xl font-bold text-gray-900 mt-1">{selectedProduct.name}</h2>
             
-            {selectedProduct.description && (
-              <p className="text-gray-500 mt-3 text-sm leading-relaxed">{selectedProduct.description}</p>
-            )}
+            <p className="text-[11px] font-bold text-[#5B43EE] uppercase tracking-wider mb-1.5">
+              {selectedProduct.readymade_category?.name || selectedProduct.category_name || 'CATEGORY'}
+            </p>
             
-            <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
-              <span className="text-2xl font-bold text-[#5B43EE]">₹{selectedProduct.selling_price || selectedProduct.price}</span>
-              <Button onClick={(e) => { 
-                addToCart(selectedProduct); 
-                showToast(`${selectedProduct.name} added to cart`, 'success');
-                setSelectedProduct(null); 
-              }} className="px-8 rounded-xl font-bold">
+            <div className="flex items-start justify-between mb-5">
+              <h2 className="text-[18px] font-bold text-[#0F172A] pr-4 leading-tight">{selectedProduct.name}</h2>
+              <span className="text-[18px] font-bold text-[#5B43EE] whitespace-nowrap">
+                ₹{Number(selectedProduct.selling_price || selectedProduct.price).toFixed(2)}
+              </span>
+            </div>
+            
+            <h3 className="text-[14px] font-bold text-[#0F172A] mb-1.5">Description</h3>
+            <p className="text-[14px] text-[#64748B] mb-6 leading-relaxed">
+              {selectedProduct.description || 'No description available.'}
+            </p>
+            
+            <div className="pt-5 border-t border-gray-100">
+              <Button 
+                onClick={(e) => { 
+                  addToCart(selectedProduct); 
+                  showToast(`${selectedProduct.name} added to cart`, 'success');
+                  setSelectedProduct(null); 
+                }} 
+                className="w-full py-4 rounded-xl font-bold text-[15px] bg-[#5B43EE] text-white hover:bg-[#4f39ce]"
+              >
                 Add to Cart
               </Button>
             </div>
           </div>
         )}
       </BottomSheet>
+
+      {/* Promotional Popup Banner */}
+      {banners.find(b => b.type === "POPUP") && !dismissedPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-sm rounded-[24px] overflow-hidden relative shadow-2xl animate-in zoom-in-95 duration-200">
+            {banners.find(b => b.type === "POPUP")?.is_dismissible && (
+              <button 
+                onClick={() => setDismissedPopup(true)}
+                className="absolute top-3 right-3 w-8 h-8 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors z-10"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            )}
+            
+            {(() => {
+              const popup = banners.find(b => b.type === "POPUP");
+              const imgUrl = popup.image_url || popup.mobile_image_url;
+              return (
+                <div 
+                  className="w-full cursor-pointer"
+                  onClick={() => {
+                    if (popup.cta_action_value) {
+                      window.open(popup.cta_action_value.startsWith('http') ? popup.cta_action_value : `https://${popup.cta_action_value}`, '_blank');
+                    }
+                  }}
+                >
+                  {imgUrl ? (
+                    <SafeImage src={formatImageUrl(imgUrl) || imgUrl} alt={popup.title || 'Promotion'} className="w-full h-auto max-h-[70vh] object-contain bg-gray-100" />
+                  ) : (
+                    <div className="p-8 text-center bg-gray-50">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{popup.title}</h3>
+                      {popup.body && <p className="text-gray-500">{popup.body}</p>}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

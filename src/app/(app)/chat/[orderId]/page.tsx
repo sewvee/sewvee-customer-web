@@ -8,7 +8,7 @@ import { useOrdersStore } from '@/store/ordersStore';
 
 interface ChatMessage {
   id: number;
-  order_id: number;
+  order_id: number | string;
   order_outfit_id: number;
   sender_type: 'CUSTOMER' | 'BUSINESS';
   message: string | null;
@@ -16,16 +16,62 @@ interface ChatMessage {
   created_at: string;
   order_number: string;
   outfit_name: string;
+  is_read_by_customer?: boolean;
+}
+
+
+function renderMessageContent(msgText: string, isCustomer: boolean) {
+  if (msgText && msgText.startsWith("Category:")) {
+    try {
+      const lines = msgText.split("\n");
+      const category = lines.find(l => l.startsWith("Category:"))?.replace("Category:", "").trim() || "";
+      const description = lines.find(l => l.startsWith("Description:"))?.replace("Description:", "").trim() || "";
+      const measurement = lines.find(l => l.startsWith("Measurement:"))?.replace("Measurement:", "").trim() || "";
+      const delivery = lines.find(l => l.startsWith("Delivery Date:"))?.replace("Delivery Date:", "").trim() || "";
+
+      return (
+        <div className="flex flex-col gap-2 mt-1 mb-1 w-full min-w-[200px]">
+          <div className={`rounded-md p-2.5 shadow-sm text-[13.5px] ${isCustomer ? 'bg-white/10' : 'bg-indigo-50/50 border border-indigo-100'}`}>
+            {category && <div className={`font-bold mb-1 ${isCustomer ? 'text-white' : 'text-[#5B43EE]'}`}>{category}</div>}
+            {description && <div className={`leading-snug italic mb-2 ${isCustomer ? 'text-indigo-100' : 'text-slate-700'}`}>"{description}"</div>}
+            <div className={`flex flex-col gap-1 text-[12.5px] border-t pt-1.5 ${isCustomer ? 'text-indigo-50 border-white/20' : 'text-slate-600 border-[#5B43EE]/10'}`}>
+              <div className="flex justify-between gap-4">
+                <span className="font-semibold">Measurements:</span>
+                <span className="text-right">{measurement}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="font-semibold">Expected By:</span>
+                <span className="text-right">{delivery}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    } catch(e) {}
+  }
+  return msgText;
+}
+
+
+function formatDateGroup(dateString: string) {
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export default function ChatDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const orderId = parseInt(params.orderId as string);
+  const orderId = params.orderId as string;
   const user = useAuthStore(s => s.user);
   
   const { orders, fetchOrders } = useOrdersStore();
-  const order = orders.find(o => o.id.toString() === orderId.toString());
+  const order = orders.find(o => String(o.id) === orderId);
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +108,7 @@ export default function ChatDetailPage() {
     async function loadChat() {
       if (!orderId) { setLoading(false); return; }
       try {
-        const res = await api.get(`/customer-portal/orders/\${orderId}/requests`, {
+        const res = await api.get(`/customer-portal/orders/${orderId}/requests`, {
           /* no params needed */
         });
         const data = res.data?.data || res.data;
@@ -82,12 +128,37 @@ export default function ChatDetailPage() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+
+  useEffect(() => {
+    if (!contextOutfitId || !orderId || messages.length === 0) return;
+    
+    const unreadMessages = messages.filter(m => 
+      String(m.order_outfit_id) === String(contextOutfitId) && 
+      m.sender_type !== 'CUSTOMER' && 
+      !m.is_read_by_customer
+    );
+    
+    if (unreadMessages.length > 0) {
+      // Mark local state as read immediately
+      setMessages(prev => prev.map(m => 
+        (String(m.order_outfit_id) === String(contextOutfitId) && m.sender_type !== 'CUSTOMER')
+          ? { ...m, is_read_by_customer: true } 
+          : m
+      ));
+      
+      // Call API
+      api.post(`/customer-portal/orders/${orderId}/outfits/${contextOutfitId}/requests/read`)
+        .catch(err => console.error('Failed to mark read', err));
+    }
+  }, [contextOutfitId, messages.length, orderId]);
+
+
   const handleSend = async () => {
     if (!inputText.trim() || !contextOutfitId || sending) return;
     
     setSending(true);
     try {
-      const res = await api.post(`/customer-portal/orders/\${orderId}/outfits/\${contextOutfitId}/requests`, {
+      const res = await api.post(`/customer-portal/orders/${orderId}/outfits/${contextOutfitId}/requests`, {
         message: inputText.trim()
       });
       
@@ -118,7 +189,8 @@ export default function ChatDetailPage() {
     return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
   
-  const headerTitle = order ? `\${order.order_number}` : 'Order Chat';
+  const displayId = order ? (order.order_number || order.billNo || order.id) : orderId;
+  const headerTitle = order ? `${displayId}` : `Order #${orderId}`;
   const headerSubtitle = order?.boutiqueName || '';
   const outfits = order?.outfits || order?.items || [];
 
@@ -140,22 +212,30 @@ export default function ChatDetailPage() {
 
       {/* Context Selector */}
       {outfits.length > 0 && (
-        <div className="bg-white px-4 py-2 border-b border-gray-200 shrink-0 shadow-sm z-10 flex items-center gap-2">
-          <span className="text-[12px] font-bold text-gray-500 uppercase shrink-0">Topic:</span>
-          <select 
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-lg text-[13px] py-1.5 px-2 outline-none text-[#0F172A] font-medium"
-            value={contextOutfitId}
-            onChange={e => setContextOutfitId(e.target.value)}
-          >
+        <div className="bg-white border-b border-gray-200 shrink-0 shadow-sm z-10">
+          <div className="overflow-x-auto hide-scrollbar flex items-center gap-2 px-4 py-2.5">
             {outfits.map((outf: any) => {
               const oid = outf.id || outf.order_outfit_id;
+              const isActive = String(contextOutfitId) === String(oid);
+              const hasUnread = messages.some(m => String(m.order_outfit_id) === String(oid) && m.sender_type !== 'CUSTOMER' && !m.is_read_by_customer);
               return (
-                <option key={oid} value={oid}>
+                <button
+                  key={oid}
+                  onClick={() => setContextOutfitId(String(oid))}
+                  className={`relative px-4 py-1.5 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
+                    isActive 
+                      ? 'bg-[#5B43EE] text-white shadow-sm' 
+                      : 'bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]'
+                  }`}
+                >
                   {outf.name || outf.outfit_type || 'Outfit'}
-                </option>
+                  {hasUnread && !isActive && (
+                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+                  )}
+                </button>
               );
             })}
-          </select>
+          </div>
         </div>
       )}
 
@@ -173,22 +253,24 @@ export default function ChatDetailPage() {
             </p>
           </div>
         ) : (
-          messages.map((msg, idx) => {
-            const isCustomer = msg.sender_type === 'CUSTOMER';
-            const showContext = idx === 0 || messages[idx-1].order_outfit_id !== msg.order_outfit_id;
-            
-            return (
-              <div key={msg.id} className="flex flex-col">
-                {showContext && (
+          (() => {
+            const filteredMessages = contextOutfitId ? messages.filter(m => String(m.order_outfit_id) === String(contextOutfitId)) : messages;
+            return filteredMessages.map((msg, idx) => {
+              const isCustomer = msg.sender_type === 'CUSTOMER';
+              const showDate = idx === 0 || new Date(filteredMessages[idx-1].created_at).toDateString() !== new Date(msg.created_at).toDateString();
+              
+              return (
+                <div key={msg.id} className="flex flex-col">
+                {showDate && (
                   <div className="flex justify-center mb-3 mt-2">
                     <span className="bg-white border border-gray-200 text-gray-500 text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
-                      {msg.outfit_name || 'Outfit'}
+                      {formatDateGroup(msg.created_at)}
                     </span>
                   </div>
                 )}
                 
-                <div className={`flex \${isCustomer ? 'justify-end' : 'justify-start'} mb-2`}>
-                  <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm \${
+                <div className={`flex ${isCustomer ? 'justify-end' : 'justify-start'} mb-2`}>
+                  <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${
                     isCustomer 
                       ? 'bg-[#5B43EE] text-white rounded-tr-sm' 
                       : 'bg-white border border-gray-100 text-[#0F172A] rounded-tl-sm'
@@ -199,18 +281,19 @@ export default function ChatDetailPage() {
                       </div>
                     )}
                     {msg.message && (
-                      <p className={`text-[14px] leading-relaxed \${isCustomer ? 'text-white' : 'text-[#334155]'}`}>
-                        {msg.message}
+                      <p className={`text-[14px] leading-relaxed ${isCustomer ? 'text-white' : 'text-[#334155]'}`}>
+                        {renderMessageContent(msg.message, isCustomer)}
                       </p>
                     )}
-                    <div className={`text-[10px] mt-1 text-right \${isCustomer ? 'text-indigo-200' : 'text-gray-400'}`}>
+                    <div className={`text-[10px] mt-1 text-right ${isCustomer ? 'text-indigo-200' : 'text-gray-400'}`}>
                       {formatTime(msg.created_at)}
                     </div>
                   </div>
                 </div>
               </div>
             );
-          })
+            })
+          })()
         )}
         <div ref={endRef} />
       </div>

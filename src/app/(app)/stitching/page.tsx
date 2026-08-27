@@ -156,9 +156,15 @@ export default function StitchingPage() {
         <button onClick={handlePrev} className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full">
           <ArrowLeft className="w-5 h-5 text-[#0F172A]" />
         </button>
-        <h1 className="text-[18px] font-bold text-[#0F172A] font-inter ml-4">
+        <h1 className="text-[18px] font-bold text-[#0F172A] font-inter ml-4 flex-1">
           New Stitching Request
         </h1>
+        <button 
+          onClick={() => router.back()}
+          className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors"
+        >
+          <X className="w-5 h-5 text-[#64748B]" />
+        </button>
       </div>
 
       <div className="flex-1 p-5 overflow-y-auto pb-24">
@@ -375,10 +381,11 @@ export default function StitchingPage() {
 
       <div className="fixed bottom-0 left-0 right-0 p-5 bg-white border-t border-gray-100 z-30 flex gap-3">
         <button
-          onClick={() => router.back()}
-          className="px-6 py-4 rounded-[14px] font-bold text-[15px] bg-[#F1F5F9] text-[#64748B] flex items-center justify-center hover:bg-[#E2E8F0] transition-colors"
+          onClick={handlePrev}
+          className="px-6 py-4 rounded-[14px] font-bold text-[15px] bg-[#F1F5F9] text-[#64748B] flex items-center justify-center gap-2 hover:bg-[#E2E8F0] transition-colors"
         >
-          Cancel
+          <ArrowLeft className="w-4 h-4" />
+          Back
         </button>
         <button
           onClick={step === 5 ? handleSubmit : handleNext}

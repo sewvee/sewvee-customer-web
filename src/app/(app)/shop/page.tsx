@@ -89,28 +89,19 @@ export default function ShopPage() {
 
   const addToCart = (product: any, e: any) => {
     e.stopPropagation();
-    setCart(prev => {
-      const ex = prev.find(p => p.id === product.id);
-      if (ex) {
-        return prev.map(p => p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p);
-      }
-      return [...prev, { ...product, quantity: 1, price: product.selling_price || product.price }];
-    });
+    storeAddToCart(product);
     showToast(`${product.name} added to cart`, 'success');
   };
   
   const updateQuantity = (productId: string, delta: number) => {
-    setCart(prev => prev.map(p => {
-      if (p.id === productId) {
-        const newQ = p.quantity + delta;
-        if (newQ > 0) return { ...p, quantity: newQ };
-      }
-      return p;
-    }).filter(p => p.quantity > 0));
+    storeUpdateQuantity(Number(productId), delta);
   };
   
   const removeFromCart = (productId: string) => {
-    setCart(prev => prev.filter(p => p.id !== productId));
+    const item = cart.find(c => c.id.toString() === productId);
+    if (item) {
+      storeUpdateQuantity(Number(productId), -item.quantity);
+    }
   };
 
   const handlePlaceOrder = async () => {
@@ -162,7 +153,7 @@ export default function ShopPage() {
 
       if (res.ok) {
         showToast('Order placed successfully!', 'success');
-        setCart([]);
+        clearCart();
         setIsCartOpen(false);
       } else {
         showToast('Failed to place order', 'error');
@@ -415,8 +406,8 @@ export default function ShopPage() {
         title={selectedProduct?.name || 'Product Details'}
       >
         {selectedProduct && (
-          <div className="pb-6">
-            <div className="w-full h-64 bg-gray-50 rounded-2xl mb-4 overflow-hidden relative">
+          <div className="px-4 pt-2 pb-safe">
+            <div className="w-full h-[220px] bg-gray-50 rounded-[16px] mb-5 overflow-hidden relative shadow-sm border border-gray-100">
               {selectedProduct.image_url ? (
                 <img src={formatImageUrl(selectedProduct.image_url) || undefined} alt={selectedProduct.name} className="w-full h-full object-cover" />
               ) : (
@@ -425,16 +416,28 @@ export default function ShopPage() {
                 </div>
               )}
             </div>
-            <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">{selectedProduct.readymade_category?.name || selectedProduct.category_name}</p>
-            <h2 className="text-2xl font-bold text-gray-900 mt-1">{selectedProduct.name}</h2>
             
-            {selectedProduct.description && (
-              <p className="text-gray-500 mt-3 text-sm leading-relaxed">{selectedProduct.description}</p>
-            )}
+            <p className="text-[11px] font-bold text-[#5B43EE] uppercase tracking-wider mb-1.5">
+              {selectedProduct.readymade_category?.name || selectedProduct.category_name || 'CATEGORY'}
+            </p>
             
-            <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
-              <span className="text-2xl font-bold text-[#5B43EE]">₹{selectedProduct.selling_price || selectedProduct.price}</span>
-              <Button onClick={(e) => { addToCart(selectedProduct, e); setSelectedProduct(null); }} className="px-8 rounded-xl font-bold">
+            <div className="flex items-start justify-between mb-5">
+              <h2 className="text-[18px] font-bold text-[#0F172A] pr-4 leading-tight">{selectedProduct.name}</h2>
+              <span className="text-[18px] font-bold text-[#5B43EE] whitespace-nowrap">
+                ₹{Number(selectedProduct.selling_price || selectedProduct.price).toFixed(2)}
+              </span>
+            </div>
+            
+            <h3 className="text-[14px] font-bold text-[#0F172A] mb-1.5">Description</h3>
+            <p className="text-[14px] text-[#64748B] mb-6 leading-relaxed">
+              {selectedProduct.description || 'No description available.'}
+            </p>
+            
+            <div className="pt-5 border-t border-gray-100">
+              <Button 
+                onClick={(e) => { addToCart(selectedProduct, e); setSelectedProduct(null); }} 
+                className="w-full py-4 rounded-xl font-bold text-[15px] bg-[#5B43EE] text-white hover:bg-[#4f39ce]"
+              >
                 Add to Cart
               </Button>
             </div>
