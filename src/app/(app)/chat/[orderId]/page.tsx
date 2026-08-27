@@ -2,9 +2,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { ChevronLeft, Send, ShoppingBag, Image as ImageIcon, Loader2, MessageCircle, MoreVertical, Mic, Edit2, Trash2 } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 
 interface ChatMessage {
   id: number;
@@ -276,8 +278,9 @@ export default function ChatDetailPage() {
                   </div>
                 )}
                 
-                <div className={`flex ${isCustomer ? 'justify-end' : 'justify-start'} mb-2`}>
-                  <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${
+                <div className={`flex ${isCustomer ? 'justify-end' : 'justify-start'} mb-2 group w-full`}>
+                  <div className={`flex items-center gap-2 max-w-[85%] ${isCustomer ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className={`max-w-full rounded-2xl px-4 py-2.5 shadow-sm ${
                     isCustomer 
                       ? 'bg-[#5B43EE] text-white rounded-tr-sm' 
                       : 'bg-white border border-gray-100 text-[#0F172A] rounded-tl-sm'
