@@ -84,7 +84,7 @@ export default function StitchingPage() {
         }
       };
 
-      const res = await fetch(URL_ORDERS, {
+      const res = await fetch(URL_CUSTOMER_PORTAL_ORDERS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -339,11 +339,17 @@ export default function StitchingPage() {
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-5 bg-white border-t border-gray-100 z-30">
+      <div className="fixed bottom-0 left-0 right-0 p-5 bg-white border-t border-gray-100 z-30 flex gap-3">
+        <button
+          onClick={() => router.back()}
+          className="px-6 py-4 rounded-[14px] font-bold text-[15px] bg-[#F1F5F9] text-[#64748B] flex items-center justify-center hover:bg-[#E2E8F0] transition-colors"
+        >
+          Cancel
+        </button>
         <button
           onClick={step === 5 ? handleSubmit : handleNext}
           disabled={loading || (step === 1 && !formData.category) || (step === 5 && !formData.delivery_date)}
-          className={`w-full py-4 rounded-[14px] font-bold text-[15px] flex items-center justify-center transition-opacity ${
+          className={`flex-1 py-4 rounded-[14px] font-bold text-[15px] flex items-center justify-center transition-opacity ${
             step === 5 ? 'bg-[#5B43EE] text-white' : 'bg-[#5B43EE] text-white'
           } disabled:opacity-50`}
         >
