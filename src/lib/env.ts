@@ -13,6 +13,7 @@ export const URL_CUSTOMER_REGISTER = `${BASE_URL}customer-auth/register`;
 // ─── Customer Portal ─────────────────────────────────────────────────────────
 export const URL_CUSTOMER_PORTAL_ORDERS = `${BASE_URL}customer-portal/orders`;
 export const URL_CUSTOMER_PORTAL_SHOP   = `${BASE_URL}customer-portal/shop`;
+export const URL_CUSTOMER_STORE_CATALOGUE = `${API_DOMAIN}/customer/store/catalogue`;
 
 // ─── Gallery (new server-side API) ────────────────────────────────────────────
 export const URL_CUSTOMER_GALLERY         = `${BASE_URL}customer-portal/gallery`;

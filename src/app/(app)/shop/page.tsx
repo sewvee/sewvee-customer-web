@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
-import { URL_CUSTOMER_PORTAL_SHOP, URL_CUSTOMER_PORTAL_ORDERS, BASE_URL } from '@/lib/env';
+import { URL_CUSTOMER_PORTAL_SHOP, URL_CUSTOMER_PORTAL_ORDERS, BASE_URL, URL_CUSTOMER_STORE_CATALOGUE } from '@/lib/env';
 import { ShoppingBag, MapPin, Store, ChevronDown, X, Plus, Minus, Trash2 } from 'lucide-react';
 import type { Product, Boutique } from '@/types';
 import { Button } from '@/components/ui/Button';
@@ -28,6 +28,7 @@ export default function ShopPage() {
   const [selectedBoutique, setSelectedBoutique] = useState<Boutique | null>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [shopMode, setShopMode] = useState<'DIRECT' | 'BOUTIQUE'>('DIRECT');
   
   const [isBoutiqueModalOpen, setBoutiqueModalOpen] = useState(false);
   
@@ -63,28 +64,45 @@ export default function ShopPage() {
   }, [orders, selectedBoutique]);
 
   useEffect(() => {
-    if (selectedBoutique) {
+    if (shopMode === 'DIRECT') {
+      fetchProducts();
+    } else if (selectedBoutique) {
       fetchProducts(selectedBoutique.id);
     }
-  }, [selectedBoutique]);
+  }, [shopMode, selectedBoutique]);
 
-  const fetchProducts = async (companyId: string) => {
+  const fetchProducts = async (companyId?: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`${URL_CUSTOMER_PORTAL_SHOP}?companyId=${companyId}`);
+      let url = '';
+      if (shopMode === 'DIRECT') {
+        url = URL_CUSTOMER_STORE_CATALOGUE;
+      } else {
+        if (!companyId) {
+          setProducts([]);
+          setLoading(false);
+          return;
+        }
+        url = `${URL_CUSTOMER_PORTAL_SHOP}?companyId=${companyId}`;
+      }
+      
+      const res = await fetch(url);
       const json = await res.json();
       if (json.success) {
-        const mapped = (json.data ?? []).map((p: any) => ({
+        const data = shopMode === 'DIRECT' ? json.products : json.data;
+        const mapped = (data ?? []).map((p: any) => ({
           ...p,
           id: p.id,
           name: p.name,
-          category: p.readymade_category?.name || 'Uncategorized',
+          category: p.readymade_category?.name || p.category?.name || 'Uncategorized',
           price: p.selling_price || 0,
           image: formatImageUrl(p.image_url),
           description: p.description || 'No description available',
           stock: Number(p.current_stock || 0)
         }));
         setProducts(mapped);
+      } else {
+        setProducts([]);
       }
     } catch {
       showToast('Failed to load products', 'error');
@@ -120,7 +138,8 @@ export default function ShopPage() {
   };
 
   const handlePlaceOrder = async () => {
-    if (cart.length === 0 || !selectedBoutique || !user || !token) return;
+    if (cart.length === 0 || !user || !token) return;
+    if (shopMode === 'BOUTIQUE' && !selectedBoutique) return;
     if (deliveryMethod === 'COURIER' && !shippingAddress.trim()) {
       showToast('Please enter a shipping address', 'error');
       return;
@@ -140,7 +159,8 @@ export default function ShopPage() {
           customer_id: (user as any).customer_id || user.id,
           customer_mobile: user.mobile,
           customer_name: user.name || 'App Customer',
-          company_id: selectedBoutique.id,
+          company_id: shopMode === 'BOUTIQUE' ? selectedBoutique?.id : undefined,
+          is_sewvee_direct: shopMode === 'DIRECT',
           order_type: 'SALE_ORDER',
           order_date: new Date().toISOString(),
           final_amount: total,
@@ -184,34 +204,57 @@ export default function ShopPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20 relative">
       {/* Header */}
-      <div className="bg-white px-4 py-3 sticky top-0 z-10 border-b border-gray-100 flex items-center justify-between">
-        <button
-          onClick={() => setBoutiqueModalOpen(true)}
-          className="flex items-center gap-2 max-w-[80%]"
-        >
-          <div className="bg-indigo-50 p-2 rounded-full">
-            <Store className="w-5 h-5 text-[#5B43EE]" />
-          </div>
-          <div className="text-left flex-1 min-w-0">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Shopping At</p>
-            <div className="flex items-center gap-1">
-              <p className="text-sm font-bold text-gray-900 truncate">
-                {selectedBoutique?.boutique_name ?? 'Select Boutique'}
-              </p>
-              <ChevronDown className="w-4 h-4 text-gray-500" />
+      <div className="bg-white px-4 py-3 sticky top-0 z-10 border-b border-gray-100">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-lg font-bold text-gray-900">Shop</div>
+          
+          {/* Cart Icon in Header */}
+          <button className="relative p-2" onClick={() => setCartModalOpen(true)}>
+            <ShoppingBag className="w-6 h-6 text-gray-700" />
+            {cartCount > 0 && (
+              <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">
+                {cartCount}
+              </div>
+            )}
+          </button>
+        </div>
+
+        {/* Tab Selection */}
+        <div className="flex bg-gray-100 p-1 rounded-xl">
+          <button 
+            onClick={() => setShopMode('DIRECT')}
+            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${shopMode === 'DIRECT' ? 'bg-white text-[#5B43EE] shadow-sm' : 'text-gray-500'}`}
+          >
+            Sewvee Originals
+          </button>
+          <button 
+            onClick={() => setShopMode('BOUTIQUE')}
+            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${shopMode === 'BOUTIQUE' ? 'bg-white text-[#5B43EE] shadow-sm' : 'text-gray-500'}`}
+          >
+            My Boutiques
+          </button>
+        </div>
+
+        {/* Boutique Selector (Only shown if BOUTIQUE mode) */}
+        {shopMode === 'BOUTIQUE' && (
+          <button
+            onClick={() => setBoutiqueModalOpen(true)}
+            className="flex items-center gap-2 max-w-[100%] w-full mt-3 bg-gray-50 p-2 rounded-xl border border-gray-200"
+          >
+            <div className="bg-indigo-50 p-2 rounded-full">
+              <Store className="w-5 h-5 text-[#5B43EE]" />
             </div>
-          </div>
-        </button>
-        
-        {/* Cart Icon in Header */}
-        <button className="relative p-2" onClick={() => setCartModalOpen(true)}>
-          <ShoppingBag className="w-6 h-6 text-gray-700" />
-          {cartCount > 0 && (
-            <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">
-              {cartCount}
+            <div className="text-left flex-1 min-w-0">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Shopping At</p>
+              <div className="flex items-center gap-1">
+                <p className="text-sm font-bold text-gray-900 truncate">
+                  {selectedBoutique?.name ?? 'Select Boutique'}
+                </p>
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              </div>
             </div>
-          )}
-        </button>
+          </button>
+        )}
       </div>
 
       <div className="p-4">
