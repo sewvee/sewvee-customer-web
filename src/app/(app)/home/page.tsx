@@ -38,7 +38,7 @@ export default function HomePage() {
   }, [user?.mobile, fetchOrders, fetchBoutiques]);
 
   useEffect(() => {
-    api.get('marketing/banners?platform=WEB')
+    api.get('marketing/banners?platform=WEB&target_app=CUSTOMER_APP')
       .then(res => {
         const data = res.data;
         if (data.banners) setBanners(data.banners);
