@@ -180,7 +180,7 @@ export default function HomePage() {
                 <Link key={item.id} href="/shop" className="snap-start shrink-0 w-[140px] bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden shadow-sm block">
                   <div className="h-[140px] bg-gray-100 relative">
                     {item.image_url ? (
-                      <img src={formatImageUrl(item.image_url) || ''} alt={item.name} className="w-full h-full object-cover" />
+                      <img src={formatImageUrl(item.image_url.split(',')[0]) || ''} alt={item.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center"><ShoppingBag className="w-8 h-8 text-gray-300" /></div>
                     )}
