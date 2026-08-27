@@ -1,11 +1,12 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Camera, ShoppingBag, User } from 'lucide-react';
+import { LayoutGrid, ClipboardList, ShoppingBag, User, MessageCircle } from 'lucide-react';
 
 const TABS = [
   { href: '/home', label: 'Home', Icon: LayoutGrid },
-  { href: '/gallery', label: 'Designs', Icon: Camera },
+  { href: '/orders', label: 'Orders', Icon: ClipboardList },
+  { href: '/chat', label: 'Chat', Icon: MessageCircle },
   { href: '/shop', label: 'Shop', Icon: ShoppingBag },
   { href: '/profile', label: 'Profile', Icon: User },
 ];

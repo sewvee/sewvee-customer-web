@@ -196,7 +196,7 @@ export default function ShopPage() {
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Shopping At</p>
             <div className="flex items-center gap-1">
               <p className="text-sm font-bold text-gray-900 truncate">
-                {selectedBoutique?.name ?? 'Select Boutique'}
+                {selectedBoutique?.boutique_name ?? 'Select Boutique'}
               </p>
               <ChevronDown className="w-4 h-4 text-gray-500" />
             </div>

@@ -8,6 +8,7 @@ import { ShoppingBag, MessageCircle, Store, ChevronDown, Bell, Scissors, Camera,
 import Link from 'next/link';
 import { BoutiqueDrawer } from '@/components/home/BoutiqueDrawer';
 import { BASE_URL, URL_CUSTOMER_PORTAL_SHOP } from '@/lib/env';
+import api from '@/lib/api';
 
 const formatImageUrl = (urlStr: string) => {
   if (!urlStr) return null;
@@ -32,9 +33,9 @@ export default function HomePage() {
   }, [user?.mobile, fetchOrders, fetchBoutiques]);
 
   useEffect(() => {
-    fetch(`${BASE_URL}marketing/banners?platform=WEB`)
-      .then(res => res.json())
-      .then(data => {
+    api.get('marketing/banners?platform=WEB')
+      .then(res => {
+        const data = res.data;
         if (data.banners) setBanners(data.banners);
         else if (Array.isArray(data)) setBanners(data);
       })

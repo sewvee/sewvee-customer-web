@@ -32,7 +32,8 @@ export const useBoutiquesStore = create<BoutiquesState>()(
         try {
           const res = await api.get('customer-portal/boutiques');
           const data = res.data?.data || res.data;
-          set({ boutiques: Array.isArray(data) ? data : [], loading: false });
+          const mapped = Array.isArray(data) ? data.map((b: any) => ({ ...b, boutique_name: b.boutique_name || b.name })) : [];
+          set({ boutiques: mapped, loading: false });
         } catch (err: any) {
           set({ loading: false, error: err.message || 'Failed to fetch boutiques' });
         }
