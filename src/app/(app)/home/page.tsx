@@ -125,20 +125,30 @@ function StripBanners({ strips }: { strips: any[] }) {
 function InlineBanners({ banners }: { banners: any[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Duplicate banners to create infinite loop illusion
+  const displayBanners = [...banners, ...banners, ...banners, ...banners];
+
   useEffect(() => {
     if (!scrollRef.current || banners.length <= 1) return;
+    
     const interval = setInterval(() => {
       if (scrollRef.current) {
         const el = scrollRef.current;
-        const maxScroll = el.scrollWidth - el.clientWidth;
-        // If we are near the end, loop back to start
-        if (el.scrollLeft >= maxScroll - 10) {
-          el.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-          // Scroll exactly one banner width + gap (16px)
-          const scrollDistance = el.children[0] ? (el.children[0] as HTMLElement).offsetWidth + 16 : el.clientWidth;
-          el.scrollBy({ left: scrollDistance, behavior: 'smooth' });
+        const bannerElement = el.children[0] as HTMLElement;
+        const scrollDistance = bannerElement ? bannerElement.offsetWidth + 16 : el.clientWidth;
+        
+        // The width of one complete set of original banners
+        const singleSetWidth = scrollDistance * banners.length;
+        
+        // If we've scrolled past the first set, jump back silently
+        if (el.scrollLeft >= singleSetWidth) {
+          el.scrollLeft = el.scrollLeft - singleSetWidth;
+          // Force reflow
+          void el.offsetHeight;
         }
+
+        // Now do the smooth scroll for the next slide
+        el.scrollTo({ left: el.scrollLeft + scrollDistance, behavior: 'smooth' });
       }
     }, 3000);
     return () => clearInterval(interval);
@@ -148,8 +158,9 @@ function InlineBanners({ banners }: { banners: any[] }) {
 
   return (
     <div className="mt-4 px-5 mb-4">
-      <div ref={scrollRef} className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar scroll-smooth">
-        {banners.map((banner, idx) => {
+      {/* Removed scroll-smooth class so JS can perform instant jumps */}
+      <div ref={scrollRef} className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar">
+        {displayBanners.map((banner, idx) => {
           const imgUrl = banner.image_url || banner.mobile_image_url;
           return (
             <div 
