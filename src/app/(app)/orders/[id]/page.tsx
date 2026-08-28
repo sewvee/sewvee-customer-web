@@ -4,12 +4,13 @@ import { useOrdersStore } from '@/store/ordersStore';
 import { useAuthStore } from '@/store/authStore';
 import { ArrowLeft, ShoppingBag, Shirt, Calendar, Scissors, Image as ImageIcon, Download, Camera, Palette, X, AlertCircle, Check } from 'lucide-react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { URL_ORDER_INVOICE_DOWNLOAD, URL_CUSTOMER_PORTAL_ORDERS, URL_UPLOAD } from '@/lib/env';
 import { CollageMaker } from '@/components/CollageMaker';
 
 export default function OrderDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
   const { orders } = useOrdersStore();
   const { user } = useAuthStore();
@@ -93,9 +94,9 @@ export default function OrderDetailPage() {
       {/* Navbar */}
       <div className="flex flex-col pt-4 border-b border-gray-100 bg-white shrink-0">
           <div className="flex items-center px-4 mb-4">
-            <Link href="/home" className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full">
+            <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full">
               <ArrowLeft className="w-5 h-5 text-[#0F172A]" />
-            </Link>
+            </button>
             <div className="flex-1 pl-4">
               <h1 className="text-[18px] font-bold text-[#0F172A] font-inter">
                 {displayId}

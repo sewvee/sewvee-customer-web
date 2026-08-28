@@ -291,9 +291,9 @@ export default function ChatDetailPage() {
                       </div>
                     )}
                     {msg.message && (
-                      <p className={`text-[14px] leading-relaxed ${isCustomer ? 'text-white' : 'text-[#334155]'}`}>
+                      <div className={`text-[14px] leading-relaxed ${isCustomer ? 'text-white' : 'text-[#334155]'}`}>
                         {renderMessageContent(msg.message, isCustomer)}
-                      </p>
+                      </div>
                     )}
                     <div className={`text-[10px] mt-1 text-right ${isCustomer ? 'text-indigo-200' : 'text-gray-400'}`}>
                       {formatTime(msg.created_at)}

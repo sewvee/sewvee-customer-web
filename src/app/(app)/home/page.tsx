@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
 import { useBoutiquesStore } from '@/store/boutiquesStore';
@@ -121,6 +121,55 @@ function StripBanners({ strips }: { strips: any[] }) {
           </div>
   );
 }
+
+function InlineBanners({ banners }: { banners: any[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!scrollRef.current || banners.length <= 1) return;
+    const interval = setInterval(() => {
+      if (scrollRef.current) {
+        const el = scrollRef.current;
+        const maxScroll = el.scrollWidth - el.clientWidth;
+        // If we are near the end, loop back to start
+        if (el.scrollLeft >= maxScroll - 10) {
+          el.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          // Scroll exactly one banner width + gap (16px)
+          const scrollDistance = el.children[0] ? (el.children[0] as HTMLElement).offsetWidth + 16 : el.clientWidth;
+          el.scrollBy({ left: scrollDistance, behavior: 'smooth' });
+        }
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [banners.length]);
+
+  if (banners.length === 0) return null;
+
+  return (
+    <div className="mt-4 px-5 mb-4">
+      <div ref={scrollRef} className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar scroll-smooth">
+        {banners.map((banner, idx) => {
+          const imgUrl = banner.image_url || banner.mobile_image_url;
+          return (
+            <div 
+              key={idx} 
+              className="snap-center shrink-0 w-[90%] md:w-[400px] h-[160px] rounded-[16px] overflow-hidden bg-gray-200 relative border border-gray-200 shadow-sm cursor-pointer" 
+              onClick={() => banner.cta_action_value && window.open(banner.cta_action_value, '_blank')}
+            >
+              <SafeImage 
+                src={formatImageUrl(imgUrl) || imgUrl} 
+                alt={banner.title || 'Banner'} 
+                className="w-full h-full object-cover" 
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const user = useAuthStore(s => s.user);
   const token = useAuthStore(s => s.token);
@@ -236,24 +285,7 @@ export default function HomePage() {
         <StripBanners strips={banners.filter(b => b.type === "STRIP")} />
 
         {/* INLINE BANNERS */}
-        {banners.filter(b => b.type === "INLINE").length > 0 && (
-          <div className="mt-4 px-5">
-            <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-2">
-              {banners.filter(b => b.type === "INLINE").map((banner, idx) => {
-                const imgUrl = banner.image_url || banner.mobile_image_url;
-                return (
-                  <div key={idx} className="snap-center shrink-0 w-[90%] md:w-[400px] h-[160px] rounded-[16px] overflow-hidden bg-gray-200 relative border border-gray-200 shadow-sm cursor-pointer" onClick={() => banner.cta_action_value && window.open(banner.cta_action_value, '_blank')}>
-                    <SafeImage 
-                      src={formatImageUrl(imgUrl) || imgUrl} 
-                      alt={banner.title || 'Banner'} 
-                      className="w-full h-full object-cover" 
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        <InlineBanners banners={banners.filter(b => b.type === "INLINE")} />
 
         {/* QUICK ACTIONS */}
         <div className="px-5 mt-6">
@@ -289,7 +321,7 @@ export default function HomePage() {
                 View All <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
             </div>
-            <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-2">
+            <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar">
               {featuredShop.map(item => (
                 <button key={item.id} onClick={() => setSelectedProduct(item)} className="snap-start shrink-0 w-[140px] bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden shadow-sm text-left block">
                   <div className="h-[140px] bg-gray-100 relative">
