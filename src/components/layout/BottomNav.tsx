@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useChatStore } from '@/store/chatStore';
 import { useAuthStore } from '@/store/authStore';
+import { useShopStore } from '@/store/shopStore';
 import { useEffect } from 'react';
 import { LayoutGrid, ClipboardList, ShoppingBag, User, MessageCircle } from 'lucide-react';
 
@@ -18,6 +19,8 @@ export function BottomNav() {
   const pathname = usePathname();
   const user = useAuthStore(s => s.user);
   const { unreadCount, fetchThreads } = useChatStore();
+  const cart = useShopStore(s => s.cart);
+  const cartCount = cart.reduce((acc, item) => acc + (item.quantity || 1), 0);
   
   useEffect(() => {
     if (user?.mobile) {
@@ -49,6 +52,11 @@ export function BottomNav() {
                   {href === '/chat' && unreadCount > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 bg-[#EF4444] text-white text-[9px] font-bold h-4 min-w-[16px] px-1 flex items-center justify-center rounded-full border border-white">
                       {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                  {href === '/shop' && cartCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-[#EF4444] text-white text-[9px] font-bold h-4 min-w-[16px] px-1 flex items-center justify-center rounded-full border border-white">
+                      {cartCount > 99 ? '99+' : cartCount}
                     </span>
                   )}
                 </div>
