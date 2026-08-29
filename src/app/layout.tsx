@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { ToastContainer } from '@/components/ui/Toast';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
   title: 'Sewvee Customer',
@@ -34,7 +34,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body className={`${inter.className} bg-[#F8FAFC] text-gray-900 antialiased`}>
+      <body className={`${inter.variable} ${inter.className} bg-[#F8FAFC] text-gray-900 antialiased`}>
         {children}
         <ToastContainer />
       </body>
