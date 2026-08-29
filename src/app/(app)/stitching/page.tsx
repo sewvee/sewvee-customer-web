@@ -10,7 +10,7 @@ import { URL_ORDERS, URL_CUSTOMER_PORTAL_ORDERS, URL_UPLOAD } from '@/lib/env';
 const API_DOMAIN = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.sewvee.com';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useToast } from '@/hooks/useToast';
-import { CollageMaker } from '@/components/CollageMaker';
+import CollageMaker from '@/components/CollageMaker';
 
 export default function StitchingPage() {
   const router = useRouter();
@@ -940,8 +940,8 @@ export default function StitchingPage() {
       <CollageMaker
         open={collageOpen}
         onClose={() => setCollageOpen(false)}
-        onSave={async (dataUrl: string) => {
-          setCollageDataUrl(dataUrl);
+        onSave={(url: string) => {
+          setCollageDataUrl(url);
           setCollageOpen(false);
         }}
       />

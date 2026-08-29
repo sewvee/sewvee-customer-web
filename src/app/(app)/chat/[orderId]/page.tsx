@@ -6,7 +6,9 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
+import { URL_UPLOAD } from '@/lib/env';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import CollageMaker from '@/components/CollageMaker';
 
 interface ChatMessage {
   id: number;
@@ -23,13 +25,15 @@ interface ChatMessage {
 
 
 function renderMessageContent(msgText: string, isCustomer: boolean) {
+
+
   if (msgText && msgText.startsWith("Category:")) {
     try {
       const lines = msgText.split("\n");
       const category = lines.find(l => l.startsWith("Category:"))?.replace("Category:", "").trim() || "";
       const description = lines.find(l => l.startsWith("Description:"))?.replace("Description:", "").trim() || "";
       const measurement = lines.find(l => l.startsWith("Measurement:"))?.replace("Measurement:", "").trim() || "";
-      const delivery = lines.find(l => l.startsWith("Delivery Date:"))?.replace("Delivery Date:", "").trim() || "";
+      const delivery = lines.find(l => l.startsWith("Delivery Date:"))?.replace("Delivery Date:", "").trim() || lines.find(l => l.startsWith("Expected Date:"))?.replace("Expected Date:", "").trim() || "";
 
       return (
         <div className="flex flex-col gap-2 mt-1 mb-1 w-full min-w-[200px]">
@@ -38,12 +42,12 @@ function renderMessageContent(msgText: string, isCustomer: boolean) {
             {description && <div className={`leading-snug italic mb-2 ${isCustomer ? 'text-indigo-100' : 'text-slate-700'}`}>"{description}"</div>}
             <div className={`flex flex-col gap-1 text-[12.5px] border-t pt-1.5 ${isCustomer ? 'text-indigo-50 border-white/20' : 'text-slate-600 border-[#5B43EE]/10'}`}>
               <div className="flex justify-between gap-4">
-                <span className="font-semibold">Measurements:</span>
-                <span className="text-right">{measurement}</span>
+                <span className="font-semibold shrink-0">Measurements:</span>
+                <span className="text-right whitespace-pre-wrap">{measurement}</span>
               </div>
-              <div className="flex justify-between gap-4">
-                <span className="font-semibold">Expected By:</span>
-                <span className="text-right">{delivery}</span>
+              <div className="flex justify-between gap-4 mt-2">
+                <span className="font-semibold shrink-0">Expected By:</span>
+                <span className="text-right whitespace-pre-wrap">{delivery}</span>
               </div>
             </div>
           </div>
@@ -79,6 +83,7 @@ export default function ChatDetailPage() {
   const [loading, setLoading] = useState(true);
   
   const [inputText, setInputText] = useState('');
+  const [collageMakerOutfitId, setCollageMakerOutfitId] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
   const [selectedMessageForOptions, setSelectedMessageForOptions] = useState<any>(null);
   
@@ -191,8 +196,15 @@ export default function ChatDetailPage() {
   
   const handleDownloadInvoice = async (url: string) => {
     try {
+      // If the backend returned the boutique's invoice URL, rewrite it to the customer portal URL
+      let fetchUrl = url;
+      if (fetchUrl.includes('/mobile/orders/') && fetchUrl.includes('/invoice')) {
+        // Strip the pdf suffix and query params since the customer portal endpoint is just /orders/:id/invoice
+        fetchUrl = fetchUrl.replace('/mobile/orders/', '/mobile/customer-portal/orders/').split('/pdf')[0].split('?')[0];
+      }
+
       const token = localStorage.getItem('sewvee_customer_token');
-      const res = await fetch(url, {
+      const res = await fetch(fetchUrl, {
         headers: {
           Authorization: token?.startsWith('Bearer ') ? token : `Bearer ${token}`
         }
@@ -219,8 +231,8 @@ export default function ChatDetailPage() {
   let displayId = order ? (order.order_number || order.billNo || order.id) : orderId;
   let targetOrderId = orderId;
   
-  if (order?.order_notes?.startsWith('CONVERTED_TO_')) {
-    const parts = order.order_notes.split('_');
+  if ((order as any)?.order_notes?.startsWith('CONVERTED_TO_')) {
+    const parts = ((order as any)?.order_notes || '').split('_');
     if (parts.length >= 3) {
       const convertedId = parts[2];
       targetOrderId = convertedId;
@@ -371,7 +383,7 @@ export default function ChatDetailPage() {
                         if (isAudio) {
                           return (
                             <div className="mb-2">
-                              <audio controls src={url} className="w-full h-9 rounded-lg" />
+                              <audio controls src={url} className="w-full min-w-[240px] h-9 rounded-lg" />
                             </div>
                           );
                         }
@@ -409,7 +421,24 @@ export default function ChatDetailPage() {
                           </button>
                         );
                       })()}
-                    {msg.message && (
+                    {msg.message && msg.message.includes('[ACTION_REQUIRED: PHOTO_REQUEST]') ? (
+                      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 my-2 text-center shadow-sm w-full">
+                        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <ImageIcon className="w-5 h-5 text-indigo-600" />
+                        </div>
+                        <h4 className="font-bold text-indigo-900 text-[15px] mb-1">Action Required</h4>
+                        <p className="text-indigo-800 text-[13.5px] leading-snug mb-4">
+                          Boutique owner requested photos to be sent.
+                        </p>
+                        <button 
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCollageMakerOutfitId(msg.order_outfit_id); }}
+                          className="w-full bg-[#5B43EE] hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition active:scale-[0.98] flex items-center justify-center gap-2"
+                        >
+                          <ImageIcon className="w-5 h-5" />
+                          Upload Photos
+                        </button>
+                      </div>
+                    ) : msg.message && (
                       <div className={`text-[14px] leading-relaxed ${isCustomer ? 'text-white' : 'text-[#334155]'}`}>
                         {renderMessageContent(msg.message, isCustomer)}
                       </div>
@@ -494,6 +523,34 @@ export default function ChatDetailPage() {
           </div>
         </div>
       </BottomSheet>
+    
+      <CollageMaker 
+        open={!!collageMakerOutfitId} 
+        onClose={() => setCollageMakerOutfitId(null)}
+        outfitId={collageMakerOutfitId || undefined}
+        onSave={async (url: string) => {
+        const blob = await (await fetch(url)).blob();
+          const formData = new FormData();
+          formData.append('file', blob, 'collage.jpg');
+          formData.append('key_name', 'chat_attachments');
+          try {
+            const uploadRes = await api.post(URL_UPLOAD, formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            const url = uploadRes.data?.url || uploadRes.data?.data?.url || uploadRes.data?.fileUrl || uploadRes.data?.data?.full_url || '';
+            if (url) {
+              await api.post(`/customer-portal/orders/${orderId}/outfits/${collageMakerOutfitId}/requests`, {
+                message: 'Uploaded Photos',
+                attachment_url: url
+              });
+              window.location.reload();
+            }
+          } catch (e) {
+            console.error('Failed to upload collage', e);
+          }
+        }}
+      />
     </div>
   );
+  
 }

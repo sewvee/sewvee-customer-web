@@ -7,7 +7,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useToast } from '@/hooks/useToast';
 import type { GalleryFolder } from '@/types';
 
-import { CollageMaker } from '@/components/CollageMaker';
+import CollageMaker from '@/components/CollageMaker';
 
 export default function GalleryPage() {
   const { folders, loading, uploading, fetchFolders, createFolder, deleteFolder, uploadImage, addImageToFolder, deleteImage } = useGalleryStore();
@@ -106,7 +106,7 @@ export default function GalleryPage() {
           )}
         </div>
         
-        <CollageMaker open={isCollageOpen} onClose={() => setCollageOpen(false)} />
+        <CollageMaker open={isCollageOpen} onClose={() => setCollageOpen(false)} onSave={async (url: string) => { setCollageOpen(false); }} />
       </div>
     );
   }
@@ -159,7 +159,7 @@ export default function GalleryPage() {
           <Button fullWidth onClick={handleCreateFolder}>Create Folder</Button>
         </div>
       </BottomSheet>
-      <CollageMaker open={isCollageOpen} onClose={() => setCollageOpen(false)} />
+      <CollageMaker open={isCollageOpen} onClose={() => setCollageOpen(false)} onSave={async (url: string) => { setCollageOpen(false); }} />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { ArrowLeft, ShoppingBag, Shirt, Calendar, Scissors, Image as ImageIcon, 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { URL_ORDER_INVOICE_DOWNLOAD, URL_CUSTOMER_PORTAL_ORDERS, URL_UPLOAD } from '@/lib/env';
-import { CollageMaker } from '@/components/CollageMaker';
+import CollageMaker from '@/components/CollageMaker';
 
 export default function OrderDetailPage() {
   const getImageUrl = (url: string) => {
@@ -39,6 +39,8 @@ export default function OrderDetailPage() {
   const [collageOpen, setCollageOpen] = useState(false);
   const [activeOutfitForCollage, setActiveOutfitForCollage] = useState<any | null>(null);
   const [confirmDrawerVisible, setConfirmDrawerVisible] = useState(false);
+  const [cancelOutfitDrawerId, setCancelOutfitDrawerId] = useState<string | null>(null);
+  const [cancelEntireDrawerVisible, setCancelEntireDrawerVisible] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [selectedOutfitForConfirm, setSelectedOutfitForConfirm] = useState<any | null>(null);
   const [outfitRequests, setOutfitRequests] = useState<any[]>([]);
@@ -79,7 +81,7 @@ export default function OrderDetailPage() {
 
   const handleCancelEntireOrder = async () => {
     if (!order || cancellingEntire) return;
-    if (!window.confirm('Are you sure you want to cancel this entire pre-order request?')) return;
+    setCancelEntireDrawerVisible(false);
     setCancellingEntire(true);
     try {
       const res = await fetch(`${URL_CUSTOMER_PORTAL_ORDERS}/${order.id}/status`, {
@@ -99,7 +101,7 @@ export default function OrderDetailPage() {
 
   const handleCancelOutfit = async (outfitId: string) => {
     if (!order || cancellingOutfitId) return;
-    if (!window.confirm('Are you sure you want to cancel this outfit?')) return;
+    setCancelOutfitDrawerId(null);
     setCancellingOutfitId(outfitId);
     try {
       const res = await fetch(`${URL_CUSTOMER_PORTAL_ORDERS}/${order.id}/outfits/${outfitId}/status`, {
@@ -219,7 +221,7 @@ export default function OrderDetailPage() {
                 <h1 className="text-[18px] font-bold text-[#0F172A] font-inter">
                   {displayId}
                 </h1>
-                {(order?.status?.id === 4 || order?.status?.name === 'CANCELLED') && (
+                {(String(order?.status).toUpperCase() === 'CANCELLED' || (order?.status as any)?.id === 4 || (order?.status as any)?.name === 'CANCELLED') && (
                   <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded-md text-[10px] font-bold tracking-widest uppercase">
                     Cancelled
                   </span>
@@ -420,6 +422,9 @@ export default function OrderDetailPage() {
                   const category = localConfig?.category || extractField('Category') || activeOutfit.name?.replace('Stitching Request - ', '') || '';
                   let description = localConfig?.description || extractField('Description') || '';
                   if (!description && rawNotes && !rawNotes.includes('Category:')) description = rawNotes;
+                  if (description) {
+                    description = description.replace(/\[CUSTOMER_CANCELLED\]/g, '').trim();
+                  }
                   const measurement = localConfig?.measurement_option || extractField('Measurement') || activeOutfit.measurement_option || '';
                   const delivDate = localConfig?.delivery_date || localRichData.delivery_date || extractField('Expected Date') || activeOutfit.deliveryDate || (order as any).deliveryDate || '';
 
@@ -440,9 +445,9 @@ export default function OrderDetailPage() {
                           <Shirt className="w-3.5 h-3.5 text-[#5B43EE] mr-2" />
                           <h2 className="text-[12px] font-bold text-[#0F172A] tracking-wide uppercase">Request Summary</h2>
                         </div>
-                        {!(order?.status?.id === 4 || order?.status?.name === 'CANCELLED') && (
+                        {!(String(order?.status).toUpperCase() === 'CANCELLED' || (order?.status as any)?.id === 4 || (order?.status as any)?.name === 'CANCELLED') && (
                           <button
-                            onClick={() => handleCancelOutfit(activeOutfit.id || activeOutfit.order_outfit_id)}
+                            onClick={() => setCancelOutfitDrawerId(activeOutfit.id || activeOutfit.order_outfit_id)}
                             disabled={cancellingOutfitId === (activeOutfit.id || activeOutfit.order_outfit_id)}
                             className="text-[10px] font-bold text-red-500 uppercase tracking-wide px-2.5 py-1.5 bg-red-50 rounded-md border border-red-100 active:bg-red-200 transition-colors disabled:opacity-50"
                           >
@@ -669,16 +674,72 @@ export default function OrderDetailPage() {
                       </p>
                     )}
                     
-                    {/* COLLAGE MAKER UPLOAD BUTTON */}
-                    <button
-                      onClick={(e) => { e.preventDefault(); setActiveOutfitForCollage(activeOutfit); setCollageOpen(true); }}
-                      className={`mt-3 w-full py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-opacity hover:opacity-90 ${(activeOutfit.requestedPhotosFromClient || activeOutfit.requested_photos_from_client) ? 'bg-[#DC2626] animate-pulse' : 'bg-[#5B43EE]'}`}
-                    >
-                      <Camera size={16} className="text-white" />
-                      <span className="text-[14px] font-bold text-white font-inter tracking-wide">
-                        {(activeOutfit.requestedPhotosFromClient || activeOutfit.requested_photos_from_client) ? 'Upload Photo Needed' : 'Upload Reference Photo'}
-                      </span>
-                    </button>
+                    {/* PENDING PHOTOS (UNCONFIRMED) */}
+                    {(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).length > 0 && (
+                      <div className="w-full mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-[11px] font-bold text-amber-700 font-inter uppercase flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Pending Uploads
+                          </p>
+                          <span className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                            {(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).length} to confirm
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          {(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).map((pUrl: string, idx: number) => (
+                            <div key={idx} className="relative rounded-lg overflow-hidden border border-amber-300 shadow-sm group">
+                              <img src={getImageUrl(pUrl)} className="w-full h-28 object-cover" />
+                              <button
+                                onClick={() => {
+                                  setPendingPhotos(prev => {
+                                    const next = { ...prev };
+                                    const oId = activeOutfit.id || activeOutfit.order_outfit_id;
+                                    if (next[oId]) {
+                                      next[oId] = next[oId].filter((_, i) => i !== idx);
+                                      if (next[oId].length === 0) delete next[oId];
+                                    }
+                                    return next;
+                                  });
+                                }}
+                                className="absolute top-1.5 right-1.5 bg-white/90 p-1.5 rounded-full text-red-500 shadow-sm active:scale-95"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => { e.preventDefault(); setActiveOutfitForCollage(activeOutfit); setCollageOpen(true); }}
+                            className="flex-1 py-2.5 bg-white text-amber-600 border border-amber-300 text-[13px] font-bold rounded-lg shadow-sm"
+                          >
+                            Add More
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedOutfitForConfirm(activeOutfit);
+                              setConfirmDrawerVisible(true);
+                            }}
+                            className="flex-[2] py-2.5 bg-amber-500 text-white text-[13px] font-bold rounded-lg shadow-sm"
+                          >
+                            Confirm Photos
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* COLLAGE MAKER UPLOAD BUTTON (only if NO pending photos) */}
+                    {!(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).length && (
+                      <button
+                        onClick={(e) => { e.preventDefault(); setActiveOutfitForCollage(activeOutfit); setCollageOpen(true); }}
+                        className={`mt-3 w-full py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-opacity hover:opacity-90 ${(activeOutfit.requestedPhotosFromClient || activeOutfit.requested_photos_from_client) ? 'bg-[#DC2626] animate-pulse' : 'bg-[#5B43EE]'}`}
+                      >
+                        <Camera size={16} className="text-white" />
+                        <span className="text-[14px] font-bold text-white font-inter tracking-wide">
+                          {(activeOutfit.requestedPhotosFromClient || activeOutfit.requested_photos_from_client) ? 'Upload Photo Needed' : 'Upload Reference Photo'}
+                        </span>
+                      </button>
+                    )}
                   </div>
                 </div>
                 )}
@@ -709,7 +770,7 @@ export default function OrderDetailPage() {
                   return (
                     <div className="bg-[#FEF3C7] rounded-[12px] p-4 mb-4 border border-[#FDE68A]">
                       <p className="text-[11px] font-bold text-[#B45309] font-inter mb-1">INSTRUCTIONS</p>
-                      <p className="text-[13px] font-medium text-[#92400E] font-inter leading-relaxed whitespace-pre-wrap">{activeOutfit.notes}</p>
+                      <p className="text-[13px] font-medium text-[#92400E] font-inter leading-relaxed whitespace-pre-wrap">{String(activeOutfit.notes || '').replace(/\[CUSTOMER_CANCELLED\]/g, '').trim()}</p>
                     </div>
                   );
                 })()}
@@ -773,10 +834,10 @@ export default function OrderDetailPage() {
             )}
             
             {/* ENTIRE ORDER ACTIONS */}
-            {order.order_type === 'STITCHING_REQUEST' && !(order?.status?.id === 4 || order?.status?.name === 'CANCELLED') && (
+            {order.order_type === 'STITCHING_REQUEST' && !(String(order?.status).toUpperCase() === 'CANCELLED' || (order?.status as any)?.id === 4 || (order?.status as any)?.name === 'CANCELLED') && (
               <div className="mt-4 mb-8">
                 <button
-                  onClick={handleCancelEntireOrder}
+                  onClick={() => setCancelEntireDrawerVisible(true)}
                   disabled={cancellingEntire}
                   className="w-full py-4 rounded-xl border border-red-200 text-red-500 font-bold text-[14px] bg-red-50 active:bg-red-100 flex justify-center items-center gap-2 disabled:opacity-50"
                 >
@@ -797,13 +858,12 @@ export default function OrderDetailPage() {
     <CollageMaker
       open={collageOpen}
       onClose={() => { setCollageOpen(false); setActiveOutfitForCollage(null); }}
-      onSave={async (dataUrl: string) => {
-        if (!activeOutfitForCollage || !dataUrl) return;
+      onSave={async (url: string) => {
+        const blob = await (await fetch(url)).blob();
+        if (!activeOutfitForCollage || !blob) return;
         const token = localStorage.getItem('sewvee_customer_token') ?? '';
         const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
         try {
-          const res = await fetch(dataUrl);
-          const blob = await res.blob();
           const file = new File([blob], `collage_${Date.now()}.jpg`, { type: 'image/jpeg' });
           const formData = new FormData();
           formData.append('file', file);
@@ -825,16 +885,13 @@ export default function OrderDetailPage() {
           const outfitId = activeOutfitForCollage.id || activeOutfitForCollage.order_outfit_id;
           console.log('[DEBUG] Saving to outfitId:', outfitId, 'activeOutfitForCollage:', activeOutfitForCollage);
           
-          // Auto submit to backend
-          await fetch(`${URL_CUSTOMER_PORTAL_ORDERS}/${order.id.toString()}/outfits/${outfitId}/requests`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: formattedToken },
-            body: JSON.stringify({ attachment_url: fileUrl, message: 'Uploaded reference photo via Customer Web', phone: user?.mobile ?? '' })
+          // Save to pendingPhotos instead of auto-submitting
+          setPendingPhotos(prev => {
+            const next = { ...prev };
+            if (!next[outfitId]) next[outfitId] = [];
+            next[outfitId].push(fileUrl);
+            return next;
           });
-          
-          if (user?.mobile) {
-            fetchOrders(user.mobile);
-          }
 
           setCollageOpen(false);
           setActiveOutfitForCollage(null);
@@ -844,6 +901,82 @@ export default function OrderDetailPage() {
         }
       }}
     />
+
+
+
+      {cancelEntireDrawerVisible && (
+        <div className="fixed inset-0 z-[60] flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/45 transition-opacity" onClick={() => setCancelEntireDrawerVisible(false)} />
+          <div className="relative bg-white rounded-t-3xl p-6 pb-10 animate-in slide-in-from-bottom-full duration-300">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 rounded-full bg-[#FEF2F2] flex items-center justify-center mr-3">
+                <AlertCircle size={20} color="#EF4444" />
+              </div>
+              <h3 className="text-[17px] font-bold text-[#1E293B] flex-1">Cancel Entire Request</h3>
+              <button onClick={() => setCancelEntireDrawerVisible(false)} className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p className="text-[15px] text-[#475569] mb-6 leading-relaxed font-inter">
+              Are you sure you want to cancel this entire order request? All outfits within this request will be cancelled. This action cannot be undone.
+            </p>
+            
+            <div className="flex gap-3">
+              <button 
+                className="flex-1 py-3.5 rounded-xl bg-[#F1F5F9] text-[#64748B] font-bold text-[15px] transition-colors hover:bg-gray-200"
+                onClick={() => setCancelEntireDrawerVisible(false)}
+              >
+                Keep Request
+              </button>
+              <button 
+                className="flex-1 py-3.5 rounded-xl bg-[#EF4444] text-white font-bold text-[15px] transition-opacity hover:opacity-90 flex justify-center items-center gap-2"
+                onClick={handleCancelEntireOrder}
+                disabled={cancellingEntire}
+              >
+                {cancellingEntire ? 'Cancelling...' : 'Cancel Request'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelOutfitDrawerId && (
+        <div className="fixed inset-0 z-[60] flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/45 transition-opacity" onClick={() => setCancelOutfitDrawerId(null)} />
+          <div className="relative bg-white rounded-t-3xl p-6 pb-10 animate-in slide-in-from-bottom-full duration-300">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 rounded-full bg-[#FEF2F2] flex items-center justify-center mr-3">
+                <AlertCircle size={20} color="#EF4444" />
+              </div>
+              <h3 className="text-[17px] font-bold text-[#1E293B] flex-1">Cancel Outfit</h3>
+              <button onClick={() => setCancelOutfitDrawerId(null)} className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p className="text-[15px] text-[#475569] mb-6 leading-relaxed font-inter">
+              Are you sure you want to cancel this outfit? This action cannot be undone and the boutique will be notified.
+            </p>
+            
+            <div className="flex gap-3">
+              <button 
+                className="flex-1 py-3.5 rounded-xl bg-[#F1F5F9] text-[#64748B] font-bold text-[15px] transition-colors hover:bg-gray-200"
+                onClick={() => setCancelOutfitDrawerId(null)}
+              >
+                Keep Outfit
+              </button>
+              <button 
+                className="flex-1 py-3.5 rounded-xl bg-[#EF4444] text-white font-bold text-[15px] transition-opacity hover:opacity-90 flex justify-center items-center gap-2"
+                onClick={() => handleCancelOutfit(cancelOutfitDrawerId)}
+                disabled={cancellingOutfitId !== null}
+              >
+                {cancellingOutfitId ? 'Cancelling...' : 'Cancel Outfit'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmDrawerVisible && selectedOutfitForConfirm && (
         <div className="fixed inset-0 z-[60] flex flex-col justify-end">

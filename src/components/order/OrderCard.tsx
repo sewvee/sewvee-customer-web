@@ -52,8 +52,13 @@ export function OrderCard({ order, href, hasPendingPhoto = false, onCancel }: Or
         <div className="flex justify-between items-center mb-3">
           {order.boutiqueName ? (
             <div className="flex flex-1 items-center overflow-hidden">
-              <p className="text-[15px] font-bold text-[#1E293B] truncate font-inter">
+              <p className="text-[15px] font-bold text-[#1E293B] truncate font-inter flex items-center gap-2">
                 {order.boutiqueName}
+                {(String(order?.status).toUpperCase() === 'CANCELLED' || (order?.status as any)?.id === 4 || (order?.status as any)?.name === 'CANCELLED') && (
+                  <span className="px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-[9px] font-bold tracking-widest uppercase flex-shrink-0">
+                    Cancelled
+                  </span>
+                )}
               </p>
               {order.has_unread_messages && (
                 <div className="ml-2 bg-red-50 px-1.5 py-0.5 rounded flex items-center shrink-0 border border-red-100">
@@ -112,7 +117,9 @@ export function OrderCard({ order, href, hasPendingPhoto = false, onCancel }: Or
               {order.order_type === 'STITCHING_REQUEST' ? 'Delivery' : 'Due'}
             </p>
             <p className={`text-[13px] font-bold font-inter ${order.order_type === 'STITCHING_REQUEST' ? 'text-[#1E293B]' : 'text-[#EF4444]'}`}>
-              {order.order_type === 'STITCHING_REQUEST' ? (deliveryDate ? formatDate(deliveryDate) : 'TBD') : `₹${due}`}
+              {(String(order?.status).toUpperCase() === 'CANCELLED' || (order?.status as any)?.id === 4 || (order?.status as any)?.name === 'CANCELLED') 
+                ? <span className="text-red-500">—</span>
+                : (order.order_type === 'STITCHING_REQUEST' ? (deliveryDate ? formatDate(deliveryDate) : 'TBD') : `₹${due}`)}
             </p>
           </div>
         </div>
