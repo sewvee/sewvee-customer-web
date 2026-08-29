@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef, useCallback, useEffect, ChangeEvent } from 'react';
-import { X, ImagePlus, Download, Trash2, Type, RotateCcw, PenTool, Check, Minus, Plus, Crop } from 'lucide-react';
+import { X, ImagePlus, Download, Trash2, Type, RotateCcw, PenTool, Check, Crop } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import Cropper from 'react-easy-crop';
 import { getCroppedImg } from '@/lib/cropImage';
@@ -22,7 +22,8 @@ const LAYOUTS = [
   { id: '4_grid',       slots: 4, label: '4 Grid' },
 ];
 
-const MARKER_COLORS = ['#EF4444','#F97316','#EAB308','#22C55E','#3B82F6','#8B5CF6','#FFFFFF','#000000'];
+const MARKER_COLORS = ['#EF4444','#3B82F6','#22C55E','#000000'];
+const STANDARD_MARKER_WIDTH = 4;
 const TEXT_COLORS   = ['#000000','#EF4444','#3B82F6','#22C55E','#F97316','#8B5CF6','#FFFFFF'];
 
 function scalePathD(d: string, scale: number) {
@@ -95,7 +96,8 @@ export function CollageMaker({ open, onClose, onSave }: CollageMakerProps) {
   const [paths, setPaths]           = useState<DrawPath[]>([]);
   const [currentPath, setCurrentPath] = useState<DrawPath|null>(null);
   const [markerColor, setMarkerColor] = useState('#EF4444');
-  const [markerWidth, setMarkerWidth] = useState(4);
+  const markerColorRef = useRef(markerColor);
+  markerColorRef.current = markerColor;
   const [textItems, setTextItems]   = useState<TextItem[]>([]);
   const [selectedTextId, setSelectedTextId] = useState<string|null>(null);
   const [addingText, setAddingText] = useState(false);
@@ -116,10 +118,7 @@ export function CollageMaker({ open, onClose, onSave }: CollageMakerProps) {
   const svgRef     = useRef<SVGSVGElement>(null);
   const fileRefs   = useRef<Record<number, HTMLInputElement|null>>({});
   const isDrawing  = useRef(false);
-  const markerColorRef = useRef(markerColor);
-  markerColorRef.current = markerColor;
-  const markerWidthRef = useRef(markerWidth);
-  markerWidthRef.current = markerWidth;
+
 
   useEffect(() => {
     if (open) {
@@ -156,7 +155,7 @@ export function CollageMaker({ open, onClose, onSave }: CollageMakerProps) {
     if (activeTool === 'marker') {
       isDrawing.current = true;
       const {x,y} = getSvgPoint(e);
-      setCurrentPath({ d:`M ${x} ${y}`, color:markerColorRef.current, width:markerWidthRef.current });
+      setCurrentPath({ d:`M ${x} ${y}`, color:markerColorRef.current, width:STANDARD_MARKER_WIDTH });
       (e.target as SVGElement).setPointerCapture(e.pointerId);
     } else if (activeTool === 'text') {
       const rect = svgRef.current!.getBoundingClientRect();
@@ -282,7 +281,9 @@ export function CollageMaker({ open, onClose, onSave }: CollageMakerProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
         <span className="text-[18px] font-bold text-[#0F172A]">Collage &amp; Edit</span>
-        <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100"><X size={22} /></button>
+        <button onClick={onClose} className="w-8 h-8 bg-[#0F172A] rounded-full flex items-center justify-center hover:bg-[#1E293B] transition-colors">
+          <X size={16} color="#fff" />
+        </button>
       </div>
 
       {/* Layout Pills */}
@@ -342,37 +343,25 @@ export function CollageMaker({ open, onClose, onSave }: CollageMakerProps) {
         </div>
 
         {activeTool==='marker' && (
-          <div className="px-4 pb-2 space-y-2">
-            <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+          <div className="px-4 pb-3 pt-1">
+            <div className="flex gap-3">
               {MARKER_COLORS.map(c=>(
                 <button key={c} onClick={()=>setMarkerColor(c)}
-                  className={`w-7 h-7 rounded-full shrink-0 border-2 ${markerColor===c?'border-[#5B43EE] scale-110':'border-transparent'}`}
-                  style={{backgroundColor:c,boxShadow:'0 0 0 1px rgba(0,0,0,0.1)'}}/>
+                  className={`w-8 h-8 rounded-full shrink-0 border-2 transition-transform ${markerColor===c?'border-[#5B43EE] scale-110':'border-transparent'}`}
+                  style={{backgroundColor:c,boxShadow:'0 0 0 1px rgba(0,0,0,0.15)'}}/> 
               ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[12px] text-[#64748B] font-semibold">Width</span>
-              <button onClick={()=>setMarkerWidth(w=>Math.max(1,w-1))} className="p-1 rounded bg-gray-100"><Minus size={14}/></button>
-              <span className="text-[13px] font-bold w-5 text-center">{markerWidth}</span>
-              <button onClick={()=>setMarkerWidth(w=>Math.min(20,w+1))} className="p-1 rounded bg-gray-100"><Plus size={14}/></button>
             </div>
           </div>
         )}
 
         {activeTool==='text' && (
-          <div className="px-4 pb-2 space-y-2">
-            <div className="flex gap-2 overflow-x-auto hide-scrollbar">
-              {TEXT_COLORS.map(c=>(
+          <div className="px-4 pb-3 pt-1">
+            <div className="flex gap-3 items-center">
+              {['#000000','#EF4444','#3B82F6','#FFFFFF'].map(c=>(
                 <button key={c} onClick={()=>setTextColor(c)}
-                  className={`w-7 h-7 rounded-full shrink-0 border-2 ${textColor===c?'border-[#5B43EE] scale-110':'border-transparent'}`}
+                  className={`w-8 h-8 rounded-full shrink-0 border-2 transition-transform ${textColor===c?'border-[#5B43EE] scale-110':'border-transparent'}`}
                   style={{backgroundColor:c,boxShadow:'0 0 0 1px rgba(0,0,0,0.15)'}}/>
               ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[12px] text-[#64748B] font-semibold">Size</span>
-              <button onClick={()=>setFontSize(f=>Math.max(10,f-2))} className="p-1 rounded bg-gray-100"><Minus size={14}/></button>
-              <span className="text-[13px] font-bold w-5 text-center">{fontSize}</span>
-              <button onClick={()=>setFontSize(f=>Math.min(60,f+2))} className="p-1 rounded bg-gray-100"><Plus size={14}/></button>
               <span className="text-[12px] text-[#94A3B8] ml-2">Tap canvas to place</span>
             </div>
           </div>

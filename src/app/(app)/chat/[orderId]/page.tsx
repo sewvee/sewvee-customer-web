@@ -285,11 +285,31 @@ export default function ChatDetailPage() {
                       ? 'bg-[#5B43EE] text-white rounded-tr-sm' 
                       : 'bg-white border border-gray-100 text-[#0F172A] rounded-tl-sm'
                   }`}>
-                    {msg.attachment_url && (
-                      <div className="mb-2 rounded-xl overflow-hidden bg-black/5">
-                        <img src={msg.attachment_url} alt="Attachment" className="w-full h-auto object-cover max-h-[200px]" />
-                      </div>
-                    )}
+                    {msg.attachment_url && (() => {
+                        const url = msg.attachment_url as string;
+                        const isAudio = url.match(/\.(webm|mp3|m4a|wav|ogg|aac)$/i) || url.includes('voice_note') || url.includes('order_audios');
+                        const isImage = !isAudio && url.match(/\.(jpg|jpeg|png|gif|webp|avif|bmp|svg)$/i);
+                        if (isAudio) {
+                          return (
+                            <div className="mb-2">
+                              <audio controls src={url} className="w-full h-9 rounded-lg" />
+                            </div>
+                          );
+                        }
+                        if (isImage) {
+                          return (
+                            <div className="mb-2 rounded-xl overflow-hidden bg-black/5">
+                              <img src={url} alt="Attachment" className="w-full h-auto object-cover max-h-[200px]" />
+                            </div>
+                          );
+                        }
+                        // Document / other file
+                        return (
+                          <a href={url} target="_blank" rel="noopener noreferrer" className="mb-2 flex items-center gap-2 bg-white/20 rounded-lg px-3 py-2 text-[13px] font-semibold underline">
+                            📎 Attachment
+                          </a>
+                        );
+                      })()}
                     {msg.message && (
                       <div className={`text-[14px] leading-relaxed ${isCustomer ? 'text-white' : 'text-[#334155]'}`}>
                         {renderMessageContent(msg.message, isCustomer)}

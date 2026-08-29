@@ -306,19 +306,22 @@ export default function HomePage() {
               <div className="w-10 h-10 bg-[#EEF2FF] rounded-full flex items-center justify-center mb-2">
                 <Scissors className="w-5 h-5 text-[#4F46E5]" />
               </div>
-              <span className="text-[12px] font-bold text-[#0F172A] text-center leading-tight">Online<br/>Stitching</span>
+              <span className="text-[13px] font-bold text-[#0F172A]">Stitching</span>
+              <span className="text-[10px] font-medium text-slate-500 mt-0.5 tracking-tight">Online stitching</span>
             </Link>
             <Link href="/shop" className="flex flex-col items-center p-4 bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm">
               <div className="w-10 h-10 bg-[#FEF3C7] rounded-full flex items-center justify-center mb-2">
                 <ShoppingBag className="w-5 h-5 text-[#D97706]" />
               </div>
-              <span className="text-[12px] font-bold text-[#0F172A] text-center leading-tight">Shop<br/>Ready-to-Wear</span>
+              <span className="text-[13px] font-bold text-[#0F172A]">Readymade</span>
+              <span className="text-[10px] font-medium text-slate-500 mt-0.5 tracking-tight">Shop readymades</span>
             </Link>
             <Link href="/gallery" className="flex flex-col items-center p-4 bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm">
               <div className="w-10 h-10 bg-[#ECFDF5] rounded-full flex items-center justify-center mb-2">
                 <Camera className="w-5 h-5 text-[#059669]" />
               </div>
-              <span className="text-[12px] font-bold text-[#0F172A] text-center leading-tight">My<br/>Designs</span>
+              <span className="text-[13px] font-bold text-[#0F172A]">My Designs</span>
+              <span className="text-[10px] font-medium text-slate-500 mt-0.5 tracking-tight">View my designs</span>
             </Link>
           </div>
         </div>

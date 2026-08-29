@@ -2,13 +2,19 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useOrdersStore } from '@/store/ordersStore';
 import { useAuthStore } from '@/store/authStore';
-import { ArrowLeft, ShoppingBag, Shirt, Calendar, Scissors, Image as ImageIcon, Download, Camera, Palette, X, AlertCircle, Check } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Shirt, Calendar, Scissors, Image as ImageIcon, Download, Camera, Palette, X, AlertCircle, Check, Mic } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { URL_ORDER_INVOICE_DOWNLOAD, URL_CUSTOMER_PORTAL_ORDERS, URL_UPLOAD } from '@/lib/env';
 import { CollageMaker } from '@/components/CollageMaker';
 
 export default function OrderDetailPage() {
+  const getImageUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+    return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3021'}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -25,6 +31,8 @@ export default function OrderDetailPage() {
   const [confirmDrawerVisible, setConfirmDrawerVisible] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [selectedOutfitForConfirm, setSelectedOutfitForConfirm] = useState<any | null>(null);
+  const [outfitRequests, setOutfitRequests] = useState<any[]>([]);
+  const { token } = useAuthStore();
 
   const handleConfirmOutfitPhotos = async () => {
     if (!selectedOutfitForConfirm || !order) return;
@@ -51,12 +59,102 @@ export default function OrderDetailPage() {
   
   const [pendingPhotos, setPendingPhotos] = useState<Record<string, string[]>>({});
   const [submittingOutfitId, setSubmittingOutfitId] = useState<string | null>(null);
+  const [cancellingEntire, setCancellingEntire] = useState(false);
+  const [cancellingOutfitId, setCancellingOutfitId] = useState<string | null>(null);
+
+  const getFormattedToken = () => {
+    const t = token || localStorage.getItem('sewvee_customer_token') || '';
+    return t.startsWith('Bearer ') ? t : `Bearer ${t}`;
+  };
+
+  const handleCancelEntireOrder = async () => {
+    if (!order || cancellingEntire) return;
+    if (!window.confirm('Are you sure you want to cancel this entire pre-order request?')) return;
+    setCancellingEntire(true);
+    try {
+      const res = await fetch(`${URL_CUSTOMER_PORTAL_ORDERS}/${order.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: getFormattedToken() },
+        body: JSON.stringify({ status_id: 4 }), // 4 = Cancelled
+      });
+      if (res.ok) {
+        await fetchOrders(user?.mobile ?? '');
+        router.back();
+      } else {
+        alert('Failed to cancel. Please try again.');
+      }
+    } catch { alert('Network error. Please try again.'); }
+    finally { setCancellingEntire(false); }
+  };
+
+  const handleCancelOutfit = async (outfitId: string) => {
+    if (!order || cancellingOutfitId) return;
+    if (!window.confirm('Are you sure you want to cancel this outfit?')) return;
+    setCancellingOutfitId(outfitId);
+    try {
+      const res = await fetch(`${URL_CUSTOMER_PORTAL_ORDERS}/${order.id}/outfits/${outfitId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: getFormattedToken() },
+        body: JSON.stringify({ status_id: 4 }),
+      });
+      if (res.ok) {
+        await fetchOrders(user?.mobile ?? '');
+      } else {
+        alert('Failed to cancel outfit. Please try again.');
+      }
+    } catch { alert('Network error. Please try again.'); }
+    finally { setCancellingOutfitId(null); }
+  };
+
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+
+  const handleDownloadInvoice = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!order?.id || downloadingInvoice) return;
+    setDownloadingInvoice(true);
+    try {
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://api.sewvee.com'}/mobile/customer-portal/orders/${order.id}/invoice`;
+      const res = await fetch(url, {
+        headers: { Authorization: getFormattedToken() }
+      });
+      if (!res.ok) throw new Error('Failed to download invoice');
+      const blob = await res.blob();
+      const objUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objUrl;
+      a.download = `Invoice_${order.billNo || order.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(objUrl);
+    } catch (err) {
+      alert('Could not download invoice. Please try again.');
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  };
 
   useEffect(() => {
     if (user?.mobile && orders.length === 0) {
       fetchOrders(user.mobile);
     }
   }, [user, orders.length, fetchOrders]);
+
+  // Fetch outfit requests (customer + boutique messages/photos/voice notes)
+  useEffect(() => {
+    const fetchOutfitRequests = async () => {
+      if (!order?.id) return;
+      const formattedToken = token ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`) : '';
+      try {
+        const res = await fetch(`${URL_CUSTOMER_PORTAL_ORDERS}/${order.id}/requests`, {
+          headers: { Authorization: formattedToken },
+        });
+        const json = await res.json();
+        if (json.success) setOutfitRequests(json.data || []);
+      } catch (e) { /* suppress */ }
+    };
+    fetchOutfitRequests();
+  }, [order?.id, token]);
 
   if (!order) {
     return (
@@ -88,6 +186,15 @@ export default function OrderDetailPage() {
   
   const activeOutfit = outfits[activeOutfitIndex] || outfits[0];
 
+  // Read rich data saved at submission time from localStorage (backend drops this data)
+  let localRichData: { delivery_date?: string; outfit_configs?: any[] } = {};
+  if (typeof window !== 'undefined' && order.id) {
+    try {
+      const stored = localStorage.getItem(`sewvee_order_${order.id}`);
+      if (stored) localRichData = JSON.parse(stored);
+    } catch(e) {}
+  }
+
   return (
     <>
     <div className="h-[100dvh] flex flex-col bg-white overflow-hidden">
@@ -106,10 +213,12 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Tabs */}
+          {order.order_type !== 'STITCHING_REQUEST' && (
           <div className="flex w-full -mb-[1px]">
             <button onClick={() => setActiveTab('details')} className={`flex-1 pb-3 text-[14px] font-bold outline-none border-b-2 ${activeTab === 'details' ? 'text-[#5B43EE] border-[#5B43EE]' : 'text-[#64748B] border-transparent'}`}>Details</button>
             <button onClick={() => setActiveTab('payments')} className={`flex-1 pb-3 text-[14px] font-bold outline-none border-b-2 ${activeTab === 'payments' ? 'text-[#5B43EE] border-[#5B43EE]' : 'text-[#64748B] border-transparent'}`}>Payments</button>
           </div>
+          )}
         </div>
 
       {/* Content */}
@@ -211,15 +320,18 @@ export default function OrderDetailPage() {
               </div>
             </div>
 
-            <a
-              href={order.id ? `${process.env.NEXT_PUBLIC_API_URL || 'https://api.sewvee.com'}/mobile/customer-portal/orders/${order.id}/invoice` : '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 bg-white text-[#0F172A] font-bold py-3.5 px-4 rounded-[12px] border border-[#E2E8F0] shadow-sm outline-none"
+            <button
+              onClick={handleDownloadInvoice}
+              disabled={downloadingInvoice}
+              className="flex items-center justify-center gap-2 bg-white text-[#0F172A] font-bold py-3.5 px-4 rounded-[12px] border border-[#E2E8F0] shadow-sm outline-none w-full mt-4 disabled:opacity-50"
             >
-              <Download className="w-4 h-4" />
-              <span className="text-[14px]">Download Invoice</span>
-            </a>
+              {downloadingInvoice ? (
+                <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              <span className="text-[14px]">{downloadingInvoice ? 'Downloading...' : 'Download Invoice'}</span>
+            </button>
 
             {(((order as any).payments && (order as any).payments.length > 0)) && (
               <div className="mt-6 space-y-4">
@@ -275,11 +387,127 @@ export default function OrderDetailPage() {
 
             {activeOutfit && (
               <div className="mb-6">
+
                 {/* OUTFIT DETAILS */}
+                {order.order_type === 'STITCHING_REQUEST' ? (() => {
+                  // PRIMARY: data saved in localStorage at submission time
+                  const localConfig = (localRichData.outfit_configs && localRichData.outfit_configs[activeOutfitIndex]) || null;
+
+                  // FALLBACK: parse from customer_notes text blob (for orders created before this fix)
+                  const rawNotes = activeOutfit.customer_notes || activeOutfit.notes || '';
+                  const extractField = (label: string) => {
+                    const match = rawNotes.match(new RegExp(`${label}:\\s*(.+)`, 'i'));
+                    return match ? match[1].trim() : '';
+                  };
+
+                  const category = localConfig?.category || extractField('Category') || activeOutfit.name?.replace('Stitching Request - ', '') || '';
+                  let description = localConfig?.description || extractField('Description') || '';
+                  if (!description && rawNotes && !rawNotes.includes('Category:')) description = rawNotes;
+                  const measurement = localConfig?.measurement_option || extractField('Measurement') || activeOutfit.measurement_option || '';
+                  const delivDate = localConfig?.delivery_date || localRichData.delivery_date || extractField('Expected Date') || activeOutfit.deliveryDate || (order as any).deliveryDate || '';
+
+                  // Photos: from localStorage OR from outfit.photos (attached via /requests)
+                  const localPhotoUrls: string[] = localConfig?.photo_urls || [];
+                  const outfitPhotoUrls: string[] = (activeOutfit.photos || []).map((p: any) =>
+                    typeof p === 'string' ? p : (p.file_url || p.url || p.attachment_url || p.image || '')
+                  ).filter(Boolean);
+                  const allUrls: string[] = [...new Set([...localPhotoUrls, ...outfitPhotoUrls])];
+                  
+                  const audioUrls = allUrls.filter((url: string) => url.match(/\.(webm|mp3|m4a|wav|ogg|aac)$/i) || url.includes('voice_note'));
+                  const imageUrls = allUrls.filter((url: string) => !audioUrls.includes(url));
+
+                  return (
+                    <div className="bg-white rounded-[16px] overflow-hidden mb-6 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                      <div className="flex items-center justify-between px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                        <div className="flex items-center">
+                          <Shirt className="w-3.5 h-3.5 text-[#5B43EE] mr-2" />
+                          <h2 className="text-[12px] font-bold text-[#0F172A] tracking-wide uppercase">Request Summary</h2>
+                        </div>
+                        <button
+                          onClick={() => handleCancelOutfit(activeOutfit.id || activeOutfit.order_outfit_id)}
+                          disabled={cancellingOutfitId === (activeOutfit.id || activeOutfit.order_outfit_id)}
+                          className="text-[10px] font-bold text-red-500 uppercase tracking-wide px-2.5 py-1.5 bg-red-50 rounded-md border border-red-100 active:bg-red-200 transition-colors disabled:opacity-50"
+                        >
+                          {cancellingOutfitId === (activeOutfit.id || activeOutfit.order_outfit_id) ? '...' : 'Cancel Outfit'}
+                        </button>
+                      </div>
+                      
+                      <div className="divide-y divide-[#F1F5F9]">
+                        {/* Category */}
+                        <div className="p-4 flex flex-col gap-1">
+                          <span className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wide">Category</span>
+                          <span className="text-[14px] font-semibold text-[#0F172A]">{category || '—'}</span>
+                        </div>
+
+                        {/* Description */}
+                        {description ? (
+                          <div className="p-4 flex flex-col gap-1">
+                            <span className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wide">Description / Notes</span>
+                            <span className="text-[14px] font-medium text-[#0F172A] whitespace-pre-wrap leading-relaxed">{description}</span>
+                          </div>
+                        ) : null}
+
+                        {/* Measurement */}
+                        {measurement ? (
+                          <div className="p-4 flex flex-col gap-1">
+                            <span className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wide">Measurement</span>
+                            <span className="text-[14px] font-semibold text-[#0F172A]">{measurement}</span>
+                          </div>
+                        ) : null}
+
+                        {/* Expected Delivery */}
+                        {delivDate ? (
+                          <div className="p-4 flex flex-col gap-1">
+                            <span className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wide">Expected Delivery</span>
+                            <span className="text-[14px] font-semibold text-[#0F172A] flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-[#5B43EE]" />
+                              {new Date(delivDate).toLocaleDateString(undefined, {day:'numeric', month:'long', year:'numeric'})}
+                            </span>
+                          </div>
+                        ) : null}
+
+                        {/* Voice Notes */}
+                        {audioUrls.length > 0 && (
+                          <div className="p-4 flex flex-col gap-2">
+                            <span className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wide flex items-center gap-1.5">
+                              <Mic className="w-3.5 h-3.5 text-[#5B43EE]" /> Voice Notes
+                            </span>
+                            {audioUrls.map((url: string, i: number) => (
+                              <audio key={i} controls src={getImageUrl(url)} className="w-full h-9 rounded-lg" />
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Reference Photos */}
+                        {imageUrls.length > 0 && (
+                          <div className="p-4 flex flex-col gap-3">
+                            <span className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wide flex items-center gap-1.5">
+                              <ImageIcon className="w-3.5 h-3.5 text-[#5B43EE]" /> Reference Photos
+                            </span>
+                            <div className="grid grid-cols-2 gap-2">
+                              {imageUrls.map((url: string, i: number) => (
+                                <div key={i} className="aspect-square rounded-xl overflow-hidden border border-[#E2E8F0] bg-[#F8FAFC]">
+                                  <img src={getImageUrl(url)} alt="Reference" className="w-full h-full object-cover" />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Empty state */}
+                        {audioUrls.length === 0 && imageUrls.length === 0 && !description && !measurement && (
+                          <div className="p-4">
+                            <span className="text-[13px] text-[#94A3B8] italic">No additional details provided.</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })() : (
                 <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
                   <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
                     <Shirt className="w-3.5 h-3.5 text-[#5B43EE] mr-2" />
-                    <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide">OUTFIT DETAILS</h2>
+                    <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide uppercase">OUTFIT DETAILS</h2>
                   </div>
                   <div className="p-4 grid grid-cols-2 gap-y-4">
                     <div className="flex flex-col">
@@ -310,131 +538,186 @@ export default function OrderDetailPage() {
                     </div>
                   </div>
                 </div>
-
-                
-                {order.order_type === 'STITCHING_REQUEST' && activeOutfit.customerNotes && (
-                  <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                    <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
-                      <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide uppercase">REQUEST DETAILS</h2>
-                    </div>
-                    <div className="p-4">
-                      <p className="text-[13px] text-[#475569] whitespace-pre-line leading-relaxed font-inter">{activeOutfit.customerNotes}</p>
-                    </div>
-                  </div>
                 )}
-
+                
                 {/* STITCHING SPECIFICATIONS */}
+                {order.order_type !== 'STITCHING_REQUEST' && (
                 <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
                   <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
                     <Scissors className="w-3.5 h-3.5 text-[#5B43EE] mr-2" />
-                    <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide">STITCHING SPECIFICATIONS</h2>
+                    <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide uppercase">STITCHING SPECIFICATIONS</h2>
                   </div>
-                  <div>
-                    {activeOutfit.stitching && activeOutfit.stitching.length > 0 ? activeOutfit.stitching.map((stitch: any, sIdx: number) => (
-                      <div key={stitch.id || sIdx} className={`flex justify-between items-center px-4 py-3 border-b border-[#F1F5F9] ${sIdx === activeOutfit.stitching.length - 1 ? 'border-b-0' : ''}`}>
-                        <div className="flex-1">
-                          <p className="text-[13px] font-semibold text-[#0F172A] font-inter">{(stitch.category?.name || 'STYLE').toUpperCase()}</p>
-                        </div>
-                        <div className="flex-1 text-right">
-                          <p className="text-[13px] font-medium text-[#475569] font-inter">
-                            {[stitch.sub_category?.name, stitch.option?.name].filter(Boolean).join(' > ') || 'Custom'}
-                          </p>
-                        </div>
+                  <div className="p-4">
+                    {activeOutfit.stitchingOptions && activeOutfit.stitchingOptions.length > 0 ? (
+                      <div className="space-y-3">
+                        {activeOutfit.stitchingOptions.map((opt: any, index: number) => (
+                          <div key={index} className="flex justify-between items-center pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                            <span className="text-[13px] font-medium text-[#475569]">{opt.name}</span>
+                            <span className="text-[13px] font-bold text-[#0F172A] text-right ml-4">{opt.value}</span>
+                          </div>
+                        ))}
                       </div>
-                    )) : (
-                      <div className="flex justify-center items-center py-6">
-                        <p className="text-[13px] text-[#94A3B8] italic font-inter">No stitching specifications provided.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* DESIGN PHOTOS & SKETCHES */}
-                <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                  <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
-                    <ImageIcon className="w-3.5 h-3.5 text-[#5B43EE] mr-2" />
-                    <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide">DESIGN PHOTOS & SKETCHES</h2>
-                  </div>
-                  <div className="flex flex-wrap p-4 gap-3">
-                    {activeOutfit.photos && activeOutfit.photos.filter((p:any)=>p.category==='REFERENCE').length > 0 ? (
-                      activeOutfit.photos.filter((p:any)=>p.category==='REFERENCE').map((photo: any, pIdx: number) => (
-                        <div key={photo.id || pIdx} className="w-[80px] h-[100px] rounded-[10px] overflow-hidden bg-[#F1F5F9] border border-[#E2E8F0]">
-                          <img src={photo.file_url || photo.url} alt="Design" className="w-full h-full object-cover" />
-                        </div>
-                      ))
                     ) : (
                       <p className="text-[13px] text-[#94A3B8] italic font-inter w-full py-4 text-center">
-                        No photos uploaded by boutique.
+                        No stitching specifications provided.
                       </p>
                     )}
                   </div>
                 </div>
-
-                {/* PHOTO UPLOAD (IF REQUESTED) */}
-                {activeOutfit.requestedPhotosFromClient && (
-                  <div className="bg-orange-50 rounded-[16px] border border-orange-200 p-4 mb-4 shadow-sm">
-                    <div className="flex items-center mb-2">
-                      <Camera className="w-4 h-4 text-orange-600 mr-2" />
-                      <h3 className="text-[12px] font-bold text-orange-800 uppercase tracking-wide">REFERENCE PHOTO NEEDED</h3>
-                    </div>
-                    <p className="text-[13px] text-orange-700 font-medium mb-4 leading-relaxed">
-                      Your boutique is requesting reference design photos. Use the Collage Maker to combine multiple photos or upload a single photo.
-                    </p>
-                    
-                    {/* Show pending photos here */}
-                    {(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).length > 0 && (
-                      <div className="flex gap-3 overflow-x-auto mb-4 pb-2">
-                        {(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).map((url, idx) => (
-                          <div key={idx} className="relative w-[72px] h-[72px] shrink-0">
-                             <img src={url} alt="Pending" className="w-full h-full object-cover rounded-xl border border-gray-200" />
-                             <button 
-                               onClick={() => setPendingPhotos(prev => { const n = {...prev}; n[activeOutfit.id || activeOutfit.order_outfit_id].splice(idx,1); return n; })}
-                               className="absolute -top-2 -right-2 bg-red-500 rounded-full w-6 h-6 flex items-center justify-center border-2 border-white shadow-md">
-                               <X size={12} className="text-white" />
-                             </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => { setActiveOutfitForCollage(activeOutfit); setCollageOpen(true); }}
-                        className="flex-1 py-3 bg-[#5B43EE] rounded-xl flex items-center justify-center gap-2 shadow-sm"
-                      >
-                        <Palette size={16} className="text-white" />
-                        <span className="text-sm font-bold text-white">
-                          {(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).length > 0 ? "Add More" : "Open Collage Maker"}
-                        </span>
-                      </button>
-                      
-                      {(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).length > 0 && (
-                        <button
-                          onClick={() => {
-                          setSelectedOutfitForConfirm(activeOutfit);
-                          setAgreedToTerms(false);
-                          setConfirmDrawerVisible(true);
-                        }}
-                          className="flex-1 py-3 bg-[#10B981] rounded-xl flex items-center justify-center gap-2 shadow-sm"
-                        >
-                          {submittingOutfitId === (activeOutfit.id || activeOutfit.order_outfit_id) ? (
-                            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <span className="text-sm font-bold text-white">Confirm Photos</span>
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </div>
                 )}
+                
+                {/* CLIENT MEASUREMENTS */}
+                {order.order_type !== 'STITCHING_REQUEST' && activeOutfit.measurements && activeOutfit.measurements.length > 0 && (
+                <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                  <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                    <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide uppercase">MEASUREMENTS</h2>
+                  </div>
+                  <div className="p-4 grid grid-cols-2 gap-y-4">
+                    {activeOutfit.measurements.map((m: any, i: number) => (
+                      <div key={i} className="flex flex-col">
+                        <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wide">
+                          {(() => {
+                            const label = m.measurement_name || m.measurement?.name || m.name || m.label || m.field_name || '';
+                            if (label) return label;
+                            // Format snake_case or camelCase valid string keys as fallback
+                            const validKey = Object.keys(m).find(k => k !== 'value' && k !== 'id' && k !== 'measurement_id' && m[k] && typeof m[k] === 'string');
+                            if (validKey) return validKey.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim();
+                            return `Measurement ${m.measurement_id || m.id || i + 1}`;
+                          })()}
+                        </span>
+                        <span className="text-[14px] font-semibold text-[#0F172A] mt-1">{m.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                )}
+                
+                {/* DESIGN PHOTOS & SKETCHES */}
+                {order.order_type !== 'STITCHING_REQUEST' && (
+                <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                  <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                    <ImageIcon className="w-3.5 h-3.5 text-[#5B43EE] mr-2" />
+                    <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide uppercase">DESIGN PHOTOS & SKETCHES</h2>
+                  </div>
+                  <div className="flex flex-col p-4 gap-3">
+                    {activeOutfit.photos && activeOutfit.photos.length > 0 ? (
+                      activeOutfit.photos.map((photo: any, pIdx: number) => {
+                        const url = photo.file_url || photo.url || photo.image || photo;
+                        const isAudio = typeof url === 'string' && (url.match(/\.(webm|mp3|m4a|wav|ogg|aac)$/i) || url.includes('voice_note'));
+                        
+                        if (isAudio) {
+                          return (
+                            <div key={pIdx} className="w-full bg-[#F8FAFC] border border-[#E2E8F0] p-3 rounded-xl flex flex-col gap-2">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Mic className="w-4 h-4 text-[#5B43EE]" />
+                                <span className="text-[12px] font-bold text-[#0F172A]">Voice Note</span>
+                              </div>
+                              <audio controls src={url} className="w-full h-8" />
+                            </div>
+                          );
+                        }
 
+                        return (
+                          <div key={pIdx} className="w-full h-[200px] rounded-[10px] overflow-hidden bg-[#F1F5F9] border border-[#E2E8F0]">
+                            <img src={getImageUrl(url)} alt="Design" className="w-full h-full object-contain" />
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <p className="text-[13px] text-[#94A3B8] italic font-inter w-full py-4 text-center">
+                        No photos provided.
+                      </p>
+                    )}
+                  </div>
+                </div>
+                )}
                 {/* BOUTIQUE NOTES */}
                 {activeOutfit.notes && (
                   <div className="bg-[#FEF3C7] rounded-[12px] p-4 mb-4 border border-[#FDE68A]">
-                    <p className="text-[11px] font-bold text-[#B45309] font-inter mb-1">BOUTIQUE NOTES</p>
+                    <p className="text-[11px] font-bold text-[#B45309] font-inter mb-1">INSTRUCTIONS</p>
                     <p className="text-[13px] font-medium text-[#92400E] font-inter leading-relaxed">{activeOutfit.notes}</p>
                   </div>
                 )}
+
+                {/* CUSTOMER + BOUTIQUE REQUESTS FEED */}
+                {order.order_type !== 'STITCHING_REQUEST' && (() => {
+                  const activeOutfitId = String(activeOutfit.id || activeOutfit.order_outfit_id || '');
+                  const filteredReqs = outfitRequests.filter((r: any) => {
+                    if (!activeOutfitId) return true;
+                    return String(r.outfit_id || r.order_outfit_id || r.outfitId || '') === activeOutfitId || !r.outfit_id;
+                  });
+                  return (
+                    <>
+                      <pre className="text-[8px] p-2 bg-blue-50 mt-4">
+                        DEBUG REQUESTS: activeOutfitId={activeOutfitId} 
+                        TotalReqs={outfitRequests.length} 
+                        FilteredReqs={filteredReqs.length}
+                        {JSON.stringify(outfitRequests, null, 2)}
+                      </pre>
+                      {filteredReqs.length > 0 && (
+                        <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                          <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                            <Mic className="w-3.5 h-3.5 text-[#5B43EE] mr-2" />
+                            <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide uppercase">Notes, Photos & Voice Notes</h2>
+                          </div>
+                          <div className="flex flex-col p-4 gap-3">
+                            {filteredReqs.map((req: any, rIdx: number) => {
+                              const isCustomer = req.sender_type === 'CUSTOMER' || req.phone === user?.mobile;
+                              const url: string = req.attachment_url || req.file_url || '';
+                              const isAudio = url && (url.match(/\.(webm|mp3|m4a|wav|ogg|aac)$/i) || url.includes('voice_note') || url.includes('order_audios'));
+                              const isImage = url && !isAudio;
+
+                              return (
+                                <div key={req.id || rIdx} className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${isCustomer ? 'bg-[#EEF2FF] text-[#4F46E5]' : 'bg-[#FEF3C7] text-[#B45309]'}`}>
+                                      {isCustomer ? 'You' : 'Boutique'}
+                                    </span>
+                                    <span className="text-[9px] text-[#94A3B8]">
+                                      {new Date(req.created_at || req.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  </div>
+                                  {isAudio && (
+                                    <div className="bg-[#F8FAFC] border border-[#E2E8F0] p-3 rounded-xl">
+                                      <p className="text-[11px] font-semibold text-[#5B43EE] mb-1.5 flex items-center gap-1"><Mic className="w-3 h-3" /> Voice Note</p>
+                                      <audio controls src={getImageUrl(url)} className="w-full h-9 rounded-lg" />
+                                    </div>
+                                  )}
+                                  {isImage && (
+                                    <div className="w-full h-[180px] rounded-[10px] overflow-hidden bg-[#F1F5F9] border border-[#E2E8F0]">
+                                      <img src={getImageUrl(url)} alt="Attachment" className="w-full h-full object-cover" />
+                                    </div>
+                                  )}
+                                  {req.message && (
+                                    <p className="text-[13px] text-[#1E293B] bg-[#F8FAFC] rounded-xl px-3 py-2 border border-[#F1F5F9]">{req.message}</p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+            
+            {/* ENTIRE ORDER ACTIONS */}
+            {order.order_type === 'STITCHING_REQUEST' && (
+              <div className="mt-4 mb-8">
+                <button
+                  onClick={handleCancelEntireOrder}
+                  disabled={cancellingEntire}
+                  className="w-full py-4 rounded-xl border border-red-200 text-red-500 font-bold text-[14px] bg-red-50 active:bg-red-100 flex justify-center items-center gap-2 disabled:opacity-50"
+                >
+                  {cancellingEntire ? (
+                    <span className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <X size={18} />
+                  )}
+                  Cancel Entire Request
+                </button>
               </div>
             )}
           </>

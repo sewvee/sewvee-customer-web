@@ -29,7 +29,13 @@ export default function OrdersPage() {
   });
 
   // Separate by tabs
-  const stitchingOrders = myOrders.filter(o => o.order_type === 'TAILORING' || o.order_type === 'STITCHING_REQUEST');
+  const stitchingOrders = myOrders.filter(o => {
+    // Hide inquiries that have been converted to orders
+    if (o.order_type === 'STITCHING_REQUEST' && (o as any).order_notes?.includes('CONVERTED_TO_')) {
+      return false;
+    }
+    return o.order_type === 'TAILORING' || o.order_type === 'STITCHING_REQUEST';
+  });
   const readymadeOrders = myOrders.filter(o => o.order_type === 'SALE_ORDER');
 
   const currentList = activeTab === 'stitching' ? stitchingOrders : readymadeOrders;
@@ -85,7 +91,7 @@ export default function OrdersPage() {
             </div>
             <p className="text-[18px] font-bold text-gray-900 mb-2 font-inter">No Orders Found</p>
             <p className="text-[14px] font-medium text-gray-500 text-center font-inter">
-              You don't have any {activeTab} orders right now.
+              You don&apos;t have any {activeTab} orders right now.
             </p>
           </div>
         ) : (

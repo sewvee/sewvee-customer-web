@@ -19,7 +19,19 @@ export function OrderCard({ order, href, hasPendingPhoto = false, onCancel }: Or
   const orderLabel = order.billNo || (isSale ? `INV-${order.id}` : `ORD-${order.id}`);
   
   const outfits = order.outfits || order.items || [];
-  const deliveryDate = outfits.find((o) => o.deliveryDate)?.deliveryDate;
+  let deliveryDate = (order as any).deliveryDate || (order as any).details?.delivery_date;
+  if (!deliveryDate && outfits.length > 0) {
+    for (const o of outfits as any[]) {
+      if (o.deliveryDate) { deliveryDate = o.deliveryDate; break; }
+      
+      const rawNotes = o.customer_notes || o.notes || '';
+      const match = rawNotes.match(/Expected Date:\s*(.+)/i);
+      if (match && match[1]) {
+        deliveryDate = match[1].trim();
+        break;
+      }
+    }
+  }
   const typeLabel = isSale ? 'READY-MADE' : (order.order_type === 'STITCHING_REQUEST' ? 'PRE-ORDER' : 'STITCHING');
   
   const total = order.totalAmount || order.total || (Number(order.advance || order.paid_amount || 0) + Number(order.balance || order.balance_amount || 0));
@@ -82,18 +94,26 @@ export function OrderCard({ order, href, hasPendingPhoto = false, onCancel }: Or
 
           <div className="w-[1px] self-stretch bg-[#E2E8F0] mx-1.5" />
 
-          {/* Col 3: Total Amount */}
+          {/* Col 3: Total Amount or Outfits */}
           <div className="flex-1 flex flex-col items-center">
-            <p className="text-[10px] text-[#64748B] font-medium font-inter mb-1">Total Amount</p>
-            <p className="text-[13px] text-[#1E293B] font-bold font-inter">₹{total}</p>
+            <p className="text-[10px] text-[#64748B] font-medium font-inter mb-1">
+              {order.order_type === 'STITCHING_REQUEST' ? 'Outfits' : 'Total Amount'}
+            </p>
+            <p className="text-[13px] text-[#1E293B] font-bold font-inter">
+              {order.order_type === 'STITCHING_REQUEST' ? outfits.length : `₹${total}`}
+            </p>
           </div>
 
           <div className="w-[1px] self-stretch bg-[#E2E8F0] mx-1.5" />
 
-          {/* Col 4: Due */}
+          {/* Col 4: Due or Expected Date */}
           <div className="flex-1 flex flex-col items-end">
-            <p className="text-[10px] text-[#64748B] font-medium font-inter mb-1">Due</p>
-            <p className="text-[13px] text-[#EF4444] font-bold font-inter">₹{due}</p>
+            <p className="text-[10px] text-[#64748B] font-medium font-inter mb-1">
+              {order.order_type === 'STITCHING_REQUEST' ? 'Delivery' : 'Due'}
+            </p>
+            <p className={`text-[13px] font-bold font-inter ${order.order_type === 'STITCHING_REQUEST' ? 'text-[#1E293B]' : 'text-[#EF4444]'}`}>
+              {order.order_type === 'STITCHING_REQUEST' ? (deliveryDate ? formatDate(deliveryDate) : 'TBD') : `₹${due}`}
+            </p>
           </div>
         </div>
 
@@ -107,16 +127,21 @@ export function OrderCard({ order, href, hasPendingPhoto = false, onCancel }: Or
 
         {/* Cancel Button */}
         {onCancel && (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onCancel(e);
-            }}
-            className="mt-3.5 w-full flex items-center justify-center bg-[#FEF2F2] px-3 py-2 rounded-lg border border-[#FECACA]"
-          >
-            <span className="text-[12px] font-bold text-[#EF4444] font-inter uppercase tracking-wide">Cancel Request</span>
-          </button>
+          <div className="mt-3.5 flex items-center justify-between gap-2.5">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onCancel(e);
+              }}
+              className="flex-1 flex items-center justify-center bg-[#FEF2F2] px-3 py-2.5 rounded-lg border border-[#FECACA]"
+            >
+              <span className="text-[11px] font-bold text-[#EF4444] font-inter uppercase tracking-wide">Cancel Request</span>
+            </button>
+            <div className="flex-1 flex items-center justify-center bg-[#EEF2FF] px-3 py-2.5 rounded-lg border border-[#C7D2FE]">
+              <span className="text-[11px] font-bold text-[#4F46E5] font-inter uppercase tracking-wide">View Order</span>
+            </div>
+          </div>
         )}
     </Link>
   );
