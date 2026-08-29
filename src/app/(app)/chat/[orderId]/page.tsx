@@ -105,7 +105,7 @@ export default function ChatDetailPage() {
       const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('key_name', 'chat_attachments');
+      formData.append('key_name', 'order_photos');
       
       const uploadRes = await fetch(URL_UPLOAD, {
         method: 'POST',
@@ -113,9 +113,10 @@ export default function ChatDetailPage() {
         body: formData,
       });
       const uploadJson = await uploadRes.json();
-      if (!uploadRes.ok) throw new Error(`Upload failed`);
+      console.log('[UPLOAD] Response:', uploadRes.status, JSON.stringify(uploadJson));
+      if (!uploadRes.ok) throw new Error(`Upload failed: ${JSON.stringify(uploadJson)}`);
       
-      const fileUrl = uploadJson.file_url ?? uploadJson.data?.file_url ?? uploadJson.data?.full_url ?? uploadJson.data?.url ?? uploadJson.full_url ?? uploadJson.url ?? '';
+      const fileUrl = (uploadJson.data?.full_url || uploadJson.data?.url || uploadJson.file_url || uploadJson.data?.file_url || uploadJson.full_url || uploadJson.url || '');
       
       if (fileUrl) {
         await api.post(`/customer-portal/orders/${orderId}/outfits/${contextOutfitId}/requests`, {
@@ -128,7 +129,7 @@ export default function ChatDetailPage() {
       }
     } catch (err) {
       console.error('Failed to upload file', err);
-      alert("Failed to upload photo. Please try again.");
+      alert("Failed to upload photo. " + (err instanceof Error ? err.message : String(err)));
     } finally {
       setSending(false);
       // Reset input
@@ -657,7 +658,7 @@ export default function ChatDetailPage() {
             const uploadJson = await uploadRes.json();
             if (!uploadRes.ok) throw new Error(`Upload failed`);
             
-            const fileUrl = uploadJson.file_url ?? uploadJson.data?.file_url ?? uploadJson.data?.full_url ?? uploadJson.data?.url ?? uploadJson.full_url ?? uploadJson.url ?? '';
+            const fileUrl = (uploadJson.data?.full_url || uploadJson.data?.url || uploadJson.file_url || uploadJson.data?.file_url || uploadJson.full_url || uploadJson.url || '');
             
             if (fileUrl) {
               await api.post(`/customer-portal/orders/${orderId}/outfits/${collageMakerOutfitId}/requests`, {
