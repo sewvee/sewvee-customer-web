@@ -192,7 +192,23 @@ export default function ChatDetailPage() {
     return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
   
-  const displayId = order ? (order.order_number || order.billNo || order.id) : orderId;
+  let displayId = order ? (order.order_number || order.billNo || order.id) : orderId;
+  let targetOrderId = orderId;
+  
+  if (order?.order_notes?.startsWith('CONVERTED_TO_')) {
+    const parts = order.order_notes.split('_');
+    if (parts.length >= 3) {
+      const convertedId = parts[2];
+      targetOrderId = convertedId;
+      const convertedOrder = orders.find(o => String(o.id) === convertedId);
+      if (convertedOrder) {
+        displayId = convertedOrder.order_number || convertedOrder.billNo || convertedOrder.id;
+      } else {
+        displayId = `Converted (${convertedId})`;
+      }
+    }
+  }
+
   const headerTitle = order ? `${displayId}` : `Order #${orderId}`;
   const headerSubtitle = order?.boutiqueName || '';
   const outfits = order?.outfits || order?.items || [];
@@ -212,7 +228,7 @@ export default function ChatDetailPage() {
           {headerSubtitle && <p className="text-[12px] text-indigo-200 truncate">{headerSubtitle}</p>}
         </div>
         <Link 
-          href={`/orders/${orderId}`}
+          href={`/orders/${targetOrderId}`}
           className="ml-2 flex items-center justify-center px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-full text-[11px] font-bold text-white transition-colors whitespace-nowrap"
         >
           View Order
@@ -291,8 +307,9 @@ export default function ChatDetailPage() {
                           const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://api.sewvee.com';
                           url = `${apiBase}${url}`;
                         }
-                        const isAudio = url.match(/\.(webm|mp3|m4a|wav|ogg|aac)$/i) || url.includes('voice_note') || url.includes('order_audios');
-                        const isImage = !isAudio && url.match(/\.(jpg|jpeg|png|gif|webp|avif|bmp|svg)$/i);
+                        const cleanUrl = url.split('?')[0];
+                        const isAudio = cleanUrl.match(/\.(webm|mp3|m4a|wav|ogg|aac)$/i) || url.includes('voice_note') || url.includes('order_audios');
+                        const isImage = !isAudio && cleanUrl.match(/\.(jpg|jpeg|png|gif|webp|avif|bmp|svg)$/i);
                         if (isAudio) {
                           return (
                             <div className="mb-2">
