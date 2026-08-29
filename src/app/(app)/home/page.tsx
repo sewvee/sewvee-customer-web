@@ -125,8 +125,8 @@ function StripBanners({ strips }: { strips: any[] }) {
 function InlineBanners({ banners }: { banners: any[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Duplicate banners to create infinite loop illusion
-  const displayBanners = [...banners, ...banners, ...banners, ...banners];
+  // Duplicate banners to create infinite loop illusion, but ONLY if there's more than 1 banner
+  const displayBanners = banners.length > 1 ? [...banners, ...banners, ...banners, ...banners] : banners;
 
   useEffect(() => {
     if (!scrollRef.current || banners.length <= 1) return;
@@ -165,7 +165,9 @@ function InlineBanners({ banners }: { banners: any[] }) {
           return (
             <div 
               key={idx} 
-              className="snap-center shrink-0 w-[90%] md:w-[400px] h-[160px] rounded-[16px] overflow-hidden bg-gray-200 relative border border-gray-200 shadow-sm cursor-pointer" 
+              className={`shrink-0 h-[160px] rounded-[16px] overflow-hidden bg-gray-200 relative border border-gray-200 shadow-sm cursor-pointer ${
+                banners.length > 1 ? 'snap-center w-[90%] md:w-[400px]' : 'w-full'
+              }`}
               onClick={() => banner.cta_action_value && window.open(banner.cta_action_value, '_blank')}
             >
               <SafeImage 

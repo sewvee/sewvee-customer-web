@@ -548,12 +548,12 @@ export default function OrderDetailPage() {
                     <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide uppercase">STITCHING SPECIFICATIONS</h2>
                   </div>
                   <div className="p-4">
-                    {activeOutfit.stitchingOptions && activeOutfit.stitchingOptions.length > 0 ? (
+                    {activeOutfit.stitching && activeOutfit.stitching.length > 0 ? (
                       <div className="space-y-3">
-                        {activeOutfit.stitchingOptions.map((opt: any, index: number) => (
+                        {activeOutfit.stitching.map((opt: any, index: number) => (
                           <div key={index} className="flex justify-between items-center pb-3 border-b border-gray-50 last:border-0 last:pb-0">
-                            <span className="text-[13px] font-medium text-[#475569]">{opt.name}</span>
-                            <span className="text-[13px] font-bold text-[#0F172A] text-right ml-4">{opt.value}</span>
+                            <span className="text-[13px] font-medium text-[#475569]">{opt.category?.name || 'Option'}</span>
+                            <span className="text-[13px] font-bold text-[#0F172A] text-right ml-4">{opt.option?.name || '-'}</span>
                           </div>
                         ))}
                       </div>
@@ -585,7 +585,7 @@ export default function OrderDetailPage() {
                             return `Measurement ${m.measurement_id || m.id || i + 1}`;
                           })()}
                         </span>
-                        <span className="text-[14px] font-semibold text-[#0F172A] mt-1">{m.value}</span>
+                        <span className="text-[14px] font-semibold text-[#0F172A] mt-1">{typeof m.value === "object" && m.value !== null ? (m.value.value || JSON.stringify(m.value)) : m.value}</span>
                       </div>
                     ))}
                   </div>
@@ -628,6 +628,17 @@ export default function OrderDetailPage() {
                         No photos provided.
                       </p>
                     )}
+                    
+                    {/* COLLAGE MAKER UPLOAD BUTTON */}
+                    <button
+                      onClick={(e) => { e.preventDefault(); setActiveOutfitForCollage(activeOutfit); setCollageOpen(true); }}
+                      className={`mt-3 w-full py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-opacity hover:opacity-90 ${(activeOutfit.requestedPhotosFromClient || activeOutfit.requested_photos_from_client) ? 'bg-[#DC2626] animate-pulse' : 'bg-[#5B43EE]'}`}
+                    >
+                      <Camera size={16} className="text-white" />
+                      <span className="text-[14px] font-bold text-white font-inter tracking-wide">
+                        {(activeOutfit.requestedPhotosFromClient || activeOutfit.requested_photos_from_client) ? 'Upload Photo Needed' : 'Upload Reference Photo'}
+                      </span>
+                    </button>
                   </div>
                 </div>
                 )}
@@ -648,12 +659,6 @@ export default function OrderDetailPage() {
                   });
                   return (
                     <>
-                      <pre className="text-[8px] p-2 bg-blue-50 mt-4">
-                        DEBUG REQUESTS: activeOutfitId={activeOutfitId} 
-                        TotalReqs={outfitRequests.length} 
-                        FilteredReqs={filteredReqs.length}
-                        {JSON.stringify(outfitRequests, null, 2)}
-                      </pre>
                       {filteredReqs.length > 0 && (
                         <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
                           <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
