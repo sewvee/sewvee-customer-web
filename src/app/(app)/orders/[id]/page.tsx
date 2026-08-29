@@ -6,7 +6,7 @@ import { ArrowLeft, ShoppingBag, Shirt, Calendar, Scissors, Image as ImageIcon, 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { URL_ORDER_INVOICE_DOWNLOAD, URL_CUSTOMER_PORTAL_ORDERS, URL_UPLOAD } from '@/lib/env';
-import CollageMaker from '@/components/CollageMaker';
+import { CollageMaker } from '@/components/CollageMaker';
 
 export default function OrderDetailPage() {
   const getImageUrl = (url: string) => {

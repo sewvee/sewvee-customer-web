@@ -7,7 +7,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useToast } from '@/hooks/useToast';
 import type { GalleryFolder } from '@/types';
 
-import CollageMaker from '@/components/CollageMaker';
+import { CollageMaker } from '@/components/CollageMaker';
 
 export default function GalleryPage() {
   const { folders, loading, uploading, fetchFolders, createFolder, deleteFolder, uploadImage, addImageToFolder, deleteImage } = useGalleryStore();
