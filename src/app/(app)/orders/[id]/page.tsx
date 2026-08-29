@@ -12,7 +12,17 @@ export default function OrderDetailPage() {
   const getImageUrl = (url: string) => {
     if (!url) return '';
     if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
-    return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3021'}${url.startsWith('/') ? '' : '/'}${url}`;
+    
+    // Ensure the path has a leading slash
+    let path = url.startsWith('/') ? url : `/${url}`;
+    
+    // If the path doesn't start with /uploads/ and the backend is serving from /uploads
+    // (e.g. order_photos/file.png), prepend /uploads
+    if (!path.startsWith('/uploads/')) {
+       path = `/uploads${path}`;
+    }
+    
+    return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3021'}${path}`;
   };
 
   const params = useParams();
@@ -635,7 +645,7 @@ export default function OrderDetailPage() {
                                 <Mic className="w-4 h-4 text-[#5B43EE]" />
                                 <span className="text-[12px] font-bold text-[#0F172A]">Voice Note</span>
                               </div>
-                              <audio controls src={url} className="w-full h-8" />
+                              <audio controls src={getImageUrl(url)} className="w-full h-8" />
                             </div>
                           );
                         }

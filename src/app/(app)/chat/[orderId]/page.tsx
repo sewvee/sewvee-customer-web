@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { ChevronLeft, Send, ShoppingBag, Image as ImageIcon, Loader2, MessageCircle, MoreVertical, Mic, Edit2, Trash2 } from 'lucide-react';
+import { ChevronLeft, Send, ShoppingBag, Image as ImageIcon, Loader2, MessageCircle, MoreVertical, Mic, Edit2, Trash2, Download, Receipt } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -188,6 +188,30 @@ export default function ChatDetailPage() {
     }
   };
 
+  
+  const handleDownloadInvoice = async (url: string) => {
+    try {
+      const token = localStorage.getItem('sewvee_customer_token');
+      const res = await fetch(url, {
+        headers: {
+          Authorization: token?.startsWith('Bearer ') ? token : `Bearer ${token}`
+        }
+      });
+      if (!res.ok) throw new Error("Failed to download");
+      const blob = await res.blob();
+      const objUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objUrl;
+      a.download = `Invoice_${displayId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(objUrl);
+    } catch (e) {
+      console.error("Failed to download invoice", e);
+    }
+  };
+
   const formatTime = (iso: string) => {
     return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -296,6 +320,40 @@ export default function ChatDetailPage() {
                 
                 <div className={`flex ${isCustomer ? 'justify-end' : 'justify-start'} mb-2 group w-full`}>
                   <div className={`flex items-center gap-2 max-w-[85%] ${isCustomer ? 'flex-row-reverse' : 'flex-row'}`}>
+                    {msg.message && msg.message.includes('invoice/receipt here for your reference') && msg.attachment_url ? (
+                      <div className="bg-white border border-indigo-100 rounded-xl overflow-hidden shadow-sm mb-1 w-full max-w-[280px]">
+                        <div className="bg-indigo-50/50 p-3 border-b border-indigo-50 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                              <Receipt className="w-4 h-4 text-indigo-600" />
+                            </div>
+                            <div>
+                              <h3 className="text-[13px] font-bold text-indigo-900 leading-tight">Order Invoice</h3>
+                              <p className="text-[10px] text-indigo-500 font-medium">#{displayId}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-white text-[13px] text-slate-600 leading-relaxed border-b border-slate-50">
+                          {renderMessageContent(msg.message, isCustomer)}
+                        </div>
+                        <div className="p-2.5 bg-slate-50 flex justify-end">
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              let url = msg.attachment_url as string;
+                              if (url.startsWith('/')) {
+                                const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://api.sewvee.com';
+                                url = `${apiBase}${url}`;
+                              }
+                              handleDownloadInvoice(url);
+                            }}
+                            className="flex items-center gap-2 bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-[12px] font-bold shadow-sm hover:bg-indigo-700 transition-colors"
+                          >
+                            <Download className="w-3.5 h-3.5" /> Download PDF
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
                     <div className={`max-w-full rounded-2xl px-4 py-2.5 shadow-sm ${
                     isCustomer 
                       ? 'bg-[#5B43EE] text-white rounded-tr-sm' 
@@ -329,11 +387,9 @@ export default function ChatDetailPage() {
                         const isInvoice = url.toLowerCase().includes('invoice');
                         
                         return (
-                          <a 
-                            href={url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className={`mb-3 mt-1 flex items-center justify-center gap-2.5 rounded-xl px-4 py-3.5 text-[14px] font-bold shadow-sm transition-all active:scale-[0.98] ${
+                          <button 
+                            onClick={(e) => { e.preventDefault(); handleDownloadInvoice(url); }}
+                            className={`w-full mb-3 mt-1 flex items-center justify-center gap-2.5 rounded-xl px-4 py-3.5 text-[14px] font-bold shadow-sm transition-all active:scale-[0.98] ${
                               isCustomer 
                                 ? 'bg-white/20 hover:bg-white/30 text-white border border-white/10' 
                                 : 'bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] border border-[#E2E8F0]'
@@ -342,15 +398,15 @@ export default function ChatDetailPage() {
                             {isInvoice ? (
                               <>
                                 <span className={`flex items-center justify-center rounded-lg w-8 h-8 ${isCustomer ? 'bg-white/20' : 'bg-white shadow-sm border border-slate-200'}`}>📄</span>
-                                View Invoice
+                                Download Invoice
                               </>
                             ) : (
                               <>
                                 <span className={`flex items-center justify-center rounded-lg w-8 h-8 ${isCustomer ? 'bg-white/20' : 'bg-white shadow-sm border border-slate-200'}`}>📎</span>
-                                View Attachment
+                                Download Attachment
                               </>
                             )}
-                          </a>
+                          </button>
                         );
                       })()}
                     {msg.message && (
@@ -362,6 +418,7 @@ export default function ChatDetailPage() {
                       {formatTime(msg.created_at)}
                     </div>
                   </div>
+                  )}
                   {isCustomer && (
                     <button 
                       onClick={() => setSelectedMessageForOptions(msg)}
