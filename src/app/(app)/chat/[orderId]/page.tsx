@@ -421,7 +421,30 @@ export default function ChatDetailPage() {
                           </button>
                         );
                       })()}
-                    {msg.message && msg.message.includes('[ACTION_REQUIRED: PHOTO_REQUEST]') ? (
+                    {msg.message && msg.message.includes('[ACTION_REQUIRED: PHOTO_REQUEST]') ? (() => {
+                      const hasUploadedAfter = filteredMessages.some(m => 
+                        m.order_outfit_id === msg.order_outfit_id && 
+                        m.sender_type === 'CUSTOMER' && 
+                        m.attachment_url && 
+                        new Date(m.created_at) > new Date(msg.created_at)
+                      );
+                      
+                      if (hasUploadedAfter) {
+                        return (
+                          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 my-2 text-center shadow-sm w-full relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-emerald-400"></div>
+                            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                              <span className="text-emerald-600 text-xl">✓</span>
+                            </div>
+                            <h4 className="font-bold text-emerald-900 text-[15px] mb-1">Photos Sent</h4>
+                            <p className="text-emerald-800 text-[13.5px] leading-snug">
+                              You have uploaded the requested photos.
+                            </p>
+                          </div>
+                        );
+                      }
+                      
+                      return (
                       <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 my-2 text-center shadow-sm w-full relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-1 bg-orange-400"></div>
                         <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -439,7 +462,8 @@ export default function ChatDetailPage() {
                           Upload Photos
                         </button>
                       </div>
-                    ) : msg.message && (
+                      );
+                    })() : msg.message && (
                       <div className={`text-[14px] leading-relaxed ${isCustomer ? 'text-white' : 'text-[#334155]'}`}>
                         {renderMessageContent(msg.message, isCustomer)}
                       </div>
@@ -530,24 +554,36 @@ export default function ChatDetailPage() {
         onClose={() => setCollageMakerOutfitId(null)}
         outfitId={collageMakerOutfitId || undefined}
         onSave={async (url: string) => {
-        const blob = await (await fetch(url)).blob();
+          const blob = await (await fetch(url)).blob();
+          const token = localStorage.getItem('sewvee_customer_token') ?? '';
+          const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
           const formData = new FormData();
-          formData.append('file', blob, 'collage.jpg');
+          formData.append('file', new File([blob], `collage_${Date.now()}.jpg`, { type: 'image/jpeg' }));
           formData.append('key_name', 'chat_attachments');
           try {
-            const uploadRes = await api.post(URL_UPLOAD, formData, {
-              headers: { 'Content-Type': 'multipart/form-data' }
+            const uploadRes = await fetch(URL_UPLOAD, {
+              method: 'POST',
+              headers: { Authorization: formattedToken },
+              body: formData,
             });
-            const url = uploadRes.data?.url || uploadRes.data?.data?.url || uploadRes.data?.fileUrl || uploadRes.data?.data?.full_url || '';
-            if (url) {
+            const uploadJson = await uploadRes.json();
+            if (!uploadRes.ok) throw new Error(`Upload failed`);
+            
+            const fileUrl = uploadJson.file_url ?? uploadJson.data?.file_url ?? uploadJson.data?.full_url ?? uploadJson.data?.url ?? uploadJson.full_url ?? uploadJson.url ?? '';
+            
+            if (fileUrl) {
               await api.post(`/customer-portal/orders/${orderId}/outfits/${collageMakerOutfitId}/requests`, {
                 message: 'Uploaded Photos',
-                attachment_url: url
+                attachment_url: fileUrl
               });
+              setCollageMakerOutfitId(null);
               window.location.reload();
+            } else {
+              throw new Error('No URL returned');
             }
           } catch (e) {
             console.error('Failed to upload collage', e);
+            alert("Failed to upload photos. Please try again.");
           }
         }}
       />
