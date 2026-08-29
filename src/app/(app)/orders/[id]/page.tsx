@@ -205,9 +205,16 @@ export default function OrderDetailPage() {
               <ArrowLeft className="w-5 h-5 text-[#0F172A]" />
             </button>
             <div className="flex-1 pl-4">
-              <h1 className="text-[18px] font-bold text-[#0F172A] font-inter">
-                {displayId}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-[18px] font-bold text-[#0F172A] font-inter">
+                  {displayId}
+                </h1>
+                {(order?.status?.id === 4 || order?.status?.name === 'CANCELLED') && (
+                  <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded-md text-[10px] font-bold tracking-widest uppercase">
+                    Cancelled
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-gray-500 font-semibold tracking-wider uppercase mt-0.5">{order.order_type === 'SALE_ORDER' ? 'SALE ORDER' : (order.order_type === 'STITCHING_REQUEST' ? 'PRE-ORDER INQUIRY' : 'CUSTOM STITCHING')}</p>
             </div>
           </div>
@@ -423,13 +430,15 @@ export default function OrderDetailPage() {
                           <Shirt className="w-3.5 h-3.5 text-[#5B43EE] mr-2" />
                           <h2 className="text-[12px] font-bold text-[#0F172A] tracking-wide uppercase">Request Summary</h2>
                         </div>
-                        <button
-                          onClick={() => handleCancelOutfit(activeOutfit.id || activeOutfit.order_outfit_id)}
-                          disabled={cancellingOutfitId === (activeOutfit.id || activeOutfit.order_outfit_id)}
-                          className="text-[10px] font-bold text-red-500 uppercase tracking-wide px-2.5 py-1.5 bg-red-50 rounded-md border border-red-100 active:bg-red-200 transition-colors disabled:opacity-50"
-                        >
-                          {cancellingOutfitId === (activeOutfit.id || activeOutfit.order_outfit_id) ? '...' : 'Cancel Outfit'}
-                        </button>
+                        {!(order?.status?.id === 4 || order?.status?.name === 'CANCELLED') && (
+                          <button
+                            onClick={() => handleCancelOutfit(activeOutfit.id || activeOutfit.order_outfit_id)}
+                            disabled={cancellingOutfitId === (activeOutfit.id || activeOutfit.order_outfit_id)}
+                            className="text-[10px] font-bold text-red-500 uppercase tracking-wide px-2.5 py-1.5 bg-red-50 rounded-md border border-red-100 active:bg-red-200 transition-colors disabled:opacity-50"
+                          >
+                            {cancellingOutfitId === (activeOutfit.id || activeOutfit.order_outfit_id) ? '...' : 'Cancel Outfit'}
+                          </button>
+                        )}
                       </div>
                       
                       <div className="divide-y divide-[#F1F5F9]">
@@ -754,7 +763,7 @@ export default function OrderDetailPage() {
             )}
             
             {/* ENTIRE ORDER ACTIONS */}
-            {order.order_type === 'STITCHING_REQUEST' && (
+            {order.order_type === 'STITCHING_REQUEST' && !(order?.status?.id === 4 || order?.status?.name === 'CANCELLED') && (
               <div className="mt-4 mb-8">
                 <button
                   onClick={handleCancelEntireOrder}
