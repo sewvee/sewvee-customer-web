@@ -89,7 +89,7 @@ export default function ShopPage() {
 
   const addToCart = (product: any, e: any) => {
     e.stopPropagation();
-    storeAddToCart(product);
+    storeAddToCart({ ...product, _company_id: shopMode === 'BOUTIQUE' ? selectedBoutiqueId : 'DIRECT' });
     showToast(`${product.name} added to cart`, 'success');
   };
   
@@ -126,8 +126,8 @@ export default function ShopPage() {
           customer_id: (user as any).customer_id || user.id,
           customer_mobile: user.mobile,
           customer_name: user.name || 'App Customer',
-          company_id: shopMode === 'BOUTIQUE' ? selectedBoutiqueId : undefined,
-          is_sewvee_direct: shopMode === 'DIRECT',
+          company_id: cart[0]?._company_id !== 'DIRECT' ? (cart[0]?._company_id || selectedBoutiqueId) : undefined,
+          is_sewvee_direct: cart[0]?._company_id === 'DIRECT' || (cart[0]?._company_id === undefined && shopMode === 'DIRECT'),
           order_type: 'SALE_ORDER',
           order_date: new Date().toISOString(),
           final_amount: total,

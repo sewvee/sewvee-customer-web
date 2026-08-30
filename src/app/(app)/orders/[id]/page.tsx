@@ -358,28 +358,28 @@ export default function OrderDetailPage() {
                 <h2 className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide px-1">Transaction Logs</h2>
                 <div className="bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm overflow-hidden">
                   {(order as any).payments.map((payment: any, pIdx: number) => (
-                    <div key={'payment-' + pIdx} className={`p-4 ${pIdx !== (order as any).payments.length - 1 ? 'border-b border-[#F1F5F9]' : ''}`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <span className="text-[14px] font-bold text-[#0F172A]">₹{Number(payment.amount).toFixed(2)}</span>
-                            <div className="bg-[#EEF2FF] px-2 py-0.5 rounded border border-[#C7D2FE]">
-                              <span className="text-[10px] font-bold text-[#4F46E5] uppercase">{payment.payment_mode || 'PAID'}</span>
-                            </div>
-                          </div>
-                          <span className="text-[12px] font-medium text-[#64748B] flex items-center">
-                            <Calendar className="w-3 h-3 mr-1.5" />
+                    <div key={'payment-' + pIdx} className={`p-4 flex items-center justify-between ${pIdx !== (order as any).payments.length - 1 ? 'border-b border-[#F1F5F9]' : ''}`}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[15px] font-extrabold text-[#0F172A] tracking-tight">₹{Number(payment.amount_paid || payment.amount || 0).toFixed(2)}</span>
+                        {(payment.payment_mode || payment.paymentMode) && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#EEF2FF] text-[#5B43EE] uppercase tracking-wider">
+                            {payment.payment_mode || payment.paymentMode}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center text-[#64748B]">
+                          <Calendar className="w-3.5 h-3.5 mr-1" />
+                          <span className="text-[12px] font-medium">
                             {new Date(payment.payment_date || payment.createdAt || new Date()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </span>
                         </div>
+                        {payment.transaction_id && (
+                          <span className="text-[10px] font-medium text-[#94A3B8]">
+                            Txn: {payment.transaction_id}
+                          </span>
+                        )}
                       </div>
-                      {payment.transaction_id && (
-                        <div className="mt-2 bg-[#F8FAFC] rounded-lg p-2 border border-[#F1F5F9]">
-                          <p className="text-[11px] font-medium text-[#64748B]">
-                            <span className="font-bold text-[#475569]">Txn ID:</span> {payment.transaction_id}
-                          </p>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -729,18 +729,6 @@ export default function OrderDetailPage() {
                       </div>
                     )}
                     
-                    {/* COLLAGE MAKER UPLOAD BUTTON (only if NO pending photos) */}
-                    {!(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).length && (
-                      <button
-                        onClick={(e) => { e.preventDefault(); setActiveOutfitForCollage(activeOutfit); setCollageOpen(true); }}
-                        className={`mt-3 w-full py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-opacity hover:opacity-90 ${(activeOutfit.requestedPhotosFromClient || activeOutfit.requested_photos_from_client) ? 'bg-[#DC2626] animate-pulse' : 'bg-[#5B43EE]'}`}
-                      >
-                        <Camera size={16} className="text-white" />
-                        <span className="text-[14px] font-bold text-white font-inter tracking-wide">
-                          {(activeOutfit.requestedPhotosFromClient || activeOutfit.requested_photos_from_client) ? 'Upload Photo Needed' : 'Upload Reference Photo'}
-                        </span>
-                      </button>
-                    )}
                   </div>
                 </div>
                 )}
@@ -800,7 +788,8 @@ export default function OrderDetailPage() {
                               const isCustomer = req.sender_type === 'CUSTOMER' || req.phone === user?.mobile;
                               const url: string = req.attachment_url || req.file_url || '';
                               const isAudio = url && (url.match(/\.(webm|mp3|m4a|wav|ogg|aac)$/i) || url.includes('voice_note') || url.includes('order_audios'));
-                              const isImage = url && !isAudio;
+                              const isDoc = url && (url.match(/\.(pdf|doc|docx|txt)$/i) || url.includes('invoice/pdf'));
+                              const isImage = url && !isAudio && !isDoc;
                               const isSystemMsg = req.message && req.message.includes('[ACTION_REQUIRED');
                               const isLast = rIdx === visibleReqs.length - 1;
                               const timeStr = new Date(req.created_at || req.createdAt || Date.now())
@@ -840,6 +829,20 @@ export default function OrderDetailPage() {
                                     {isImage && (
                                       <div className="rounded-2xl overflow-hidden border border-[#E2E8F0] shadow-sm">
                                         <img src={getImageUrl(url)} alt="Attachment" className="w-full max-h-[220px] object-cover block" />
+                                      </div>
+                                    )}
+
+                                    {/* Document / Invoice */}
+                                    {isDoc && (
+                                      <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-[#F1F5F9]" onClick={() => window.open(getImageUrl(url), '_blank')}>
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-lg">📄</div>
+                                          <div>
+                                            <p className="text-[13px] font-bold text-[#0F172A]">{url.includes('invoice') ? 'Order Invoice' : 'Document'}</p>
+                                            <p className="text-[11px] text-[#64748B]">Tap to view</p>
+                                          </div>
+                                        </div>
+                                        <div className="text-indigo-600 text-[11px] font-bold uppercase tracking-wide">Open</div>
                                       </div>
                                     )}
 
