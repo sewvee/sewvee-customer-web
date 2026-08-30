@@ -733,6 +733,34 @@ export default function ChatDetailPage() {
         </div>
       </BottomSheet>
     
+      <FeedbackModal
+        isOpen={!!feedbackOutfitId}
+        onClose={() => setFeedbackOutfitId(null)}
+        isSubmitting={submittingFeedback}
+        onSubmit={async (feedbackData) => {
+          if (!feedbackOutfitId) return;
+          setSubmittingFeedback(true);
+          try {
+            // 1. Store structured feedback in order.feedback JSONB (the real data store)
+            await api.post(`/customer-portal/orders/${orderId}/outfits/${feedbackOutfitId}/feedback`, feedbackData);
+
+            // 2. Also drop a human-readable summary into the chat so the boutique sees it
+            const ratingMsg = `⭐ Feedback Submitted!\nStitching: ${feedbackData.stitchingRating}★ | Staff: ${feedbackData.staffRating}★ | Overall: ${feedbackData.boutiqueRating}★${feedbackData.comments ? `\nComments: ${feedbackData.comments}` : ''}`;
+            await api.post(`/customer-portal/orders/${orderId}/outfits/${feedbackOutfitId}/requests`, {
+              message: ratingMsg
+            });
+
+            setFeedbackOutfitId(null);
+            showToast('Feedback submitted! Thank you!', 'success');
+            loadChat();
+          } catch (e) {
+            showToast('Failed to submit feedback. Please try again.', 'error');
+          } finally {
+            setSubmittingFeedback(false);
+          }
+        }}
+      />
+
       <CollageMaker 
         open={!!collageMakerOutfitId} 
         onClose={() => setCollageMakerOutfitId(null)}
