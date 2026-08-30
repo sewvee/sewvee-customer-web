@@ -76,8 +76,10 @@ export default function ChatDetailPage() {
   const orderId = params.orderId as string;
   const user = useAuthStore(s => s.user);
   
-  const { orders, fetchOrders } = useOrdersStore();
-  const order = orders.find(o => String(o.id) === orderId);
+  const { orders } = useOrdersStore();
+  const storeOrder = orders.find(o => String(o.id) === orderId);
+  const [freshOrder, setFreshOrder] = useState<any>(null);
+  const order = freshOrder || storeOrder;
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,20 +134,11 @@ export default function ChatDetailPage() {
       alert("Failed to upload photo. " + (err instanceof Error ? err.message : String(err)));
     } finally {
       setSending(false);
-      // Reset input
       e.target.value = '';
     }
   };
 
-
-  // Fetch Orders if missing
-  useEffect(() => {
-    if (user?.mobile && (!order || orders.length === 0)) {
-      useOrdersStore.getState().refreshOrders(user.mobile);
-    }
-  }, [user, orders.length, fetchOrders]);
-
-  // Default topic selection
+  // Default topic selection — runs whenever order data arrives (store or fresh)
   useEffect(() => {
     if (order && !contextOutfitId) {
       const outfits = order.outfits || order.items || [];
@@ -156,18 +149,31 @@ export default function ChatDetailPage() {
     }
   }, [order, contextOutfitId]);
 
-  // Load chat messages for this order
+  // Load chat messages + fresh order data in one shot.
+  // Using the orders list API so we always get the latest outfit count regardless of
+  // the Zustand store cache (avoids missing tabs when admin adds outfits).
   useEffect(() => {
     console.log("LOAD CHAT CALLED", { userMobile: user?.mobile, orderId });
     async function loadChat() {
       if (!orderId) { setLoading(false); return; }
       try {
-        const res = await api.get(`/customer-portal/orders/${orderId}/requests`, {
-          /* no params needed */
-        });
-        const data = res.data?.data || res.data;
+        const [chatRes, ordersListRes] = await Promise.all([
+          api.get(`/customer-portal/orders/${orderId}/requests`),
+          api.get(`/customer-portal/orders`, { params: { limit: 100 } }),
+        ]);
+        const data = chatRes.data?.data || chatRes.data;
         setMessages(Array.isArray(data) ? data : []);
-        
+        // Pick the fresh order from the list so outfit tabs always reflect current state
+        const allOrders = ordersListRes.data?.data || ordersListRes.data || [];
+        const found = Array.isArray(allOrders) ? allOrders.find((o: any) => String(o.id) === String(orderId)) : null;
+        if (found) {
+          setFreshOrder(found);
+          // Also update the Zustand store so other pages (order detail, home) benefit
+          useOrdersStore.setState(s => ({
+            orders: s.orders.map(o => String(o.id) === String(orderId) ? { ...o, ...found } : o),
+            lastFetched: Date.now(),
+          }));
+        }
       } catch (err) {
         console.error('Failed to load messages:', err);
       } finally {
@@ -496,16 +502,16 @@ export default function ChatDetailPage() {
                         <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
                           <ImageIcon className="w-5 h-5 text-orange-600" />
                         </div>
-                        <h4 className="font-bold text-orange-900 text-[15px] mb-1">Action Required</h4>
+                        <h4 className="font-bold text-orange-900 text-[15px] mb-1">📸 Photos Requested</h4>
                         <p className="text-orange-800 text-[13.5px] leading-snug mb-4">
-                          Boutique owner requested photos to be sent.
+                          Your boutique needs reference photos for this outfit. Please upload them so they can get started!
                         </p>
                         <button 
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCollageMakerOutfitId(msg.order_outfit_id); }}
                           className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition active:scale-[0.98] flex items-center justify-center gap-2"
                         >
                           <ImageIcon className="w-5 h-5" />
-                          Upload Photos
+                          Upload Reference Photos
                         </button>
                       </div>
                       );

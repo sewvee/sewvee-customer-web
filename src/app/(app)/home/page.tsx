@@ -186,7 +186,7 @@ function InlineBanners({ banners }: { banners: any[] }) {
 export default function HomePage() {
   const user = useAuthStore(s => s.user);
   const token = useAuthStore(s => s.token);
-  const { orders, loading, fetchOrders, cancelOrder, refreshOrders } = useOrdersStore();
+  const { orders, loading, cancelOrder, refreshOrders } = useOrdersStore();
   const { boutiques, selectedBoutiqueId, setSelectedBoutiqueId, fetchBoutiques } = useBoutiquesStore();
   const { showToast } = useToast();
 
@@ -213,8 +213,8 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchBoutiques();
-    if (user?.mobile) fetchOrders(user.mobile);
-  }, [user?.mobile, fetchOrders, fetchBoutiques]);
+    if (user?.mobile) refreshOrders(user.mobile);
+  }, [user?.mobile, refreshOrders, fetchBoutiques]);
 
   useEffect(() => {
     api.get('marketing/banners?platform=WEB&target_app=CUSTOMER_APP')

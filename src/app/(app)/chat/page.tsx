@@ -30,7 +30,7 @@ export default function ChatListPage() {
   // New Chat Bottom Sheet State
   const [newChatDrawerOpen, setNewChatDrawerOpen] = useState(false);
   const [selectedThreadForOptions, setSelectedThreadForOptions] = useState<any>(null);
-  const { orders, fetchOrders } = useOrdersStore();
+  const { orders, refreshOrders } = useOrdersStore();
 
   useEffect(() => {
     if (user?.mobile) {
@@ -38,12 +38,12 @@ export default function ChatListPage() {
     }
   }, [user?.mobile, fetchThreads]);
 
-  // Load orders to derive orders for new chat
+  // Always refresh on mount — ensures outfit counts reflect latest admin changes
   useEffect(() => {
-    if (user?.mobile && orders.length === 0) {
-      fetchOrders(user.mobile);
+    if (user?.mobile) {
+      refreshOrders(user.mobile);
     }
-  }, [user?.mobile, orders.length, fetchOrders]);
+  }, [user?.mobile, refreshOrders]);
 
   const formatTime = (isoStr: string) => {
     if (!isoStr) return '';
@@ -126,7 +126,12 @@ export default function ChatListPage() {
                   
                   <div className="flex justify-between items-center">
                     <p className={`text-[13px] truncate ${t.unread_count > 0 ? 'text-[#1E293B] font-semibold' : 'text-[#64748B]'}`}>
-                      {t.latest_message_text || (t.latest_message_attachment ? '📷 Image' : 'Started a conversation')}
+                       {(() => {
+                         const txt = t.latest_message_text;
+                         if (txt && txt.includes('[ACTION_REQUIRED: PHOTO_REQUEST]')) return '📸 Please upload reference photos';
+                         if (t.latest_message_attachment) return txt ? txt : '📷 Image';
+                         return txt || 'Started a conversation';
+                       })()}
                     </p>
                     {t.unread_count ? (
                       <span className="bg-[#5B43EE] text-white text-[11px] font-bold h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full ml-2 shrink-0">
