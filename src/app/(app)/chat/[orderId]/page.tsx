@@ -80,6 +80,7 @@ export default function ChatDetailPage() {
   const storeOrder = orders.find(o => String(o.id) === orderId);
   const [freshOrder, setFreshOrder] = useState<any>(null);
   const order = freshOrder || storeOrder;
+  const isCancelled = String(order?.status).toUpperCase() === 'CANCELLED' || (order?.status as any)?.id === 4 || (order?.status as any)?.name === 'CANCELLED';
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -544,7 +545,15 @@ export default function ChatDetailPage() {
       </div>
 
       {/* Input Area */}
-      <div className="bg-white border-t border-gray-200 p-3 shrink-0 flex items-end gap-2 pb-safe relative">
+      {isCancelled ? (
+        <div className="bg-white border-t border-gray-200 p-4 shrink-0 flex flex-col items-center justify-center gap-1 pb-safe bg-red-50/30">
+          <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
+            Inquiry Cancelled
+          </span>
+          <p className="text-sm text-slate-500 font-medium">This inquiry is closed and cannot receive new messages.</p>
+        </div>
+      ) : (
+        <div className="bg-white border-t border-gray-200 p-3 shrink-0 flex items-end gap-2 pb-safe relative">
         {showAttachMenu && (
           <>
           <div className="fixed inset-0 z-40" onClick={() => setShowAttachMenu(false)}></div>
@@ -624,6 +633,7 @@ export default function ChatDetailPage() {
           </button>
         )}
       </div>
+      )}
 
       {/* Message Options Drawer */}
       <BottomSheet open={!!selectedMessageForOptions} onClose={() => setSelectedMessageForOptions(null)}>

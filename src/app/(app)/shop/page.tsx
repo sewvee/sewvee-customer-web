@@ -114,7 +114,7 @@ export default function ShopPage() {
     
     setIsSubmitting(true);
     try {
-      const total = cart.reduce((acc, c) => acc + (Number(c.price) * (c.quantity || 1)), 0);
+      const total = cart.reduce((acc, c) => acc + (Number(c.selling_price || c.price || 0) * (c.quantity || 1)), 0);
       
       const res = await fetch(URL_CUSTOMER_PORTAL_ORDERS, {
         method: 'POST',
@@ -139,13 +139,13 @@ export default function ShopPage() {
           outfits: cart.map(c => ({
             name: c.name,
             quantity: c.quantity || 1,
-            total_amount: Number(c.price) * (c.quantity || 1),
+            total_amount: Number(c.selling_price || c.price || 0) * (c.quantity || 1),
             items: [{
               item_type: 'READYMADE',
               readymade_id: c.id,
               qty: c.quantity || 1,
-              price: Number(c.price),
-              total_price: Number(c.price) * (c.quantity || 1)
+              price: Number(c.selling_price || c.price || 0),
+              total_price: Number(c.selling_price || c.price || 0) * (c.quantity || 1)
             }]
           }))
         })
@@ -167,7 +167,7 @@ export default function ShopPage() {
   };
 
   const cartCount = cart.reduce((acc, c) => acc + (c.quantity || 1), 0);
-  const cartTotal = cart.reduce((acc, c) => acc + (Number(c.price) * (c.quantity || 1)), 0);
+  const cartTotal = cart.reduce((acc, c) => acc + (Number(c.selling_price || c.price || 0) * (c.quantity || 1)), 0);
 
   const selectedBoutique = boutiques.find(b => b.id === selectedBoutiqueId);
 
@@ -322,7 +322,7 @@ export default function ShopPage() {
                           <X className="w-4 h-4" />
                         </button>
                       </div>
-                      <p className="text-[#5B43EE] font-bold text-sm mt-1">₹{item.price}</p>
+                      <p className="text-[#5B43EE] font-bold text-sm mt-1">₹{item.selling_price || item.price}</p>
                       
                       <div className="flex items-center gap-3 mt-2">
                         <button onClick={() => updateQuantity(item.id, -1)} className="w-7 h-7 bg-gray-50 border border-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">
