@@ -621,120 +621,60 @@ export default function OrderDetailPage() {
                 </div>
                 )}
                 
-                {/* DESIGN PHOTOS & SKETCHES */}
-                {order.order_type !== 'STITCHING_REQUEST' && (
-                <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                  <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
-                    <ImageIcon className="w-3.5 h-3.5 text-[#5B43EE] mr-2" />
-                    <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide uppercase">DESIGN PHOTOS & SKETCHES</h2>
-                  </div>
-                  <div className="flex flex-col p-4 gap-3">
-                    {activeOutfit.photos && activeOutfit.photos.length > 0 ? (
-                      activeOutfit.photos.map((photo: any, pIdx: number) => {
-                        const url = photo.file_url || photo.url || photo.image || photo;
-                        const isAudio = typeof url === 'string' && (url.match(/\.(webm|mp3|m4a|wav|ogg|aac)$/i) || url.includes('voice_note'));
-                        
-                        const isCustomerByAudio = isAudio && photo.duration === 0;
-                        const isCustomerByReq = outfitRequests.some((r: any) => r.sender_type === 'CUSTOMER' && (r.attachment_url === url || r.file_url === url));
-                        const isBoutiqueByReq = outfitRequests.some((r: any) => r.sender_type === 'BUSINESS' && (r.attachment_url === url || r.file_url === url));
-                        
-                        // Heuristic fallback: if it's the first audio and there are multiple audios, often customer. Or if not claimed by boutique.
-                        const isCustomer = isCustomerByAudio || isCustomerByReq || (!isBoutiqueByReq && pIdx === 0 && activeOutfit.photos.length > 1);
-
-                        if (isAudio) {
-                          return (
-                            <div key={pIdx} className="w-full bg-[#F8FAFC] border border-[#E2E8F0] p-3 rounded-xl flex flex-col gap-2 relative">
-                              <div className="absolute top-2 right-2">
-                                {isCustomer ? (
-                                  <span className="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-[9px] font-black uppercase border border-orange-200">Customer</span>
-                                ) : (
-                                  <span className="bg-[#5B43EE]/10 text-[#5B43EE] px-1.5 py-0.5 rounded text-[9px] font-black uppercase border border-[#5B43EE]/20">Boutique</span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <Mic className="w-4 h-4 text-[#5B43EE]" />
-                                <span className="text-[12px] font-bold text-[#0F172A]">Voice Note</span>
-                              </div>
-                              <audio controls src={getImageUrl(url)} className="w-full h-8" />
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <div key={pIdx} className="w-full rounded-[10px] overflow-hidden bg-[#F1F5F9] border border-[#E2E8F0] relative">
-                            <div className="absolute top-2 right-2 z-10 shadow-sm">
-                              {isCustomer ? (
-                                <span className="bg-orange-100/90 text-orange-800 px-2 py-1 rounded text-[10px] font-black uppercase border border-orange-300 backdrop-blur-sm shadow-sm">Customer</span>
-                              ) : (
-                                <span className="bg-[#5B43EE]/90 text-white px-2 py-1 rounded text-[10px] font-black uppercase border border-[#5B43EE] backdrop-blur-sm shadow-sm">Boutique</span>
-                              )}
-                            </div>
-                            <img src={getImageUrl(url)} alt="Design" className="w-full h-auto max-h-[300px] object-contain" />
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <p className="text-[13px] text-[#94A3B8] italic font-inter w-full py-4 text-center">
-                        No photos provided.
-                      </p>
-                    )}
-                    
-                    {/* PENDING PHOTOS (UNCONFIRMED) */}
-                    {(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).length > 0 && (
-                      <div className="w-full mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                        <div className="flex items-center justify-between mb-3">
-                          <p className="text-[11px] font-bold text-amber-700 font-inter uppercase flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Pending Uploads
-                          </p>
-                          <span className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                            {(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).length} to confirm
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          {(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).map((pUrl: string, idx: number) => (
-                            <div key={idx} className="relative rounded-lg overflow-hidden border border-amber-300 shadow-sm group">
-                              <img src={getImageUrl(pUrl)} className="w-full h-28 object-cover" />
-                              <button
-                                onClick={() => {
-                                  setPendingPhotos(prev => {
-                                    const next = { ...prev };
-                                    const oId = activeOutfit.id || activeOutfit.order_outfit_id;
-                                    if (next[oId]) {
-                                      next[oId] = next[oId].filter((_, i) => i !== idx);
-                                      if (next[oId].length === 0) delete next[oId];
-                                    }
-                                    return next;
-                                  });
-                                }}
-                                className="absolute top-1.5 right-1.5 bg-white/90 p-1.5 rounded-full text-red-500 shadow-sm active:scale-95"
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={(e) => { e.preventDefault(); setActiveOutfitForCollage(activeOutfit); setCollageOpen(true); }}
-                            className="flex-1 py-2.5 bg-white text-amber-600 border border-amber-300 text-[13px] font-bold rounded-lg shadow-sm"
-                          >
-                            Add More
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedOutfitForConfirm(activeOutfit);
-                              setConfirmDrawerVisible(true);
-                            }}
-                            className="flex-[2] py-2.5 bg-amber-500 text-white text-[13px] font-bold rounded-lg shadow-sm"
-                          >
-                            Confirm Photos
-                          </button>
-                        </div>
+                {/* PENDING PHOTOS (UNCONFIRMED) */}
+                {order.order_type !== 'STITCHING_REQUEST' && (pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).length > 0 && (
+                  <div className="bg-white rounded-[16px] overflow-hidden mb-4 border border-[#E2E8F0] shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-4">
+                    <div className="w-full bg-amber-50 border border-amber-200 rounded-xl p-3">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-[11px] font-bold text-amber-700 font-inter uppercase flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Pending Uploads
+                        </p>
+                        <span className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                          {(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).length} to confirm
+                        </span>
                       </div>
-                    )}
-                    
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        {(pendingPhotos[activeOutfit.id || activeOutfit.order_outfit_id] || []).map((pUrl: string, idx: number) => (
+                          <div key={idx} className="relative rounded-lg overflow-hidden border border-amber-300 shadow-sm group">
+                            <img src={getImageUrl(pUrl)} className="w-full h-28 object-cover" />
+                            <button
+                              onClick={() => {
+                                setPendingPhotos(prev => {
+                                  const next = { ...prev };
+                                  const oId = activeOutfit.id || activeOutfit.order_outfit_id;
+                                  if (next[oId]) {
+                                    next[oId] = next[oId].filter((_, i) => i !== idx);
+                                    if (next[oId].length === 0) delete next[oId];
+                                  }
+                                  return next;
+                                });
+                              }}
+                              className="absolute top-1.5 right-1.5 bg-white/90 p-1.5 rounded-full text-red-500 shadow-sm active:scale-95"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => { e.preventDefault(); setActiveOutfitForCollage(activeOutfit); setCollageOpen(true); }}
+                          className="flex-1 py-2.5 bg-white text-amber-600 border border-amber-300 text-[13px] font-bold rounded-lg shadow-sm"
+                        >
+                          Add More
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedOutfitForConfirm(activeOutfit);
+                            setConfirmDrawerVisible(true);
+                          }}
+                          className="flex-[2] py-2.5 bg-amber-500 text-white text-[13px] font-bold rounded-lg shadow-sm"
+                        >
+                          Confirm Photos
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
                 )}
                 {/* BOUTIQUE NOTES */}
                 {activeOutfit.notes && (() => {
@@ -771,10 +711,28 @@ export default function OrderDetailPage() {
                 {/* CUSTOMER + BOUTIQUE REQUESTS FEED — Timeline */}
                 {order.order_type !== 'STITCHING_REQUEST' && (() => {
                   const activeOutfitId = String(activeOutfit.id || activeOutfit.order_outfit_id || '');
-                  const filteredReqs = outfitRequests.filter((r: any) => {
+                  let filteredReqs = outfitRequests.filter((r: any) => {
                     if (!activeOutfitId) return true;
                     return String(r.outfit_id || r.order_outfit_id || r.outfitId || '') === activeOutfitId || !r.outfit_id;
                   });
+                  
+                  // Inject photos from activeOutfit that aren't in requests (like initial boutique uploads)
+                  const existingUrls = new Set(filteredReqs.map((r: any) => r.attachment_url || r.file_url).filter(Boolean));
+                  if (activeOutfit.photos && activeOutfit.photos.length > 0) {
+                    activeOutfit.photos.forEach((photo: any, i: number) => {
+                      const url = typeof photo === 'string' ? photo : (photo.file_url || photo.url || photo.image || '');
+                      if (url && !existingUrls.has(url)) {
+                        filteredReqs.unshift({
+                          id: `synth-${i}`,
+                          outfit_id: activeOutfitId,
+                          sender_type: 'BUSINESS',
+                          attachment_url: url,
+                          created_at: activeOutfit.created_at || (order as any).created_at || order.createdAt || Date.now(),
+                        });
+                      }
+                    });
+                  }
+                  
                   const visibleReqs = filteredReqs.filter((r: any) => {
                     const isSystemOnly = r.message && r.message.includes('[ACTION_REQUIRED') && !r.attachment_url && !r.file_url;
                     return !isSystemOnly;

@@ -32,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png?v=2" />
       </head>
       <body className={`${inter.variable} ${inter.className} bg-[#F8FAFC] text-gray-900 antialiased`}>
         {children}

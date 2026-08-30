@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Star, Sparkles } from "lucide-react";
+import { Star } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
 
 interface FeedbackModalProps {
@@ -11,28 +11,30 @@ interface FeedbackModalProps {
 
 const RatingRow = ({ label, description, value, onChange }: any) => {
   return (
-    <div className="flex flex-col mb-4">
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <h4 className="text-sm font-semibold text-slate-800">{label}</h4>
-          {description && <p className="text-[11px] text-slate-500 leading-tight mt-0.5">{description}</p>}
-        </div>
-        <div className="flex gap-1 shrink-0 ml-4">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              type="button"
-              onClick={() => onChange(star)}
-              className="p-0.5 transition-transform hover:scale-110 focus:outline-none"
-            >
-              <Star
-                size={22}
-                className={star <= value ? "fill-amber-500 text-amber-500" : "fill-transparent text-slate-300"}
-                strokeWidth={star <= value ? 2 : 1.5}
-              />
-            </button>
-          ))}
-        </div>
+    <div className="flex flex-col mb-8 items-center border-b border-slate-100 pb-6 last:border-0 last:pb-0">
+      <div className="text-center mb-3">
+        <h4 className="text-[16px] font-bold text-slate-800">{label}</h4>
+        {description && <p className="text-[13px] text-slate-500 mt-1">{description}</p>}
+      </div>
+      <div className="flex justify-center gap-3">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(star)}
+            className="p-1 transition-all duration-300 hover:scale-110 active:scale-90 focus:outline-none"
+          >
+            <Star
+              size={36}
+              className={`transition-all duration-300 ${
+                star <= value 
+                  ? "fill-amber-400 text-amber-400 scale-110 drop-shadow-sm" 
+                  : "fill-transparent text-slate-300"
+              }`}
+              strokeWidth={star <= value ? 0 : 1.5}
+            />
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -56,34 +58,22 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, o
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex justify-end bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
       {/* Backdrop (clickable) */}
-      <div 
-        className="absolute inset-0" 
-        onClick={onClose}
-      />
+      <div className="absolute inset-0" />
       
-      {/* Drawer */}
-      <div className="relative w-full sm:w-[400px] h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+      {/* Centered Modal */}
+      <div className="relative w-full max-w-[400px] bg-white rounded-2xl shadow-2xl flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden max-h-[90vh]">
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-6 shrink-0 relative">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1.5 transition-colors focus:outline-none"
-          >
-            <X size={20} />
-          </button>
-          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mb-3 backdrop-blur-md">
-            <Sparkles className="text-white" size={24} />
-          </div>
-          <h2 className="text-[17px] font-bold text-white text-center">Customer Feedback</h2>
-          <p className="text-indigo-100 text-center text-[12px] mt-1 font-medium leading-tight">
+        <div className="bg-gradient-to-r from-indigo-600 to-blue-600 py-5 px-6 shrink-0 relative text-center">
+          <h2 className="text-[18px] font-bold text-white">Customer Feedback</h2>
+          <p className="text-indigo-100 text-[13px] mt-1 font-medium leading-tight">
             How was the experience? Share your feedback.
           </p>
         </div>
 
         {/* Body */}
-        <div className="p-6 flex-1 overflow-y-auto">
+        <div className="p-6 overflow-y-auto flex flex-col">
           <RatingRow
             label="Stitching & Fitting"
             description="How satisfied are you with the outfit?"
@@ -103,10 +93,10 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, o
             onChange={setBoutiqueRating}
           />
 
-          <div className="mt-4">
-            <label className="block text-[13px] font-semibold text-slate-800 mb-2">Additional Comments</label>
+          <div className="mt-2">
+            <label className="block text-[15px] font-bold text-slate-800 mb-3 text-center">Additional Comments</label>
             <textarea
-              className="w-full border border-slate-200 rounded-xl p-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none"
+              className="w-full border border-slate-200 rounded-xl p-4 text-[14px] text-slate-900 leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none shadow-sm"
               rows={3}
               placeholder="Tell us what you liked or how we can improve..."
               value={comments}
@@ -117,22 +107,13 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, o
         
         {/* Footer */}
         <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0">
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="flex-1 py-2.5 px-4 rounded-xl text-[13px] font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors focus:outline-none"
-            >
-              Skip
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="flex-1 py-2.5 px-4 rounded-xl text-[13px] font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors disabled:opacity-70 flex justify-center items-center shadow-sm focus:outline-none"
-            >
-              {isSubmitting ? "Submitting..." : "Submit Feedback"}
-            </button>
-          </div>
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="w-full py-4 px-4 rounded-xl text-[15px] font-bold text-white bg-[#5B43EE] hover:bg-[#4a34ce] transition-colors disabled:opacity-70 flex justify-center items-center shadow-md focus:outline-none active:scale-[0.98]"
+          >
+            {isSubmitting ? "Submitting..." : "Submit Feedback"}
+          </button>
         </div>
       </div>
     </div>
