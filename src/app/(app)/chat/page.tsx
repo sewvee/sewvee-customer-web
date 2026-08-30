@@ -129,6 +129,7 @@ export default function ChatListPage() {
                        {(() => {
                          const txt = t.latest_message_text;
                          if (txt && txt.includes('[ACTION_REQUIRED: PHOTO_REQUEST]')) return '📸 Please upload reference photos';
+                         if (txt && txt.includes('[ACTION_REQUIRED: FEEDBACK]')) return '⭐ We would love your feedback on this order!';
                          if (t.latest_message_attachment) return txt ? txt : '📷 Image';
                          return txt || 'Started a conversation';
                        })()}
