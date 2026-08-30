@@ -9,6 +9,8 @@ import { useOrdersStore } from '@/store/ordersStore';
 import { URL_UPLOAD } from '@/lib/env';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { CollageMaker } from '@/components/CollageMaker';
+import { FeedbackModal } from '@/components/FeedbackModal';
+import { useToast } from '@/hooks/useToast';
 
 interface ChatMessage {
   id: number;
@@ -71,6 +73,7 @@ function formatDateGroup(dateString: string) {
 }
 
 export default function ChatDetailPage() {
+  const { showToast } = useToast();
   const router = useRouter();
   const params = useParams();
   const orderId = params.orderId as string;
@@ -87,6 +90,8 @@ export default function ChatDetailPage() {
   
   const [inputText, setInputText] = useState('');
   const [collageMakerOutfitId, setCollageMakerOutfitId] = useState<number | null>(null);
+  const [feedbackOutfitId, setFeedbackOutfitId] = useState<number | null>(null);
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [sending, setSending] = useState(false);
   const [selectedMessageForOptions, setSelectedMessageForOptions] = useState<any>(null);
   
@@ -475,7 +480,48 @@ export default function ChatDetailPage() {
                           </button>
                         );
                       })()}
-                    {msg.message && msg.message.includes('[ACTION_REQUIRED: PHOTO_REQUEST]') ? (() => {
+                    {msg.message && msg.message.includes('[ACTION_REQUIRED: FEEDBACK]') ? (() => {
+                      const hasReviewedAfter = filteredMessages.some(m => 
+                        m.order_outfit_id === msg.order_outfit_id && 
+                        m.sender_type === 'CUSTOMER' && 
+                        m.message && m.message.includes('Feedback Submitted') &&
+                        new Date(m.created_at) > new Date(msg.created_at)
+                      );
+                      
+                      if (hasReviewedAfter) {
+                        return (
+                          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 my-2 text-center shadow-sm w-full relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-emerald-400"></div>
+                            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                              <span className="text-emerald-600 text-xl">✓</span>
+                            </div>
+                            <h4 className="font-bold text-emerald-900 text-[15px] mb-1">Feedback Sent</h4>
+                            <p className="text-emerald-800 text-[13.5px] leading-snug">
+                              Thank you for providing your feedback!
+                            </p>
+                          </div>
+                        );
+                      }
+                      
+                      return (
+                      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 my-2 text-center shadow-sm w-full relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-indigo-400"></div>
+                        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <span className="text-indigo-600 text-xl">⭐</span>
+                        </div>
+                        <h4 className="font-bold text-indigo-900 text-[15px] mb-1">⭐ Feedback Requested</h4>
+                        <p className="text-indigo-800 text-[13.5px] leading-snug mb-4">
+                          We'd love to hear about your experience! Please leave your feedback.
+                        </p>
+                        <button 
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setFeedbackOutfitId(msg.order_outfit_id); }}
+                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition active:scale-[0.98] flex items-center justify-center gap-2"
+                        >
+                          Leave Feedback
+                        </button>
+                      </div>
+                      );
+                    })() : msg.message && msg.message.includes('[ACTION_REQUIRED: PHOTO_REQUEST]') ? (() => {
                       const hasUploadedAfter = filteredMessages.some(m => 
                         m.order_outfit_id === msg.order_outfit_id && 
                         m.sender_type === 'CUSTOMER' && 
@@ -690,7 +736,6 @@ export default function ChatDetailPage() {
       <CollageMaker 
         open={!!collageMakerOutfitId} 
         onClose={() => setCollageMakerOutfitId(null)}
-        outfitId={collageMakerOutfitId || undefined}
         onSave={async (url: string) => {
           const blob = await (await fetch(url)).blob();
           const token = localStorage.getItem('sewvee_customer_token') ?? '';
