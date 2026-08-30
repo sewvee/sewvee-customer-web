@@ -534,31 +534,35 @@ export default function OrderDetailPage() {
                     <Shirt className="w-3.5 h-3.5 text-[#5B43EE] mr-2" />
                     <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide uppercase">OUTFIT DETAILS</h2>
                   </div>
-                  <div className="p-4 grid grid-cols-2 gap-y-4">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-[#94A3B8] font-inter tracking-wide mb-1.5 uppercase">ORDER TYPE</span>
-                      <span className="text-[13px] font-bold text-[#0F172A] font-inter">{order.order_type === 'STITCHING_REQUEST' ? 'PRE-ORDER' : 'STITCHING'}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-[#94A3B8] font-inter tracking-wide mb-1.5 uppercase">URGENCY</span>
-                      <span className="text-[13px] font-bold text-[#0F172A] font-inter uppercase">{activeOutfit.urgency || (order as any).urgency || 'NORMAL'}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-[#94A3B8] font-inter tracking-wide mb-1.5 uppercase">TRIAL DATE</span>
-                      <div className="flex items-center">
-                        <Calendar className="w-3.5 h-3.5 text-[#5B43EE] mr-1.5" />
-                        <span className="text-[13px] font-bold text-[#0F172A] font-inter">
-                          {activeOutfit.trialDate ? new Date(activeOutfit.trialDate).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'}) : 'N/A'}
-                        </span>
+                  <div className="divide-y divide-[#F1F5F9]">
+                    <div className="p-4 grid grid-cols-2 gap-y-4 divide-x divide-[#F1F5F9]">
+                      <div className="flex flex-col pr-4">
+                        <span className="text-[10px] font-bold text-[#94A3B8] font-inter tracking-wide mb-1.5 uppercase">ORDER TYPE</span>
+                        <span className="text-[13px] font-bold text-[#0F172A] font-inter capitalize">{order.order_type === 'STITCHING_REQUEST' ? 'Pre-order' : 'Stitching'}</span>
+                      </div>
+                      <div className="flex flex-col pl-4">
+                        <span className="text-[10px] font-bold text-[#94A3B8] font-inter tracking-wide mb-1.5 uppercase">URGENCY</span>
+                        <span className="text-[13px] font-bold text-[#0F172A] font-inter capitalize">{activeOutfit.urgency?.toLowerCase() || (order as any).urgency?.toLowerCase() || 'Normal'}</span>
                       </div>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-[#94A3B8] font-inter tracking-wide mb-1.5 uppercase">DELIVERY DATE</span>
-                      <div className="flex items-center">
-                        <Calendar className="w-3.5 h-3.5 text-[#5B43EE] mr-1.5" />
-                        <span className="text-[13px] font-bold text-[#0F172A] font-inter">
-                          {activeOutfit.deliveryDate ? new Date(activeOutfit.deliveryDate).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'}) : (order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'}) : 'N/A')}
-                        </span>
+                    <div className="p-4 grid grid-cols-2 gap-y-4 divide-x divide-[#F1F5F9]">
+                      <div className="flex flex-col pr-4">
+                        <span className="text-[10px] font-bold text-[#94A3B8] font-inter tracking-wide mb-1.5 uppercase">TRIAL DATE</span>
+                        <div className="flex items-center">
+                          <Calendar className="w-3.5 h-3.5 text-[#5B43EE] mr-1.5" />
+                          <span className="text-[13px] font-bold text-[#0F172A] font-inter">
+                            {activeOutfit.trialDate ? new Date(activeOutfit.trialDate).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'}) : 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col pl-4">
+                        <span className="text-[10px] font-bold text-[#94A3B8] font-inter tracking-wide mb-1.5 uppercase">DELIVERY DATE</span>
+                        <div className="flex items-center">
+                          <Calendar className="w-3.5 h-3.5 text-[#5B43EE] mr-1.5" />
+                          <span className="text-[13px] font-bold text-[#0F172A] font-inter">
+                            {activeOutfit.deliveryDate ? new Date(activeOutfit.deliveryDate).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'}) : (order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'}) : 'N/A')}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -576,7 +580,7 @@ export default function OrderDetailPage() {
                     {activeOutfit.stitching && activeOutfit.stitching.length > 0 ? (
                       <div className="space-y-3">
                         {activeOutfit.stitching.map((opt: any, index: number) => (
-                          <div key={index} className="flex justify-between items-center pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                          <div key={index} className="flex justify-between items-center pb-3 border-b border-[#F1F5F9] last:border-0 last:pb-0">
                             <span className="text-[13px] font-medium text-[#475569]">{opt.category?.name || 'Option'}</span>
                             <span className="text-[13px] font-bold text-[#0F172A] text-right ml-4">{opt.option?.name || '-'}</span>
                           </div>
@@ -597,9 +601,9 @@ export default function OrderDetailPage() {
                   <div className="flex items-center px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
                     <h2 className="text-[11px] font-bold text-[#0F172A] font-inter tracking-wide uppercase">MEASUREMENTS</h2>
                   </div>
-                  <div className="p-4 grid grid-cols-2 gap-y-4">
+                  <div className="grid grid-cols-2 divide-x divide-y divide-[#F1F5F9] border-t border-[#F1F5F9] -mt-[1px]">
                     {activeOutfit.measurements.map((m: any, i: number) => (
-                      <div key={i} className="flex flex-col">
+                      <div key={i} className="flex flex-col p-4">
                         <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wide">
                           {(() => {
                             const label = m.measurement_name || m.measurement?.name || m.name || m.label || m.field_name || '';

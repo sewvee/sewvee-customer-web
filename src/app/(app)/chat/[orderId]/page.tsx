@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { ChevronLeft, Send, ShoppingBag, Image as ImageIcon, Loader2, MessageCircle, MoreVertical, Mic, Edit2, Trash2, Download, Receipt, Paperclip, Camera } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -126,7 +126,7 @@ export default function ChatDetailPage() {
           message: 'Uploaded Photo',
           attachment_url: fileUrl
         });
-        window.location.reload();
+        loadChat();
       } else {
         throw new Error('No URL returned');
       }
@@ -153,37 +153,38 @@ export default function ChatDetailPage() {
   // Load chat messages + fresh order data in one shot.
   // Using the orders list API so we always get the latest outfit count regardless of
   // the Zustand store cache (avoids missing tabs when admin adds outfits).
+  const loadChat = useCallback(async () => {
+    if (!orderId) { setLoading(false); return; }
+    try {
+      const [chatRes, ordersListRes] = await Promise.all([
+        api.get(`/customer-portal/orders/${orderId}/requests`),
+        api.get(`/customer-portal/orders`, { params: { limit: 100 } }),
+      ]);
+      const data = chatRes.data?.data || chatRes.data;
+      setMessages(Array.isArray(data) ? data : []);
+      // Pick the fresh order from the list so outfit tabs always reflect current state
+      const allOrders = ordersListRes.data?.data || ordersListRes.data || [];
+      const found = Array.isArray(allOrders) ? allOrders.find((o: any) => String(o.id) === String(orderId)) : null;
+      if (found) {
+        setFreshOrder(found);
+        // Also update the Zustand store so other pages (order detail, home) benefit
+        useOrdersStore.setState(s => ({
+          orders: s.orders.map(o => String(o.id) === String(orderId) ? { ...o, ...found } : o),
+          lastFetched: Date.now(),
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to load messages:', err);
+    } finally {
+      console.log("SETTING LOADING FALSE");
+      setLoading(false);
+    }
+  }, [orderId]);
+
   useEffect(() => {
     console.log("LOAD CHAT CALLED", { userMobile: user?.mobile, orderId });
-    async function loadChat() {
-      if (!orderId) { setLoading(false); return; }
-      try {
-        const [chatRes, ordersListRes] = await Promise.all([
-          api.get(`/customer-portal/orders/${orderId}/requests`),
-          api.get(`/customer-portal/orders`, { params: { limit: 100 } }),
-        ]);
-        const data = chatRes.data?.data || chatRes.data;
-        setMessages(Array.isArray(data) ? data : []);
-        // Pick the fresh order from the list so outfit tabs always reflect current state
-        const allOrders = ordersListRes.data?.data || ordersListRes.data || [];
-        const found = Array.isArray(allOrders) ? allOrders.find((o: any) => String(o.id) === String(orderId)) : null;
-        if (found) {
-          setFreshOrder(found);
-          // Also update the Zustand store so other pages (order detail, home) benefit
-          useOrdersStore.setState(s => ({
-            orders: s.orders.map(o => String(o.id) === String(orderId) ? { ...o, ...found } : o),
-            lastFetched: Date.now(),
-          }));
-        }
-      } catch (err) {
-        console.error('Failed to load messages:', err);
-      } finally {
-        console.log("SETTING LOADING FALSE");
-        setLoading(false);
-      }
-    }
     loadChat();
-  }, [orderId, user?.mobile]);
+  }, [loadChat, user?.mobile]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -553,7 +554,38 @@ export default function ChatDetailPage() {
           <p className="text-sm text-slate-500 font-medium">This inquiry is closed and cannot receive new messages.</p>
         </div>
       ) : (
-        <div className="bg-white border-t border-gray-200 p-3 shrink-0 flex items-end gap-2 pb-safe relative">
+        <div className="shrink-0 flex flex-col bg-white border-t border-gray-200 pb-safe relative">
+          {(() => {
+             const allOutfits = order?.outfits || order?.items || [];
+             const outfitsNeedingPhotos = contextOutfitId 
+               ? allOutfits.filter((o:any) => (String(o.id) === String(contextOutfitId) || String(o.order_outfit_id) === String(contextOutfitId)) && (o.requestedPhotosFromClient === true || o.requested_photos_from_client === true))
+               : allOutfits.filter((o:any) => (o.requestedPhotosFromClient === true || o.requested_photos_from_client === true));
+             
+             if (outfitsNeedingPhotos.length > 0) {
+                const targetOutfitId = outfitsNeedingPhotos[0].id || outfitsNeedingPhotos[0].order_outfit_id;
+                return (
+                  <div className="px-4 py-3 bg-orange-50 border-b border-orange-100 flex items-center justify-between shadow-[0_-2px_10px_rgba(0,0,0,0.02)]">
+                    <div className="flex items-center gap-2.5">
+                       <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                         <ImageIcon className="w-4 h-4 text-orange-600" />
+                       </div>
+                       <div>
+                         <p className="text-[13px] font-bold text-orange-900">Action Required</p>
+                         <p className="text-[11px] text-orange-700 font-medium">Please upload reference photos.</p>
+                       </div>
+                    </div>
+                    <button 
+                      onClick={() => setCollageMakerOutfitId(targetOutfitId)}
+                      className="bg-orange-500 hover:bg-orange-600 text-white text-[12px] font-bold px-4 py-2.5 rounded-lg shadow-sm transition active:scale-95"
+                    >
+                      Upload Photos
+                    </button>
+                  </div>
+                );
+             }
+             return null;
+          })()}
+          <div className="p-3 flex items-end gap-2 relative">
         {showAttachMenu && (
           <>
           <div className="fixed inset-0 z-40" onClick={() => setShowAttachMenu(false)}></div>
@@ -633,6 +665,7 @@ export default function ChatDetailPage() {
           </button>
         )}
       </div>
+      </div>
       )}
 
       {/* Message Options Drawer */}
@@ -682,7 +715,7 @@ export default function ChatDetailPage() {
                 attachment_url: fileUrl
               });
               setCollageMakerOutfitId(null);
-              window.location.reload();
+              loadChat();
             } else {
               throw new Error('No URL returned');
             }
