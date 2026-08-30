@@ -576,10 +576,28 @@ export default function ChatDetailPage() {
                         </p>
                         <button 
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setFeedbackOutfitId(msg.order_outfit_id); }}
-                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition active:scale-[0.98] flex items-center justify-center gap-2"
+                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition active:scale-[0.98] flex items-center justify-center gap-2 mb-3"
                         >
                           Leave Feedback
                         </button>
+                        
+                        {order?.googleReviewLink && (
+                          <div className="mt-4 pt-4 border-t border-indigo-200/60 text-center">
+                            <h5 className="font-bold text-indigo-900 text-[14px] mb-1">Support us on Google!</h5>
+                            <p className="text-indigo-700 text-[12px] leading-snug mb-3">
+                              If you enjoyed our service, a Google review would mean the world to us.
+                            </p>
+                            <a 
+                              href={order.googleReviewLink} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center gap-2 w-full bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 font-bold py-2.5 px-4 rounded-xl shadow-sm transition active:scale-[0.98]"
+                            >
+                              <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" className="w-4 h-4" />
+                              Write a Google Review
+                            </a>
+                          </div>
+                        )}
                       </div>
                       );
                     })() : msg.message && msg.message.includes('[ACTION_REQUIRED: PHOTO_REQUEST]') ? (() => {
@@ -637,7 +655,7 @@ export default function ChatDetailPage() {
                   {isCustomer && (
                     <button 
                       onClick={() => setSelectedMessageForOptions(msg)}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all shrink-0"
+                      className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all shrink-0"
                     >
                       <MoreVertical className="w-4 h-4" />
                     </button>
