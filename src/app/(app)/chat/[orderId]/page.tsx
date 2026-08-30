@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { ChevronLeft, Send, ShoppingBag, Image as ImageIcon, Loader2, MessageCircle, MoreVertical, Mic, Edit2, Trash2, Download, Receipt, Paperclip, Camera } from 'lucide-react';
+import { ChevronLeft, Send, ShoppingBag, Image as ImageIcon, Loader2, MessageCircle, MoreVertical, Mic, Edit2, Trash2, Download, Receipt, Paperclip, Camera, Smile } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import EmojiPicker, { Theme, EmojiStyle } from 'emoji-picker-react';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
@@ -136,6 +137,19 @@ export default function ChatDetailPage() {
   const [loading, setLoading] = useState(true);
   
   const [inputText, setInputText] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
+        setShowEmojiPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const [collageMakerOutfitId, setCollageMakerOutfitId] = useState<number | null>(null);
   const [feedbackOutfitId, setFeedbackOutfitId] = useState<number | null>(null);
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
@@ -725,14 +739,34 @@ export default function ChatDetailPage() {
         >
           <Paperclip className="w-5 h-5" />
         </button>
-        <div className="flex-1 bg-gray-50 border border-gray-200 rounded-3xl flex items-end overflow-hidden">
+        <div className="flex-1 bg-gray-50 border border-gray-200 rounded-3xl flex items-end overflow-visible relative">
+          <button
+            type="button"
+            className="p-3 text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            disabled={!contextOutfitId || sending}
+          >
+            <Smile className="w-5 h-5" />
+          </button>
+          {showEmojiPicker && (
+            <div className="absolute bottom-full left-0 mb-2 z-50" ref={emojiPickerRef}>
+              <EmojiPicker
+                onEmojiClick={(emojiObject) => {
+                  setInputText(prev => prev + emojiObject.emoji);
+                  setShowEmojiPicker(false);
+                }}
+                theme={Theme.LIGHT}
+                emojiStyle={EmojiStyle.APPLE}
+              />
+            </div>
+          )}
           <textarea 
             value={inputText}
             onChange={e => setInputText(e.target.value)}
             placeholder={((order?.outfits?.length ?? 0) > 1 || (order?.items?.length ?? 0) > 1) && !contextOutfitId ? "Select a topic first..." : "Type a message..."}
             disabled={!contextOutfitId || sending}
             rows={1}
-            className="w-full max-h-[100px] min-h-[44px] bg-transparent resize-none outline-none py-3 px-4 text-[14px] text-[#0F172A] disabled:opacity-50"
+            className="w-full max-h-[100px] min-h-[44px] bg-transparent resize-none outline-none py-3 pr-4 text-[14px] text-[#0F172A] disabled:opacity-50"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
