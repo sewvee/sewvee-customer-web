@@ -27,7 +27,54 @@ interface ChatMessage {
 
 
 function renderMessageContent(msgText: string, isCustomer: boolean) {
+  if (msgText && msgText.startsWith("⭐ Feedback Submitted!")) {
+    try {
+      const lines = msgText.split("\n");
+      const ratingsStr = lines[1] || ""; // e.g., "Stitching: 5★ | Staff: 4★ | Overall: 4★"
+      const commentsStr = lines.slice(2).join("\n").replace("Comments: ", "").trim();
 
+      const parseRating = (section: string) => {
+        const match = section.match(/(\d+)★/);
+        return match ? parseInt(match[1]) : 0;
+      };
+
+      const parts = ratingsStr.split("|").map(s => s.trim());
+      const stitching = parts.find(p => p.startsWith("Stitching:")) ? parseRating(parts.find(p => p.startsWith("Stitching:"))!) : 0;
+      const staff = parts.find(p => p.startsWith("Staff:")) ? parseRating(parts.find(p => p.startsWith("Staff:"))!) : 0;
+      const overall = parts.find(p => p.startsWith("Overall:")) ? parseRating(parts.find(p => p.startsWith("Overall:"))!) : 0;
+
+      const StarRow = ({ label, count }: { label: string, count: number }) => (
+        <div className="flex items-center justify-between py-1">
+          <span className={`text-[12.5px] font-medium ${isCustomer ? 'text-indigo-50' : 'text-slate-600'}`}>{label}</span>
+          <div className="flex gap-0.5">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <span key={s} className={`text-[13px] ${s <= count ? 'text-yellow-400' : 'text-black/10'}`}>★</span>
+            ))}
+          </div>
+        </div>
+      );
+
+      return (
+        <div className={`flex flex-col w-full min-w-[220px] rounded-xl p-3 shadow-sm border ${isCustomer ? 'bg-white/10 border-white/20' : 'bg-emerald-50/50 border-emerald-100'}`}>
+          <div className={`flex items-center gap-2 mb-2 font-bold ${isCustomer ? 'text-white' : 'text-emerald-700'}`}>
+            <span className="text-lg">⭐</span> Feedback Received
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <StarRow label="Stitching Quality" count={stitching} />
+            <StarRow label="Staff Behavior" count={staff} />
+            <StarRow label="Overall Experience" count={overall} />
+          </div>
+          {commentsStr && (
+            <div className={`mt-3 pt-2.5 border-t text-[13px] leading-relaxed italic ${isCustomer ? 'border-white/20 text-indigo-100' : 'border-emerald-200/50 text-emerald-800'}`}>
+              "{commentsStr}"
+            </div>
+          )}
+        </div>
+      );
+    } catch (e) {
+      // fallback to default text
+    }
+  }
 
   if (msgText && msgText.startsWith("Category:")) {
     try {
