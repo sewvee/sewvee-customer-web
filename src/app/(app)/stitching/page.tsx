@@ -15,12 +15,20 @@ import { CollageMaker } from '@/components/CollageMaker';
 export default function StitchingPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { selectedBoutiqueId } = useBoutiquesStore();
+  const { selectedBoutiqueId, boutiques } = useBoutiquesStore();
   const { orders } = useOrdersStore();
   const { showToast } = useToast();
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+
+  // Guard: Ensure a boutique is selected before allowing order placement
+  useEffect(() => {
+    if (selectedBoutiqueId === null) {
+      showToast('Please select a boutique first from the home dashboard.', 'error');
+      router.push('/home');
+    }
+  }, [selectedBoutiqueId, router, showToast]);
   
   // Step 2
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -342,9 +350,16 @@ export default function StitchingPage() {
         <button onClick={handlePrev} className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full">
           <ArrowLeft className="w-5 h-5 text-[#0F172A]" />
         </button>
-        <h1 className="text-[18px] font-bold text-[#0F172A] font-inter ml-4 flex-1">
-          New Stitching Request
-        </h1>
+        <div className="flex-1 ml-4">
+          <h1 className="text-[18px] font-bold text-[#0F172A] font-inter leading-tight">
+            New Stitching Request
+          </h1>
+          {selectedBoutiqueId && (
+            <p className="text-[12px] font-semibold text-[#5B43EE] mt-0.5">
+              to {boutiques.find(b => b.id === selectedBoutiqueId)?.boutique_name || 'Boutique'}
+            </p>
+          )}
+        </div>
         <button 
           onClick={() => router.back()}
           className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors"

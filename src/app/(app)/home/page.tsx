@@ -250,6 +250,15 @@ export default function HomePage() {
     }
   }, [selectedBoutiqueId, orders, setSelectedBoutiqueId]);
 
+  
+  useEffect(() => {
+    // Automatically open the boutique selection drawer if no boutique is selected
+    // and the user has boutiques available to choose from.
+    if (selectedBoutiqueId === null && boutiques.length > 0) {
+      setDrawerOpen(true);
+    }
+  }, [selectedBoutiqueId, boutiques.length]);
+
   const selectedBoutique = boutiques.find(b => b.id === selectedBoutiqueId);
   const displayedOrders = selectedBoutiqueId 
     ? orders.filter(o => Number(o.boutiqueId || (o as any).company_id) === selectedBoutiqueId)

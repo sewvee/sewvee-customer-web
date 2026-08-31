@@ -680,36 +680,7 @@ export default function ChatDetailPage() {
         </div>
       ) : (
         <div className="shrink-0 flex flex-col bg-white border-t border-gray-200 pb-safe relative">
-          {(() => {
-             const allOutfits = order?.outfits || order?.items || [];
-             const outfitsNeedingPhotos = contextOutfitId 
-               ? allOutfits.filter((o:any) => (String(o.id) === String(contextOutfitId) || String(o.order_outfit_id) === String(contextOutfitId)) && (o.requestedPhotosFromClient === true || o.requested_photos_from_client === true))
-               : allOutfits.filter((o:any) => (o.requestedPhotosFromClient === true || o.requested_photos_from_client === true));
-             
-             if (outfitsNeedingPhotos.length > 0) {
-                const targetOutfitId = outfitsNeedingPhotos[0].id || outfitsNeedingPhotos[0].order_outfit_id;
-                return (
-                  <div className="px-4 py-3 bg-orange-50 border-b border-orange-100 flex items-center justify-between shadow-[0_-2px_10px_rgba(0,0,0,0.02)]">
-                    <div className="flex items-center gap-2.5">
-                       <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
-                         <ImageIcon className="w-4 h-4 text-orange-600" />
-                       </div>
-                       <div>
-                         <p className="text-[13px] font-bold text-orange-900">Action Required</p>
-                         <p className="text-[11px] text-orange-700 font-medium">Please upload reference photos.</p>
-                       </div>
-                    </div>
-                    <button 
-                      onClick={() => setCollageMakerOutfitId(targetOutfitId)}
-                      className="bg-orange-500 hover:bg-orange-600 text-white text-[12px] font-bold px-4 py-2.5 rounded-lg shadow-sm transition active:scale-95"
-                    >
-                      Upload Photos
-                    </button>
-                  </div>
-                );
-             }
-             return null;
-          })()}
+          
           <div className="p-3 flex items-end gap-2 relative">
         {showAttachMenu && (
           <>
