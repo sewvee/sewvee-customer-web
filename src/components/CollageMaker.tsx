@@ -325,7 +325,15 @@ export function CollageMaker({ open, onClose, onSave }: CollageMakerProps) {
       <div className="shrink-0 border-t border-gray-100 bg-white">
         <div className="flex justify-around py-2">
           {[{id:'select',icon:<ImagePlus size={20}/>,label:'Select'},{id:'marker',icon:<PenTool size={20}/>,label:'Marker'},{id:'text',icon:<Type size={20}/>,label:'Text'}].map(t=>(
-            <button key={t.id} onClick={()=>setActiveTool(t.id as 'select'|'marker'|'text')}
+            <button key={t.id} onClick={()=>{
+              setActiveTool(t.id as 'select'|'marker'|'text');
+              if (t.id === 'text') {
+                setPendingPos({ x: 150, y: 150 });
+                setEditingTextId(null);
+                setDraftText('');
+                setAddingText(true);
+              }
+            }}
               className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl ${activeTool===t.id?'bg-[#EEF2FF] text-[#5B43EE]':'text-[#94A3B8]'}`}>
               {t.icon}<span className="text-[11px] font-semibold">{t.label}</span>
             </button>
@@ -362,7 +370,7 @@ export function CollageMaker({ open, onClose, onSave }: CollageMakerProps) {
                   className={`w-8 h-8 rounded-full shrink-0 border-2 transition-transform ${textColor===c?'border-[#5B43EE] scale-110':'border-transparent'}`}
                   style={{backgroundColor:c,boxShadow:'0 0 0 1px rgba(0,0,0,0.15)'}}/>
               ))}
-              <span className="text-[12px] text-[#94A3B8] ml-2">Tap canvas to place</span>
+              <span className="text-[12px] text-[#94A3B8] ml-2">Tap canvas to add more text</span>
             </div>
           </div>
         )}
