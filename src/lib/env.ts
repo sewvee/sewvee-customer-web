@@ -36,3 +36,8 @@ export const URL_ORDER_INVOICE_DOWNLOAD = (id: string) =>
   `${URL_ORDERS}/${id}/invoice/download`;
 export const URL_ORDER_TAILORING_COPY_DOWNLOAD = (id: string) =>
   `${URL_ORDERS}/${id}/tailoringcopy/download`;
+
+// ─── Location ─────────────────────────────────────────────────────────────────
+export const URL_LOCATION_COUNTRIES = `${BASE_URL}location/countries`;
+export const URL_LOCATION_STATES = `${BASE_URL}location/states`;
+export const URL_LOCATION_CITIES = `${BASE_URL}location/cities`;

@@ -9,11 +9,18 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [pin, setPin] = useState('');
   const [validationError, setValidationError] = useState('');
+  const [expanding, setExpanding] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const { login, loading, error, token, clearError } = useAuthStore();
 
   useEffect(() => {
-    if (token) router.replace('/home');
-  }, [token, router]);
+    if (token && !showSuccess) {
+      setExpanding(true);
+      setTimeout(() => {
+        router.push('/home');
+      }, 500); // Wait for the booming circle to expand before redirecting
+    }
+  }, [token, showSuccess, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +108,7 @@ export default function LoginPage() {
             )}
           </div>
 
-          <Button type="submit" fullWidth size="lg" loading={loading} className="mb-6 bg-[#5B43EE] hover:bg-[#4935bf] h-12 rounded-xl text-[15px] font-semibold">
+          <Button type="submit" fullWidth size="lg" loading={loading} className="mb-6 bg-[#5B43EE] hover:bg-[#4935bf] h-12 rounded-xl text-[15px] font-semibold relative overflow-hidden">
             Continue →
           </Button>
           
@@ -112,6 +119,20 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Booming Circle Animation */}
+      <div 
+        className={`fixed inset-0 z-40 pointer-events-none flex items-center justify-center overflow-hidden transition-opacity duration-300 ${expanding ? 'opacity-100' : 'opacity-0'}`}
+      >
+        <div 
+          className="bg-[#FBF6F0] rounded-full transition-transform duration-700 ease-in-out"
+          style={{
+            width: '100vmax',
+            height: '100vmax',
+            transform: expanding ? 'scale(2)' : 'scale(0)',
+          }}
+        />
       </div>
     </div>
   );

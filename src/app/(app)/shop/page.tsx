@@ -11,6 +11,7 @@ import { URL_CUSTOMER_STORE_CATALOGUE, URL_CUSTOMER_PORTAL_SHOP, URL_CUSTOMER_PO
 import { useToast } from '@/hooks/useToast';
 import { Button } from '@/components/ui/Button';
 import { BoutiqueDrawer } from '@/components/home/BoutiqueDrawer';
+import { logEvent } from '@/lib/analytics';
 
 const formatImageUrl = (urlStr: string | null): string | undefined => {
   if (!urlStr) return undefined;
@@ -91,14 +92,15 @@ export default function ShopPage() {
     e.stopPropagation();
     storeAddToCart({ ...product, _company_id: shopMode === 'BOUTIQUE' ? selectedBoutiqueId : 'DIRECT' });
     showToast(`${product.name} added to cart`, 'success');
+    logEvent('add_to_cart', product.id?.toString(), product.name, { price: product.selling_price || product.price, shopMode });
   };
   
-  const updateQuantity = (productId: string, delta: number) => {
+  const updateQuantity = (productId: string | number, delta: number) => {
     storeUpdateQuantity(Number(productId), delta);
   };
   
-  const removeFromCart = (productId: string) => {
-    const item = cart.find(c => c.id.toString() === productId);
+  const removeFromCart = (productId: string | number) => {
+    const item = cart.find(c => c.id.toString() === productId.toString());
     if (item) {
       storeUpdateQuantity(Number(productId), -item.quantity);
     }
@@ -112,6 +114,8 @@ export default function ShopPage() {
       return;
     }
     
+    logEvent('checkout_started', undefined, undefined, { cartSize: cart.length, shopMode });
+
     setIsSubmitting(true);
     try {
       const total = cart.reduce((acc, c) => acc + (Number(c.selling_price || c.price || 0) * (c.quantity || 1)), 0);
@@ -155,6 +159,7 @@ export default function ShopPage() {
         showToast('Order placed successfully!', 'success');
         clearCart();
         setIsCartOpen(false);
+        logEvent('order_placed', undefined, undefined, { totalAmount: total, cartSize: cart.length });
       } else {
         showToast('Failed to place order', 'error');
       }
@@ -241,8 +246,11 @@ export default function ShopPage() {
               return (
                 <div 
                   key={p.id} 
-                  className="bg-white rounded-2xl overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col cursor-pointer"
-                  onClick={() => setSelectedProduct(p)}
+                  className="bg-white rounded-[16px] overflow-hidden shadow-sm border border-gray-100/80 p-2.5 relative flex flex-col cursor-pointer transition-transform active:scale-[0.98]"
+                  onClick={() => {
+                    setSelectedProduct(p);
+                    logEvent('view_item', p.id?.toString(), p.name, { price: p.selling_price || p.price, shopMode });
+                  }}
                 >
                   <div className="h-40 bg-gray-50 w-full relative">
                     {img ? (

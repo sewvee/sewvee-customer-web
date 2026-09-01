@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
 import { useBoutiquesStore } from '@/store/boutiquesStore';
@@ -191,18 +192,35 @@ export default function HomePage() {
   const { showToast } = useToast();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (searchParams.get('selectBoutique') === 'true') {
+      setDrawerOpen(true);
+      // Remove query param without reloading page
+      router.replace('/home');
+    }
+  }, [searchParams, router]);
+
   const [banners, setBanners] = useState<any[]>([]);
   const [featuredShop, setFeaturedShop] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [dismissedPopup, setDismissedPopup] = useState(false);
   const [dismissedBannerId, setDismissedBannerId] = useState<number | null>(null);
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
   
   useEffect(() => {
-    // Check localStorage for previously dismissed banner
+    // Check localStorage for previously dismissed banner and welcome popup
     if (typeof window !== 'undefined') {
       const dismissedId = localStorage.getItem('sewvee_dismissed_popup');
       if (dismissedId) {
         setDismissedBannerId(parseInt(dismissedId, 10));
+      }
+      
+      const seenWelcome = localStorage.getItem('sewvee_welcome_seen');
+      if (!seenWelcome) {
+        setShowWelcomePopup(true);
       }
     }
   }, []);
@@ -496,8 +514,38 @@ export default function HomePage() {
         )}
       </BottomSheet>
 
+      {/* Welcome Popup Banner */}
+      {showWelcomePopup && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-5 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-sm rounded-[24px] overflow-hidden relative shadow-2xl flex flex-col items-center">
+            <button 
+              onClick={() => {
+                setShowWelcomePopup(false);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('sewvee_welcome_seen', 'true');
+                }
+              }}
+              className="absolute top-4 right-4 w-8 h-8 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors z-10"
+            >
+              <XCircle className="w-5 h-5" />
+            </button>
+            <div 
+              className="w-full cursor-pointer max-h-[70vh] overflow-y-auto no-scrollbar"
+              onClick={() => {
+                setShowWelcomePopup(false);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('sewvee_welcome_seen', 'true');
+                }
+              }}
+            >
+              <SafeImage src="/welcome_banner.png" alt="Welcome" className="w-full h-auto" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Promotional Popup Banner */}
-      {banners.find(b => b.type === "POPUP" && b.id !== dismissedBannerId) && !dismissedPopup && (
+      {banners.find(b => b.type === "POPUP" && b.id !== dismissedBannerId) && !dismissedPopup && !showWelcomePopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-sm rounded-[24px] overflow-hidden relative shadow-2xl animate-in zoom-in-95 duration-200">
             {banners.find(b => b.type === "POPUP")?.is_dismissible && (
@@ -521,7 +569,7 @@ export default function HomePage() {
               const imgUrl = popup.image_url || popup.mobile_image_url;
               return (
                 <div 
-                  className="w-full cursor-pointer"
+                  className="w-full cursor-pointer max-h-[70vh] overflow-y-auto no-scrollbar"
                   onClick={() => {
                     if (popup.cta_action_value) {
                       window.open(popup.cta_action_value.startsWith('http') ? popup.cta_action_value : `https://${popup.cta_action_value}`, '_blank');
@@ -529,7 +577,7 @@ export default function HomePage() {
                   }}
                 >
                   {imgUrl ? (
-                    <SafeImage src={formatImageUrl(imgUrl) || imgUrl} alt={popup.title || 'Promotion'} className="w-full h-auto max-h-[70vh] object-contain bg-gray-100" />
+                    <SafeImage src={formatImageUrl(imgUrl) || imgUrl} alt={popup.title || 'Promotion'} className="w-full h-auto object-contain bg-gray-100" />
                   ) : (
                     <div className="p-8 text-center bg-gray-50">
                       <h3 className="text-xl font-bold text-gray-900 mb-2">{popup.title}</h3>
