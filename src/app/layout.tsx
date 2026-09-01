@@ -1,5 +1,11 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { Geist } from 'next/font/google';
+
+const geist = Geist({
+  subsets: ['latin'],
+  variable: '--font-sans',
+});
 import { ToastContainer } from '@/components/ui/Toast';
 
 
@@ -32,7 +38,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png?v=2" />
       </head>
-      <body className={`font-sans bg-[#F8FAFC] text-gray-900 antialiased`}>
+      <body className={`${geist.variable} ${geist.className} font-sans bg-[#F8FAFC] text-gray-900 antialiased`}>
         {children}
         <ToastContainer />
       </body>

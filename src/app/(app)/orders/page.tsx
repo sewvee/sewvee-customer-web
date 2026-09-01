@@ -57,8 +57,8 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-20">
-      <div className="flex flex-col px-4 pt-8 pb-3 bg-white border-b border-[#E2E8F0] sticky top-0 z-10">
-        <h1 className="text-[20px] font-bold text-gray-900 font-inter mb-4">My Orders</h1>
+      <div className="bg-white px-4 pt-6 pb-4 sticky top-0 z-20 border-b border-gray-100">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">My Orders</h1>
         <div className="flex bg-[#F1F5F9] p-1 rounded-xl">
           <button
             onClick={() => setActiveTab('stitching')}

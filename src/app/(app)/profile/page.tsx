@@ -1,7 +1,7 @@
 'use client';
 import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
-import { LogOut, ChevronRight } from 'lucide-react';
+import { LogOut, ChevronRight, Package, ShoppingBag, Settings, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -15,86 +15,110 @@ export default function ProfilePage() {
   const totalReadymade = allOrders.filter((o) => o.order_type === 'SALE_ORDER').length;
 
   return (
-    <div className="bg-[#F8FAFC] min-h-screen px-4 pt-6 pb-24">
-      {/* Combined Profile + Stats Card */}
-      <div className="bg-white rounded-[16px] border border-[#E2E8F0] flex flex-col items-center pt-6 pb-5 px-4 mb-3">
-        {/* Avatar & Info */}
-        <div className="w-[60px] h-[60px] rounded-full bg-[#7C3AED] flex items-center justify-center mb-2.5">
-          <span className="text-[20px] font-bold text-white font-inter">{initials}</span>
-        </div>
-        <h2 className="text-[17px] font-bold text-[#0F172A] font-inter mb-1">
-          {user?.name || 'Customer'}
-        </h2>
-        <p className="text-[13px] text-[#94A3B8] font-inter mb-2.5">
-          {user?.mobile || 'No phone'}
-        </p>
-        <div className="bg-[#F0F4FF] px-3 py-1 rounded-[20px] border border-[#E0E7FF] mb-4.5">
-          <span className="text-[11px] font-semibold text-[#4F46E5] font-inter">
-            Sewvee Customer
-          </span>
-        </div>
-
-        {/* Divider */}
-        <div className="w-full h-[1px] bg-[#F1F5F9] mb-4" />
-
-        {/* All Orders Stats */}
-        <h3 className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-[0.6px] font-inter self-start mb-3.5">
-          Order Insights
-        </h3>
-        <div className="flex items-center w-full">
-          <div className="flex-1 flex flex-col items-center">
-            <span className="text-[22px] font-bold text-[#4F46E5] font-inter">{allOrders.length}</span>
-            <span className="text-[11px] text-[#94A3B8] font-inter mt-0.5">Total</span>
-          </div>
-          <div className="w-[1px] h-8 bg-[#E2E8F0]" />
-          <div className="flex-1 flex flex-col items-center">
-            <span className="text-[22px] font-bold text-[#F59E0B] font-inter">{totalStitching}</span>
-            <span className="text-[11px] text-[#94A3B8] font-inter mt-0.5">Stitching</span>
-          </div>
-          <div className="w-[1px] h-8 bg-[#E2E8F0]" />
-          <div className="flex-1 flex flex-col items-center">
-            <span className="text-[22px] font-bold text-[#10B981] font-inter">{totalReadymade}</span>
-            <span className="text-[11px] text-[#94A3B8] font-inter mt-0.5">Readymade</span>
-          </div>
-        </div>
+    <div className="bg-[#F8FAFC] min-h-screen pb-24">
+      {/* Header — matches Shop / Orders / Chats */}
+      <div className="bg-white px-4 pt-6 pb-4 sticky top-0 z-20 border-b border-gray-100">
+        <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
       </div>
 
-      {/* Quick Links */}
-      <div className="bg-white rounded-[14px] border border-[#E2E8F0] mb-5 overflow-hidden">
-        <Link href="/profile/settings" className="flex items-center px-4 py-3.5 active:bg-gray-50">
-          <div className="flex-1">
-            <p className="text-[14px] font-semibold text-[#0F172A] font-inter mb-0.5">My Profile</p>
-            <p className="text-[12px] text-[#94A3B8] font-inter">Name, email, phone & PIN settings</p>
+      <div className="px-4 pt-5 space-y-3">
+        {/* Avatar + Info + Stats Card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="flex items-center gap-4 px-5 py-5">
+            <div className="w-[58px] h-[58px] rounded-full bg-[#7C3AED] flex items-center justify-center shrink-0">
+              <span className="text-[22px] font-bold text-white">{initials}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[17px] font-bold text-gray-900 truncate">{user?.name || 'Customer'}</p>
+              <p className="text-[13px] text-gray-400 mt-0.5">{user?.mobile || ''}</p>
+              <span className="inline-block mt-1.5 bg-[#EEF2FF] text-[#4F46E5] text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
+                Sewvee Customer
+              </span>
+            </div>
+            <Link href="/profile/settings" className="p-2 bg-gray-50 rounded-full">
+              <Settings className="w-5 h-5 text-gray-500" />
+            </Link>
           </div>
-          <ChevronRight className="w-4 h-4 text-[#CBD5E1]" />
-        </Link>
-        <div className="h-[1px] bg-[#F1F5F9] mx-4" />
 
-        <Link href="/orders" className="flex items-center px-4 py-3.5 active:bg-gray-50">
-          <div className="flex-1">
-            <p className="text-[14px] font-semibold text-[#0F172A] font-inter mb-0.5">My Orders</p>
-            <p className="text-[12px] text-[#94A3B8] font-inter">View all your online orders</p>
+          <div className="h-px bg-gray-100 mx-5" />
+
+          {/* Stats Row */}
+          <div className="flex items-stretch divide-x divide-gray-100 px-2 py-4">
+            <div className="flex-1 flex flex-col items-center gap-0.5">
+              <span className="text-[22px] font-bold text-[#4F46E5]">{allOrders.length}</span>
+              <span className="text-[11px] text-gray-400 font-medium">Total</span>
+            </div>
+            <div className="flex-1 flex flex-col items-center gap-0.5">
+              <span className="text-[22px] font-bold text-[#F59E0B]">{totalStitching}</span>
+              <span className="text-[11px] text-gray-400 font-medium">Stitching</span>
+            </div>
+            <div className="flex-1 flex flex-col items-center gap-0.5">
+              <span className="text-[22px] font-bold text-[#10B981]">{totalReadymade}</span>
+              <span className="text-[11px] text-gray-400 font-medium">Readymade</span>
+            </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-[#CBD5E1]" />
-        </Link>
-        <div className="h-[1px] bg-[#F1F5F9] mx-4" />
-        <Link href="/shop" className="flex items-center px-4 py-3.5 active:bg-gray-50">
-          <div className="flex-1">
-            <p className="text-[14px] font-semibold text-[#0F172A] font-inter mb-0.5">Shop Readymades</p>
-            <p className="text-[12px] text-[#94A3B8] font-inter">Browse & order from boutiques</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-[#CBD5E1]" />
-        </Link>
+        </div>
+
+        {/* Quick Links */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <Link href="/orders" className="flex items-center px-5 py-4 active:bg-gray-50 transition-colors">
+            <div className="w-9 h-9 rounded-xl bg-[#EEF2FF] flex items-center justify-center mr-4 shrink-0">
+              <Package className="w-4 h-4 text-[#5B43EE]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[14px] font-semibold text-gray-900">My Orders</p>
+              <p className="text-[12px] text-gray-400 mt-0.5">View all your orders</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-300" />
+          </Link>
+          <div className="h-px bg-gray-100 mx-5" />
+
+          <Link href="/shop" className="flex items-center px-5 py-4 active:bg-gray-50 transition-colors">
+            <div className="w-9 h-9 rounded-xl bg-[#F0FDF4] flex items-center justify-center mr-4 shrink-0">
+              <ShoppingBag className="w-4 h-4 text-[#10B981]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[14px] font-semibold text-gray-900">Shop Readymades</p>
+              <p className="text-[12px] text-gray-400 mt-0.5">Browse & order from boutiques</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-300" />
+          </Link>
+          <div className="h-px bg-gray-100 mx-5" />
+
+          <Link href="/chat" className="flex items-center px-5 py-4 active:bg-gray-50 transition-colors">
+            <div className="w-9 h-9 rounded-xl bg-[#FFF7ED] flex items-center justify-center mr-4 shrink-0">
+              <MessageCircle className="w-4 h-4 text-[#F59E0B]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[14px] font-semibold text-gray-900">Chats</p>
+              <p className="text-[12px] text-gray-400 mt-0.5">Message your boutique</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-300" />
+          </Link>
+          <div className="h-px bg-gray-100 mx-5" />
+
+          <Link href="/profile/settings" className="flex items-center px-5 py-4 active:bg-gray-50 transition-colors">
+            <div className="w-9 h-9 rounded-xl bg-[#F5F3FF] flex items-center justify-center mr-4 shrink-0">
+              <Settings className="w-4 h-4 text-[#7C3AED]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[14px] font-semibold text-gray-900">Account Settings</p>
+              <p className="text-[12px] text-gray-400 mt-0.5">Name, email, phone & PIN</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-300" />
+          </Link>
+        </div>
+
+        {/* Sign Out */}
+        <button
+          onClick={() => logout()}
+          className="w-full flex justify-center items-center gap-2 h-12 rounded-2xl border border-red-200 bg-red-50 active:bg-red-100 transition-colors"
+        >
+          <LogOut className="w-4 h-4 text-red-500" />
+          <span className="text-[14px] font-semibold text-red-500">Sign Out</span>
+        </button>
       </div>
-
-      {/* Sign Out */}
-      <button 
-        onClick={() => logout()}
-        className="w-full flex justify-center items-center h-[46px] rounded-[12px] border border-[#FCA5A5] bg-[#FFF5F5] active:bg-[#FEE2E2]"
-      >
-        <LogOut className="w-4 h-4 text-[#EF4444] mr-1.5" />
-        <span className="text-[14px] font-semibold text-[#EF4444] font-inter">Sign Out</span>
-      </button>
     </div>
   );
 }
+

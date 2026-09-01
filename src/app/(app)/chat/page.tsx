@@ -58,8 +58,8 @@ export default function ChatListPage() {
   return (
     <div className="bg-[#F8FAFC] min-h-screen flex flex-col relative">
       {/* Header */}
-      <div className="flex flex-col px-4 pt-8 pb-3 bg-white border-b border-[#E2E8F0] sticky top-0 z-10">
-        <h1 className="text-[24px] font-bold text-gray-900 font-inter">Chats</h1>
+      <div className="bg-white px-4 pt-6 pb-4 sticky top-0 z-20 border-b border-gray-100">
+        <h1 className="text-2xl font-bold text-gray-900">Chats</h1>
       </div>
 
       {/* List */}
