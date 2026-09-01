@@ -58,11 +58,8 @@ export default function ChatListPage() {
   return (
     <div className="bg-[#F8FAFC] min-h-screen flex flex-col relative">
       {/* Header */}
-      <div className="bg-[#5B43EE] pt-12 pb-4 px-4 flex items-center shadow-sm shrink-0">
-        <button onClick={() => router.back()} className="mr-3">
-          <ChevronLeft className="w-6 h-6 text-white" />
-        </button>
-        <h1 className="text-[18px] font-bold text-white font-inter">Chats</h1>
+      <div className="flex flex-col px-4 pt-8 pb-3 bg-white border-b border-[#E2E8F0] sticky top-0 z-10">
+        <h1 className="text-[24px] font-bold text-gray-900 font-inter">Chats</h1>
       </div>
 
       {/* List */}

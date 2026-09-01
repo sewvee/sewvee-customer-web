@@ -78,7 +78,7 @@ export default function ShopPage() {
       const res = await fetch(url);
       const json = await res.json();
       if (json.success) {
-        const data = shopMode === 'DIRECT' ? json.products : json.data;
+        const data = shopMode === 'DIRECT' ? (json.data || json.products) : json.data;
         setProducts(data || []);
       }
     } catch (e) {

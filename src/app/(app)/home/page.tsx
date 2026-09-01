@@ -195,21 +195,13 @@ export default function HomePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  useEffect(() => {
-    if (searchParams.get('selectBoutique') === 'true') {
-      setDrawerOpen(true);
-      // Remove query param without reloading page
-      router.replace('/home');
-    }
-  }, [searchParams, router]);
-
   const [banners, setBanners] = useState<any[]>([]);
   const [featuredShop, setFeaturedShop] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [dismissedPopup, setDismissedPopup] = useState(false);
   const [dismissedBannerId, setDismissedBannerId] = useState<number | null>(null);
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
-  
+
   useEffect(() => {
     // Check localStorage for previously dismissed banner and welcome popup
     if (typeof window !== 'undefined') {
@@ -224,6 +216,28 @@ export default function HomePage() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get('selectBoutique') === 'true') {
+      // If there is a welcome popup, wait for it to close. If not, open immediately.
+      if (!showWelcomePopup) {
+        setDrawerOpen(true);
+        router.replace('/home');
+      }
+    }
+  }, [searchParams, router, showWelcomePopup]);
+
+  useEffect(() => {
+    // Automatically open the boutique selection drawer if no boutique is selected,
+    // they have boutiques to choose from, and the welcome popup is NOT currently showing.
+    if (selectedBoutiqueId === null && boutiques.length > 0 && !showWelcomePopup) {
+      // Add a slight delay for a smooth transition after the popup closes
+      const timer = setTimeout(() => {
+        setDrawerOpen(true);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedBoutiqueId, boutiques.length, showWelcomePopup]);
   const { addToCart } = useShopStore();
   
   const [cancelling, setCancelling] = useState(false);
@@ -269,14 +283,6 @@ export default function HomePage() {
   }, [selectedBoutiqueId, orders, setSelectedBoutiqueId]);
 
   
-  useEffect(() => {
-    // Automatically open the boutique selection drawer if no boutique is selected
-    // and the user has boutiques available to choose from.
-    if (selectedBoutiqueId === null && boutiques.length > 0) {
-      setDrawerOpen(true);
-    }
-  }, [selectedBoutiqueId, boutiques.length]);
-
   const selectedBoutique = boutiques.find(b => b.id === selectedBoutiqueId);
   const displayedOrders = selectedBoutiqueId 
     ? orders.filter(o => Number(o.boutiqueId || (o as any).company_id) === selectedBoutiqueId)
