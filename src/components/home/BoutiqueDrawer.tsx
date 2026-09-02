@@ -32,7 +32,7 @@ export function BoutiqueDrawer({ open, onClose }: BoutiqueDrawerProps) {
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/40 transition-opacity" 
-        onClick={onClose} 
+        onClick={selectedBoutiqueId === null ? undefined : onClose} 
       />
 
       {/* Drawer */}
@@ -41,9 +41,11 @@ export function BoutiqueDrawer({ open, onClose }: BoutiqueDrawerProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-6 pb-4">
           <h2 className="text-[18px] font-bold text-[#0F172A] font-inter">Select Boutique</h2>
-          <button onClick={onClose} className="p-2 bg-gray-50 rounded-full text-gray-500">
-            <X className="w-5 h-5" />
-          </button>
+          {selectedBoutiqueId !== null && (
+            <button onClick={onClose} className="p-2 bg-gray-50 rounded-full text-gray-500">
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Search Bar */}
@@ -62,31 +64,6 @@ export function BoutiqueDrawer({ open, onClose }: BoutiqueDrawerProps) {
 
         {/* List */}
         <div className="flex-1 overflow-y-auto px-5 pb-10">
-          {!search && (
-            <div className="mb-2">
-              <button
-                onClick={() => {
-                  setSelectedBoutiqueId(null);
-                  onClose();
-                }}
-                className={`w-full flex items-center py-4 text-left transition-colors ${
-                  selectedBoutiqueId === null ? 'bg-indigo-50/50 rounded-xl px-2' : 'px-2'
-                }`}
-              >
-                <div className="flex-1">
-                  <p className={`text-[15px] font-bold font-inter ${selectedBoutiqueId === null ? 'text-[#4F46E5]' : 'text-[#0F172A]'}`}>
-                    All Boutiques
-                  </p>
-                  <div className="flex items-center mt-1 text-gray-500">
-                    <p className="text-[13px] font-inter">View products from all boutiques</p>
-                  </div>
-                </div>
-              </button>
-              {filteredBoutiques.length > 0 && (
-                <div className="h-[1px] bg-gray-100 w-full ml-2 my-1" />
-              )}
-            </div>
-          )}
           {filteredBoutiques.length > 0 ? (
             filteredBoutiques.map((boutique, index) => {
               const isSelected = selectedBoutiqueId === boutique.id;
