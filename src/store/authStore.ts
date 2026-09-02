@@ -62,7 +62,14 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         localStorage.removeItem('sewvee_customer_token');
+        localStorage.removeItem('sewvee_welcome_seen');
+        localStorage.removeItem('sewvee_dismissed_popup');
+        localStorage.removeItem('sewvee_customer_boutiques');
         set({ user: null, token: null, error: null });
+        // Also force a reload to completely clear all zustand stores in memory
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
       },
 
       clearError: () => set({ error: null }),
