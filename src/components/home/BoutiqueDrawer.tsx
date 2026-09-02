@@ -82,8 +82,8 @@ export function BoutiqueDrawer({ open, onClose }: BoutiqueDrawerProps) {
                       <p className={`text-[15px] font-bold font-inter ${isSelected ? 'text-[#4F46E5]' : 'text-[#0F172A]'}`}>
                         {boutique.boutique_name}
                       </p>
-                      <div className="flex items-center mt-1 text-gray-500">
-                        <MapPin className="w-3.5 h-3.5 mr-1" />
+                      <div className="flex items-start mt-1 text-gray-500">
+                        <MapPin className="w-3.5 h-3.5 mr-1.5 mt-[3px] flex-shrink-0" />
                         <p className="text-[13px] font-inter">
                           {boutique.city_name ? boutique.city_name : 'No City'} 
                           {boutique.address && ` • ${boutique.address}`}
