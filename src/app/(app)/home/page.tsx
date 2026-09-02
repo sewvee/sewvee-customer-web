@@ -158,17 +158,16 @@ function InlineBanners({ banners }: { banners: any[] }) {
   if (banners.length === 0) return null;
 
   return (
-    <div className="mt-4 mb-4">
+    <div className="mt-4 px-5 mb-4">
       {/* Removed scroll-smooth class so JS can perform instant jumps */}
       <div ref={scrollRef} className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar">
-        <div className="shrink-0 w-1" />
         {displayBanners.map((banner, idx) => {
           const imgUrl = banner.image_url || banner.mobile_image_url;
           return (
             <div 
               key={idx} 
               className={`shrink-0 h-[160px] rounded-[16px] overflow-hidden bg-gray-200 relative border border-gray-200 shadow-sm cursor-pointer ${
-                banners.length > 1 ? 'snap-start w-[85%] md:w-[400px]' : 'w-full snap-start'
+                banners.length > 1 ? 'snap-center w-[90%] md:w-[400px]' : 'w-full'
               }`}
               onClick={() => banner.cta_action_value && window.open(banner.cta_action_value, '_blank')}
             >
@@ -180,7 +179,6 @@ function InlineBanners({ banners }: { banners: any[] }) {
             </div>
           );
         })}
-        <div className="shrink-0 w-1" />
       </div>
     </div>
   );
@@ -385,16 +383,16 @@ export default function HomePage() {
 
         {/* FEATURED IN SHOP */}
         {featuredShop.length > 0 && (
-          <div className="mt-8">
-            <div className="flex justify-between items-center mb-4 px-5">
+          <div className="mt-8 px-5">
+            <div className="flex justify-between items-center mb-4">
               <h2 className="text-[18px] font-bold text-[#0F172A] font-inter">Featured in Shop</h2>
               <Link href="/shop" className="text-[13px] font-bold text-[#4F46E5] flex items-center">
                 View All <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
             </div>
             
-<div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-4">
-              <div className="shrink-0 w-1" />
+<div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-4 -mx-5">
+              <div className="shrink-0 w-5" />
               {featuredShop.map(item => (
                 <button key={item.id} onClick={() => setSelectedProduct(item)} className="snap-start shrink-0 w-[140px] bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.04)] text-left block">
                   <div className="h-[140px] bg-gray-50 relative rounded-t-[16px] overflow-hidden">
