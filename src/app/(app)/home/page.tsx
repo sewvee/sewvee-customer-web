@@ -357,8 +357,11 @@ export default function HomePage() {
         <div className="px-5 mt-6">
           <h2 className="text-[18px] font-bold text-[#0F172A] font-inter mb-4">Quick Actions</h2>
           <div className="grid grid-cols-3 gap-3">
-            <Link href="/stitching" className="flex flex-col items-center p-4 bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm">
-              <div className="w-10 h-10 bg-[#EEF2FF] rounded-full flex items-center justify-center mb-2">
+            <Link href="/stitching" className="relative flex flex-col items-center p-4 bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm">
+              <div className="absolute -top-2.5 bg-[linear-gradient(110deg,#4F46E5,45%,#818cf8,55%,#4F46E5)] text-white text-[9px] font-bold px-2 py-0.5 rounded-full animate-shimmer shadow-sm whitespace-nowrap">
+                Online Trending
+              </div>
+              <div className="w-10 h-10 bg-[#EEF2FF] rounded-full flex items-center justify-center mb-2 mt-0.5">
                 <Scissors className="w-5 h-5 text-[#4F46E5]" />
               </div>
               <span className="text-[13px] font-bold text-[#0F172A]">Stitching</span>
