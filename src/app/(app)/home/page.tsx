@@ -357,7 +357,7 @@ export default function HomePage() {
         <div className="px-5 mt-6">
           <h2 className="text-[18px] font-bold text-[#0F172A] font-inter mb-4">Quick Actions</h2>
           <div className="grid grid-cols-3 gap-3">
-            <Link href="/stitching" className="relative flex flex-col items-center p-4 bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm">
+            <Link href="/stitching" className="relative flex flex-col items-center p-4 bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm animate-border-glow">
               <div className="absolute -top-2.5 bg-[linear-gradient(110deg,#4F46E5,45%,#818cf8,55%,#4F46E5)] text-white text-[9px] font-bold px-2 py-0.5 rounded-full animate-shimmer shadow-sm whitespace-nowrap">
                 Online Order
               </div>
