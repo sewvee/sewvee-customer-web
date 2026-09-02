@@ -33,3 +33,25 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+@keyframes shimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+@utility animate-shimmer {
+  animation: shimmer 2.5s infinite linear;
+  background-size: 200% auto;
+}
+
+@keyframes border-glow {
+  0%, 100% {
+    border-color: #E2E8F0;
+  }
+  50% {
+    border-color: #818cf8;
+  }
+}
+.animate-border-glow {
+  animation: border-glow 3s ease-in-out infinite;
+}
