@@ -8,6 +8,13 @@ import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
 import { useChatStore } from '@/store/chatStore';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { API_DOMAIN } from '@/lib/env';
+
+const formatImageUrl = (urlStr: string | null): string | undefined => {
+  if (!urlStr) return undefined;
+  if (urlStr.startsWith('http')) return urlStr;
+  return `${API_DOMAIN}/${urlStr.replace(/^\//, '')}`;
+};
 
 interface ChatThread {
   order_id: number;
@@ -87,7 +94,7 @@ export default function ChatListPage() {
                 {/* Avatar */}
                 <div className="w-[50px] h-[50px] rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0 overflow-hidden">
                   {t.profile_icon_url ? (
-                    <img src={t.profile_icon_url} alt={t.boutique_name} className="w-full h-full object-cover" />
+                    <img src={formatImageUrl(t.profile_icon_url)} alt={t.boutique_name} className="w-full h-full object-cover" />
                   ) : (
                     <ShoppingBag className="w-6 h-6 text-indigo-400" />
                   )}
@@ -200,7 +207,7 @@ export default function ChatListPage() {
           <div className="flex items-center gap-3 mb-6 px-2">
             <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center shrink-0">
               {selectedThreadForOptions?.profile_icon_url ? (
-                <img src={selectedThreadForOptions.profile_icon_url} alt="" className="w-full h-full object-cover rounded-full" />
+                <img src={formatImageUrl(selectedThreadForOptions.profile_icon_url)} alt="" className="w-full h-full object-cover rounded-full" />
               ) : (
                 <ShoppingBag className="w-5 h-5 text-indigo-400" />
               )}
