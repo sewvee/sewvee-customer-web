@@ -273,6 +273,7 @@ export default function StitchingPage() {
       const payload = {
         order_type: 'STITCHING_REQUEST',
         customer_mobile: user?.mobile,
+        customer_name: user?.name,
         company_id: selectedBoutiqueId,
         outfits: payloadOutfits,
       };
