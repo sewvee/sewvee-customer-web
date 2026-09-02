@@ -143,7 +143,9 @@ export function OrderCard({ order, href, hasPendingPhoto = false, onCancel }: Or
               }}
               className="flex-1 flex items-center justify-center bg-[#FEF2F2] px-3 py-2.5 rounded-lg border border-[#FECACA]"
             >
-              <span className="text-[11px] font-bold text-[#EF4444] font-inter uppercase tracking-wide">Cancel Request</span>
+              <span className="text-[11px] font-bold text-[#EF4444] font-inter uppercase tracking-wide">
+                {order.order_type === 'STITCHING_REQUEST' ? 'Cancel Request' : 'Cancel Order'}
+              </span>
             </button>
             <div className="flex-1 flex items-center justify-center bg-[#EEF2FF] px-3 py-2.5 rounded-lg border border-[#C7D2FE]">
               <span className="text-[11px] font-bold text-[#4F46E5] font-inter uppercase tracking-wide">View Order</span>

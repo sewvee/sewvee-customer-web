@@ -18,6 +18,22 @@ export default function OrdersPage() {
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTab = sessionStorage.getItem('ordersActiveTab');
+      if (savedTab === 'readymade' || savedTab === 'stitching') {
+        setActiveTab(savedTab);
+      }
+    }
+  }, []);
+
+  const handleTabChange = (tab: 'stitching' | 'readymade') => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('ordersActiveTab', tab);
+    }
+  };
+
+  useEffect(() => {
     if (user?.mobile) refreshOrders(user.mobile);
   }, [user?.mobile, refreshOrders]);
 
@@ -61,7 +77,7 @@ export default function OrdersPage() {
         <h1 className="text-2xl font-bold text-gray-900 mb-4">My Orders</h1>
         <div className="flex bg-[#F1F5F9] p-1 rounded-xl">
           <button
-            onClick={() => setActiveTab('stitching')}
+            onClick={() => handleTabChange('stitching')}
             className={`flex-1 py-2 text-[14px] font-bold rounded-lg transition-colors ${
               activeTab === 'stitching' ? 'bg-white text-[#5B43EE] shadow-sm' : 'text-[#64748B]'
             }`}
@@ -69,7 +85,7 @@ export default function OrdersPage() {
             Stitching
           </button>
           <button
-            onClick={() => setActiveTab('readymade')}
+            onClick={() => handleTabChange('readymade')}
             className={`flex-1 py-2 text-[14px] font-bold rounded-lg transition-colors ${
               activeTab === 'readymade' ? 'bg-white text-[#5B43EE] shadow-sm' : 'text-[#64748B]'
             }`}
@@ -100,7 +116,7 @@ export default function OrdersPage() {
               const statusStr = (item.status || '').toUpperCase();
               const isCancelled = statusStr === 'CANCELLED' || String(item.status) === '4';
               const isDelivered = statusStr === 'DELIVERED' || String(item.status) === '5';
-              const canCancel = !isCancelled && !isDelivered && (item.source === 'send order request' || item.order_type === 'STITCHING_REQUEST' || item.source === 'ONLINE');
+              const canCancel = !isCancelled && !isDelivered && (item.source === 'send order request' || item.order_type === 'STITCHING_REQUEST' || item.order_type === 'SALE_ORDER' || item.source === 'ONLINE');
               
               return (
                 <OrderCard 
@@ -124,7 +140,7 @@ export default function OrdersPage() {
           </div>
           <h3 className="text-[20px] font-bold text-gray-900 mb-2 font-inter">Cancel Order</h3>
           <p className="text-[15px] text-gray-500 mb-6 font-inter leading-relaxed">
-            Are you sure you want to cancel this order request? This action cannot be undone.
+            Are you sure you want to cancel this order? This action cannot be undone.
           </p>
           <div className="flex gap-3 w-full">
             <button 
