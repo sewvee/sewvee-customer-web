@@ -8,7 +8,7 @@ import { OrderCard } from '@/components/order/OrderCard';
 import { ShoppingBag, MessageCircle, Store, ChevronDown, Bell, Scissors, Camera, ArrowRight, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { BoutiqueDrawer } from '@/components/home/BoutiqueDrawer';
-import { BASE_URL, URL_CUSTOMER_PORTAL_SHOP } from '@/lib/env';
+import { BASE_URL, URL_CUSTOMER_PORTAL_SHOP, URL_CUSTOMER_STORE_CATALOGUE } from '@/lib/env';
 import api from '@/lib/api';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useToast } from '@/hooks/useToast';
@@ -261,7 +261,7 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchFeatured() {
       try {
-        let allItems = [];
+        let allItems: any[] = [];
         
         // Fetch Sewvee Originals
         const originalsRes = await fetch(URL_CUSTOMER_STORE_CATALOGUE).then(r => r.json()).catch(() => null);
@@ -391,7 +391,8 @@ export default function HomePage() {
               </Link>
             </div>
             
-<div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-4 -mx-5 px-5">
+<div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-4 -mx-5">
+              <div className="shrink-0 w-5" />
               {featuredShop.map(item => (
                 <button key={item.id} onClick={() => setSelectedProduct(item)} className="snap-start shrink-0 w-[140px] bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.04)] text-left block">
                   <div className="h-[140px] bg-gray-100 relative p-1.5">
@@ -420,6 +421,7 @@ export default function HomePage() {
                 <p className="text-[13px] font-bold text-[#0F172A]">View All</p>
                 <p className="text-[11px] text-gray-500 mt-0.5">Explore Shop</p>
               </Link>
+              <div className="shrink-0 w-5" />
             </div>
 
           </div>
