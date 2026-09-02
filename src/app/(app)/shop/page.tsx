@@ -273,7 +273,7 @@ export default function ShopPage() {
                     logEvent('view_item', (p.id || p.item_id)?.toString(), p.name, { price: p.selling_price || p.price, shopMode });
                   }}
                 >
-                  <div className="h-40 bg-gray-50 w-full relative">
+                  <div className="h-40 bg-gray-50 w-full relative rounded-[12px] overflow-hidden">
                     {img ? (
                       <img src={img || undefined} alt={p.name} className="w-full h-full object-cover" />
                     ) : (
