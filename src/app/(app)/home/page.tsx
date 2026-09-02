@@ -158,16 +158,16 @@ function InlineBanners({ banners }: { banners: any[] }) {
   if (banners.length === 0) return null;
 
   return (
-    <div className="mt-4 px-5 mb-4">
+    <div className="mt-4 mb-4">
       {/* Removed scroll-smooth class so JS can perform instant jumps */}
-      <div ref={scrollRef} className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar">
+      <div ref={scrollRef} className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar px-5">
         {displayBanners.map((banner, idx) => {
           const imgUrl = banner.image_url || banner.mobile_image_url;
           return (
             <div 
               key={idx} 
               className={`shrink-0 h-[160px] rounded-[16px] overflow-hidden bg-gray-200 relative border border-gray-200 shadow-sm cursor-pointer ${
-                banners.length > 1 ? 'snap-center w-[90%] md:w-[400px]' : 'w-full'
+                banners.length > 1 ? 'snap-start w-[85%] md:w-[400px]' : 'w-full snap-start'
               }`}
               onClick={() => banner.cta_action_value && window.open(banner.cta_action_value, '_blank')}
             >
@@ -395,15 +395,15 @@ export default function HomePage() {
               <div className="shrink-0 w-5" />
               {featuredShop.map(item => (
                 <button key={item.id} onClick={() => setSelectedProduct(item)} className="snap-start shrink-0 w-[140px] bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.04)] text-left block">
-                  <div className="h-[140px] bg-gray-100 relative p-1.5">
+                  <div className="h-[140px] bg-gray-50 relative rounded-t-[16px] overflow-hidden">
                     {item.image_url ? (
                       <SafeImage 
                         src={formatImageUrl(item.image_url.split(',')[0]) || ''} 
                         alt={item.name} 
-                        className="w-full h-full object-cover rounded-[12px]" 
+                        className="w-full h-full object-cover" 
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-[12px]"><ShoppingBag className="w-8 h-8 text-gray-300" /></div>
+                      <div className="w-full h-full flex items-center justify-center text-gray-300"><ShoppingBag className="w-8 h-8" /></div>
                     )}
                   </div>
                   <div className="p-3 pt-2">
