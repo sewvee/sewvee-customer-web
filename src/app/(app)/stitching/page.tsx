@@ -15,7 +15,7 @@ import { CollageMaker } from '@/components/CollageMaker';
 export default function StitchingPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { selectedBoutiqueId, boutiques } = useBoutiquesStore();
+  const { selectedBoutiqueId, boutiques, fetchBoutiques } = useBoutiquesStore();
   const { orders } = useOrdersStore();
   const { showToast } = useToast();
 
@@ -29,6 +29,13 @@ export default function StitchingPage() {
       router.push('/home');
     }
   }, [selectedBoutiqueId, router, showToast]);
+
+  // Ensure boutiques are loaded so the header can show the name
+  useEffect(() => {
+    if (boutiques.length === 0) {
+      fetchBoutiques();
+    }
+  }, [boutiques.length, fetchBoutiques]);
   
   // Step 2
   const fileInputRef = useRef<HTMLInputElement>(null);
