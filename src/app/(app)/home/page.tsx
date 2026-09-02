@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { BoutiqueDrawer } from '@/components/home/BoutiqueDrawer';
 import { BASE_URL, URL_CUSTOMER_PORTAL_SHOP, URL_CUSTOMER_STORE_CATALOGUE } from '@/lib/env';
 import api from '@/lib/api';
+import { logEvent } from '@/lib/analytics';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useToast } from '@/hooks/useToast';
 import { useShopStore } from '@/store/shopStore';
@@ -398,7 +399,7 @@ export default function HomePage() {
             
 <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-4 px-5">
               {featuredShop.map(item => (
-                <button key={item.id} onClick={() => setSelectedProduct(item)} className="snap-start shrink-0 w-[140px] bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.04)] text-left block">
+                <button key={item.id} onClick={() => { setSelectedProduct(item); logEvent('view_item', item.id?.toString(), item.name, { price: item.selling_price || item.price, source: 'home_featured' }); }} className="snap-start shrink-0 w-[140px] bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.04)] text-left block">
                   <div className="h-[140px] bg-gray-50 relative rounded-t-[16px] overflow-hidden">
                     {item.image_url ? (
                       <SafeImage 
@@ -546,6 +547,7 @@ export default function HomePage() {
                 onClick={(e) => { 
                   addToCart(selectedProduct); 
                   showToast(`${selectedProduct.name} added to cart`, 'success');
+                  logEvent('add_to_cart', selectedProduct.id?.toString(), selectedProduct.name, { price: selectedProduct.selling_price || selectedProduct.price, source: 'home_featured' });
                   setSelectedProduct(null); 
                 }} 
                 className="w-full py-4 rounded-xl font-bold text-[15px] bg-[#5B43EE] text-white hover:bg-[#4f39ce]"
