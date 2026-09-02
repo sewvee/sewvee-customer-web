@@ -233,7 +233,7 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Tabs */}
-          {order.order_type !== 'STITCHING_REQUEST' && (
+          {order.order_type === 'TAILORING' && (
           <div className="flex w-full -mb-[1px]">
             <button onClick={() => setActiveTab('details')} className={`flex-1 pb-3 text-[14px] font-bold outline-none border-b-2 ${activeTab === 'details' ? 'text-[#5B43EE] border-[#5B43EE]' : 'text-[#64748B] border-transparent'}`}>Details</button>
             <button onClick={() => setActiveTab('payments')} className={`flex-1 pb-3 text-[14px] font-bold outline-none border-b-2 ${activeTab === 'payments' ? 'text-[#5B43EE] border-[#5B43EE]' : 'text-[#64748B] border-transparent'}`}>Payments</button>
@@ -244,7 +244,7 @@ export default function OrderDetailPage() {
       {/* Content */}
       <div className="bg-[#F8FAFC] flex-1 flex flex-col px-4 pt-4 overflow-y-auto pb-24">
         
-        {activeTab === 'payments' && (
+        {(activeTab === 'payments' || order.order_type === 'SALE_ORDER') && (
           <div className="space-y-4">
             <h2 className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide px-1">Order Billing Summary</h2>
             
@@ -389,7 +389,7 @@ export default function OrderDetailPage() {
         )}
 
 
-        {activeTab === 'details' && (
+        {activeTab === 'details' && order.order_type !== 'SALE_ORDER' && (
           <>
             {outfits.length > 0 && (
               <div className="flex overflow-x-auto gap-2 mb-4 hide-scrollbar min-h-[44px]">
@@ -833,7 +833,8 @@ export default function OrderDetailPage() {
             )}
             
             {/* ENTIRE ORDER ACTIONS */}
-            {order.order_type === 'STITCHING_REQUEST' && !(String(order?.status).toUpperCase() === 'CANCELLED' || (order?.status as any)?.id === 4 || (order?.status as any)?.name === 'CANCELLED') && (
+            {!(String(order?.status).toUpperCase() === 'CANCELLED' || (order?.status as any)?.id === 4 || (order?.status as any)?.name === 'CANCELLED') && 
+             !(String(order?.status).toUpperCase() === 'DELIVERED' || (order?.status as any)?.id === 5 || (order?.status as any)?.name === 'DELIVERED') && (
               <div className="mt-4 mb-8">
                 <button
                   onClick={() => setCancelEntireDrawerVisible(true)}
@@ -845,7 +846,7 @@ export default function OrderDetailPage() {
                   ) : (
                     <X size={18} />
                   )}
-                  Cancel Entire Request
+                  {order.order_type === 'STITCHING_REQUEST' ? 'Cancel Entire Request' : 'Cancel Order'}
                 </button>
               </div>
             )}
@@ -911,14 +912,14 @@ export default function OrderDetailPage() {
               <div className="w-10 h-10 rounded-full bg-[#FEF2F2] flex items-center justify-center mr-3">
                 <AlertCircle size={20} color="#EF4444" />
               </div>
-              <h3 className="text-[17px] font-bold text-[#1E293B] flex-1">Cancel Entire Request</h3>
+              <h3 className="text-[17px] font-bold text-[#1E293B] flex-1">{order.order_type === 'STITCHING_REQUEST' ? 'Cancel Entire Request' : 'Cancel Order'}</h3>
               <button onClick={() => setCancelEntireDrawerVisible(false)} className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
                 <X size={20} />
               </button>
             </div>
             
             <p className="text-[15px] text-[#475569] mb-6 leading-relaxed font-inter">
-              Are you sure you want to cancel this entire order request? All outfits within this request will be cancelled. This action cannot be undone.
+              {order.order_type === 'STITCHING_REQUEST' ? 'Are you sure you want to cancel this entire order request? All outfits within this request will be cancelled. This action cannot be undone.' : 'Are you sure you want to cancel this order? This action cannot be undone.'}
             </p>
             
             <div className="flex gap-3">
@@ -926,14 +927,14 @@ export default function OrderDetailPage() {
                 className="flex-1 py-3.5 rounded-xl bg-[#F1F5F9] text-[#64748B] font-bold text-[15px] transition-colors hover:bg-gray-200"
                 onClick={() => setCancelEntireDrawerVisible(false)}
               >
-                Keep Request
+                {order.order_type === 'STITCHING_REQUEST' ? 'Keep Request' : 'Keep Order'}
               </button>
               <button 
                 className="flex-1 py-3.5 rounded-xl bg-[#EF4444] text-white font-bold text-[15px] transition-opacity hover:opacity-90 flex justify-center items-center gap-2"
                 onClick={handleCancelEntireOrder}
                 disabled={cancellingEntire}
               >
-                {cancellingEntire ? 'Cancelling...' : 'Cancel Request'}
+                {cancellingEntire ? 'Cancelling...' : (order.order_type === 'STITCHING_REQUEST' ? 'Cancel Request' : 'Cancel Order')}
               </button>
             </div>
           </div>

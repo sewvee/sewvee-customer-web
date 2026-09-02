@@ -9,21 +9,22 @@ interface ShopState {
 
 export const useShopStore = create<ShopState>((set) => ({
   cart: [],
-  addToCart: (product) => set((state) => {
-    const existing = state.cart.find(c => c.id === product.id);
+  addToCart: (product: any) => set((state) => {
+    const pId = product.id || product.item_id;
+    const existing = state.cart.find(c => (c.id || c.item_id) === pId);
     if (existing) {
-      return { cart: state.cart.map(c => c.id === product.id ? { ...c, quantity: (c.quantity || 1) + 1 } : c) };
+      return { cart: state.cart.map(c => (c.id || c.item_id) === pId ? { ...c, quantity: (c.quantity || 1) + 1 } : c) };
     }
     return { cart: [...state.cart, { ...product, quantity: 1 }] };
   }),
-  updateQuantity: (productId, delta) => set((state) => {
-    const existing = state.cart.find(c => c.id === productId);
+  updateQuantity: (productId: number, delta: number) => set((state) => {
+    const existing = state.cart.find(c => (c.id || c.item_id) === productId);
     if (!existing) return state;
     const newQty = (existing.quantity || 1) + delta;
     if (newQty <= 0) {
-      return { cart: state.cart.filter(c => c.id !== productId) };
+      return { cart: state.cart.filter(c => (c.id || c.item_id) !== productId) };
     }
-    return { cart: state.cart.map(c => c.id === productId ? { ...c, quantity: newQty } : c) };
+    return { cart: state.cart.map(c => (c.id || c.item_id) === productId ? { ...c, quantity: newQty } : c) };
   }),
   clearCart: () => set({ cart: [] }),
 }));

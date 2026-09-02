@@ -77,7 +77,7 @@ export default function ShopPage() {
       
       const res = await fetch(url);
       const json = await res.json();
-      if (json.success) {
+      if (json.success || Array.isArray(json.data) || Array.isArray(json.products)) {
         const data = shopMode === 'DIRECT' ? (json.data || json.products) : json.data;
         setProducts(data || []);
       }
@@ -100,7 +100,7 @@ export default function ShopPage() {
   };
   
   const removeFromCart = (productId: string | number) => {
-    const item = cart.find(c => c.id.toString() === productId.toString());
+    const item = cart.find(c =>  (c.id || c.item_id).toString() === productId.toString());
     if (item) {
       storeUpdateQuantity(Number(productId), -item.quantity);
     }
@@ -108,58 +108,78 @@ export default function ShopPage() {
 
   const handlePlaceOrder = async () => {
     if (cart.length === 0 || !user || !token) return;
-    if (shopMode === 'BOUTIQUE' && !selectedBoutiqueId) return;
     if (deliveryMethod === 'COURIER' && !shippingAddress.trim()) {
       showToast('Please enter a shipping address', 'error');
       return;
     }
     
-    logEvent('checkout_started', undefined, undefined, { cartSize: cart.length, shopMode });
+    logEvent('checkout_started', undefined, undefined, { cartSize: cart.length });
 
     setIsSubmitting(true);
     try {
-      const total = cart.reduce((acc, c) => acc + (Number(c.selling_price || c.price || 0) * (c.quantity || 1)), 0);
-      
-      const res = await fetch(URL_CUSTOMER_PORTAL_ORDERS, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token.startsWith('Bearer ') ? token : `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          customer_id: (user as any).customer_id || user.id,
-          customer_mobile: user.mobile,
-          customer_name: user.name || 'App Customer',
-          company_id: cart[0]?._company_id !== 'DIRECT' ? (cart[0]?._company_id || selectedBoutiqueId) : undefined,
-          is_sewvee_direct: cart[0]?._company_id === 'DIRECT' || (cart[0]?._company_id === undefined && shopMode === 'DIRECT'),
-          order_type: 'SALE_ORDER',
-          order_date: new Date().toISOString(),
-          final_amount: total,
-          total_amount: total,
-          total_outfits: cart.length,
-          order_notes: 'Online App Order',
-          delivery_method: deliveryMethod,
-          shipping_address: deliveryMethod === 'COURIER' ? shippingAddress : null,
-          outfits: cart.map(c => ({
-            name: c.name,
-            quantity: c.quantity || 1,
-            total_amount: Number(c.selling_price || c.price || 0) * (c.quantity || 1),
-            items: [{
-              item_type: 'READYMADE',
-              readymade_id: c.id,
-              qty: c.quantity || 1,
-              price: Number(c.selling_price || c.price || 0),
-              total_price: Number(c.selling_price || c.price || 0) * (c.quantity || 1)
-            }]
-          }))
-        })
-      });
+      // Group cart by company_id so Sewvee Originals and different boutiques get separate orders
+      const groupedCart = cart.reduce((groups, item) => {
+        const companyId = item._company_id || 'DIRECT';
+        if (!groups[companyId]) groups[companyId] = [];
+        groups[companyId].push(item);
+        return groups;
+      }, {} as Record<string, any[]>);
 
-      if (res.ok) {
-        showToast('Order placed successfully!', 'success');
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const [companyId, items] of Object.entries(groupedCart)) {
+        const total = items.reduce((acc, c) => acc + (Number(c.selling_price || c.price || 0) * (c.quantity || 1)), 0);
+        const isDirect = companyId === 'DIRECT';
+        
+        const res = await fetch(URL_CUSTOMER_PORTAL_ORDERS, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token.startsWith('Bearer ') ? token : `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            customer_id: (user as any).customer_id || user.id,
+            customer_mobile: user.mobile,
+            customer_name: user.name || 'App Customer',
+            company_id: isDirect ? undefined : Number(companyId),
+            is_sewvee_direct: isDirect,
+            order_type: 'SALE_ORDER',
+            order_date: new Date().toISOString(),
+            final_amount: total,
+            total_amount: total,
+            total_outfits: items.length,
+            order_notes: 'Online App Order',
+            delivery_method: deliveryMethod,
+            shipping_address: deliveryMethod === 'COURIER' ? shippingAddress : null,
+            outfits: items.map(c => ({
+              name: c.name,
+              quantity: c.quantity || 1,
+              total_amount: Number(c.selling_price || c.price || 0) * (c.quantity || 1),
+              items: [{
+                item_type: 'READYMADE',
+                readymade_id: c.id || c.item_id,
+                qty: c.quantity || 1,
+                price: Number(c.selling_price || c.price || 0),
+                total_price: Number(c.selling_price || c.price || 0) * (c.quantity || 1)
+              }]
+            }))
+          })
+        });
+
+        if (res.ok) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        showToast(failCount > 0 ? 'Orders partially placed!' : 'Order placed successfully!', 'success');
         clearCart();
         setIsCartOpen(false);
-        logEvent('order_placed', undefined, undefined, { totalAmount: total, cartSize: cart.length });
+        const overallTotal = cart.reduce((acc, c) => acc + (Number(c.selling_price || c.price || 0) * (c.quantity || 1)), 0);
+        logEvent('order_placed', undefined, undefined, { totalAmount: overallTotal, cartSize: cart.length });
       } else {
         showToast('Failed to place order', 'error');
       }
@@ -245,11 +265,11 @@ export default function ShopPage() {
               const img = formatImageUrl(p.image_url);
               return (
                 <div 
-                  key={p.id} 
+                  key={p.id || p.item_id} 
                   className="bg-white rounded-[16px] overflow-hidden shadow-sm border border-gray-100/80 p-2.5 relative flex flex-col cursor-pointer transition-transform active:scale-[0.98]"
                   onClick={() => {
                     setSelectedProduct(p);
-                    logEvent('view_item', p.id?.toString(), p.name, { price: p.selling_price || p.price, shopMode });
+                    logEvent('view_item', (p.id || p.item_id)?.toString(), p.name, { price: p.selling_price || p.price, shopMode });
                   }}
                 >
                   <div className="h-40 bg-gray-50 w-full relative">
@@ -267,15 +287,15 @@ export default function ShopPage() {
                     <div className="mt-auto pt-3 flex items-center justify-between">
                       <span className="font-bold text-[#5B43EE]">₹{p.selling_price || p.price}</span>
                       {(() => {
-                        const cartItem = cart.find(c => c.id === p.id);
+                        const cartItem = cart.find(c => c.id === (p.id || p.item_id) || c.item_id === (p.id || p.item_id));
                         if (cartItem) {
                           return (
                             <div className="flex items-center gap-1 border border-[#5B43EE] rounded-xl p-0.5" onClick={(e) => e.stopPropagation()}>
-                              <button onClick={() => updateQuantity(p.id, -1)} className="w-6 h-6 flex items-center justify-center text-[#5B43EE] hover:bg-indigo-50 rounded-lg transition-colors">
+                              <button onClick={() => updateQuantity(p.id || p.item_id, -1)} className="w-6 h-6 flex items-center justify-center text-[#5B43EE] hover:bg-indigo-50 rounded-lg transition-colors">
                                 <Minus className="w-3 h-3" />
                               </button>
                               <span className="text-xs font-bold w-4 text-center text-[#5B43EE]">{cartItem.quantity}</span>
-                              <button onClick={() => updateQuantity(p.id, 1)} className="w-6 h-6 flex items-center justify-center text-[#5B43EE] hover:bg-indigo-50 rounded-lg transition-colors">
+                              <button onClick={() => updateQuantity(p.id || p.item_id, 1)} className="w-6 h-6 flex items-center justify-center text-[#5B43EE] hover:bg-indigo-50 rounded-lg transition-colors">
                                 <Plus className="w-3 h-3" />
                               </button>
                             </div>
@@ -315,7 +335,7 @@ export default function ShopPage() {
             ) : (
               <div className="divide-y divide-gray-100">
                 {cart.map((item) => (
-                  <div key={item.id} className="py-4 flex gap-4">
+                  <div key={item.id || item.item_id} className="py-4 flex gap-4">
                     <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden shrink-0">
                       {item.image_url ? (
                         <img src={formatImageUrl(item.image_url) || undefined} alt={item.name} className="w-full h-full object-cover" />
@@ -326,18 +346,18 @@ export default function ShopPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
                         <p className="font-bold text-[#0F172A] text-sm truncate pr-2">{item.name}</p>
-                        <button onClick={() => removeFromCart(item.id)} className="p-1 text-gray-400 hover:text-red-500">
+                        <button onClick={() => removeFromCart(item.id || item.item_id)} className="p-1 text-gray-400 hover:text-red-500">
                           <X className="w-4 h-4" />
                         </button>
                       </div>
                       <p className="text-[#5B43EE] font-bold text-sm mt-1">₹{item.selling_price || item.price}</p>
                       
                       <div className="flex items-center gap-3 mt-2">
-                        <button onClick={() => updateQuantity(item.id, -1)} className="w-7 h-7 bg-gray-50 border border-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">
+                        <button onClick={() => updateQuantity(item.id || item.item_id, -1)} className="w-7 h-7 bg-gray-50 border border-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">
                           <Minus className="w-3 h-3" />
                         </button>
                         <span className="font-bold text-sm w-4 text-center text-gray-900">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.id, 1)} className="w-7 h-7 bg-gray-50 border border-gray-200 rounded-full flex items-center justify-center text-[#5B43EE] hover:bg-indigo-50 transition-colors">
+                        <button onClick={() => updateQuantity(item.id || item.item_id, 1)} className="w-7 h-7 bg-gray-50 border border-gray-200 rounded-full flex items-center justify-center text-[#5B43EE] hover:bg-indigo-50 transition-colors">
                           <Plus className="w-3 h-3" />
                         </button>
                       </div>

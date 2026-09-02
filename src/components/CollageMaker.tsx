@@ -70,7 +70,7 @@ function SlotView({ i, images, activeSlot, activeTool, onSlotClick, onDeleteSlot
     >
       {images[i] ? (
         <>
-          <img src={images[i]} className="w-full h-full object-cover" alt={`Slot ${i+1}`} />
+          <img src={images[i]} className="w-full h-full object-cover" alt={`Slot ${i+1}`} onError={() => { alert("This image format is not supported by your browser (e.g. HEIC). Please choose a JPG or PNG."); onDeleteSlot(i); }} />
           {isActive && (
             <button className="absolute top-2 right-2 z-20 bg-red-500 rounded-full p-1.5 shadow" onClick={e=>{e.stopPropagation();onDeleteSlot(i);}}>
               <Trash2 size={14} color="#fff" />
@@ -207,9 +207,9 @@ export function CollageMaker({ open, onClose, onSave }: CollageMakerProps) {
     ctx.fillStyle='#E2E8F0'; ctx.fillRect(0,0,SIZE,SIZE);
 
     const loadImg = (src:string): Promise<HTMLImageElement> => new Promise((res,rej)=>{
-      const img=new Image(); img.crossOrigin='anonymous';
+      const img=new Image();
       img.onload=()=>res(img);
-      img.onerror=()=>{const i2=new Image();i2.onload=()=>res(i2);i2.onerror=rej;i2.src=src;};
+      img.onerror=(e)=>rej(e);
       img.src=src;
     });
 
