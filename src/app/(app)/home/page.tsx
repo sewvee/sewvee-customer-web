@@ -383,15 +383,15 @@ export default function HomePage() {
 
         {/* FEATURED IN SHOP */}
         {featuredShop.length > 0 && (
-          <div className="mt-8 px-5">
-            <div className="flex justify-between items-center mb-4">
+          <div className="mt-8">
+            <div className="flex justify-between items-center mb-4 px-5">
               <h2 className="text-[18px] font-bold text-[#0F172A] font-inter">Featured in Shop</h2>
               <Link href="/shop" className="text-[13px] font-bold text-[#4F46E5] flex items-center">
                 View All <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
             </div>
             
-<div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-4 px-5 -mx-5">
+<div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-4 px-5">
               {featuredShop.map(item => (
                 <button key={item.id} onClick={() => setSelectedProduct(item)} className="snap-start shrink-0 w-[140px] bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.04)] text-left block">
                   <div className="h-[140px] bg-gray-50 relative rounded-t-[16px] overflow-hidden">
