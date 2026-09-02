@@ -391,8 +391,7 @@ export default function HomePage() {
               </Link>
             </div>
             
-<div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-4 -mx-5">
-              <div className="shrink-0 w-5" />
+<div className="flex overflow-x-auto gap-4 snap-x snap-mandatory no-scrollbar pb-4 px-5 -mx-5">
               {featuredShop.map(item => (
                 <button key={item.id} onClick={() => setSelectedProduct(item)} className="snap-start shrink-0 w-[140px] bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.04)] text-left block">
                   <div className="h-[140px] bg-gray-50 relative rounded-t-[16px] overflow-hidden">
