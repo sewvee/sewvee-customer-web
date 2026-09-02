@@ -13,11 +13,17 @@ export function BoutiqueDrawer({ open, onClose }: BoutiqueDrawerProps) {
 
   const filteredBoutiques = useMemo(() => {
     const s = search.toLowerCase();
-    return boutiques.filter((b) => 
+    const filtered = boutiques.filter((b) => 
       (b.boutique_name && b.boutique_name.toLowerCase().includes(s)) ||
       (b.city_name && b.city_name.toLowerCase().includes(s))
     );
-  }, [boutiques, search]);
+    
+    return filtered.sort((a, b) => {
+      if (a.id === selectedBoutiqueId) return -1;
+      if (b.id === selectedBoutiqueId) return 1;
+      return 0;
+    });
+  }, [boutiques, search, selectedBoutiqueId]);
 
   if (!open) return null;
 

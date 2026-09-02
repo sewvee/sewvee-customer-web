@@ -128,8 +128,9 @@ export default function ShopPage() {
       let successCount = 0;
       let failCount = 0;
 
-      for (const [companyId, items] of Object.entries(groupedCart)) {
-        const total = items.reduce((acc, c) => acc + (Number(c.selling_price || c.price || 0) * (c.quantity || 1)), 0);
+      for (const [companyId, itemsGroup] of Object.entries(groupedCart)) {
+        const items = itemsGroup as any[];
+        const total = items.reduce((acc: number, c: any) => acc + (Number(c.selling_price || c.price || 0) * (c.quantity || 1)), 0);
         const isDirect = companyId === 'DIRECT';
         
         const res = await fetch(URL_CUSTOMER_PORTAL_ORDERS, {
