@@ -73,7 +73,7 @@ export default function StitchingPage() {
   });
 
   const categories = ['Blouse', 'Kurta / Kurti', 'Lehenga', 'Suit / Salwar', 'Dress / Gown', 'Pants / Trousers', 'Other'];
-  const measurementOptions = ['Use Previous Measurements', 'I will provide later', 'Take measurements at store'];
+  const measurementOptions = ['Use Previous Measurements', 'I will provide later', 'Take measurements at store', 'Send sample garment via courier'];
 
   const selectedBoutique = boutiques.find((b) => b.id === selectedBoutiqueId);
   const termsText = selectedBoutique?.terms_and_conditions;
@@ -380,9 +380,9 @@ export default function StitchingPage() {
         </button>
       </div>
 
-      <div className="flex-1 p-5 overflow-y-auto pb-24">
+      <div className="flex-1 p-5 overflow-y-auto pb-24 flex flex-col">
         {/* PROGRESS BAR */}
-        <div className="mb-8 px-4">
+        <div className="mb-8 px-4 shrink-0">
           <div className="relative flex items-center justify-between">
             <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[3px] bg-[#E2E8F0] z-0 rounded-full" />
             <div 
@@ -505,12 +505,12 @@ export default function StitchingPage() {
 
         {/* STEP 3: EXPECTED DELIVERY */}
         {step === 3 && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-            <h2 className="text-[20px] font-bold text-[#0F172A] mb-4">Expected Delivery Date</h2>
+          <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col flex-1 min-h-0 pb-16">
+            <h2 className="text-[20px] font-bold text-[#0F172A] mb-4 shrink-0">Expected Delivery Date</h2>
             
             <button 
               onClick={() => setShowCalendar(true)}
-              className="w-full bg-white border border-[#E2E8F0] rounded-xl p-4 flex items-center justify-between outline-none"
+              className="w-full shrink-0 bg-white border border-[#E2E8F0] rounded-xl p-4 flex items-center justify-between outline-none"
             >
               <span className={`text-[15px] font-bold ${deliveryDate ? 'text-[#0F172A]' : 'text-[#94A3B8]'}`}>
                 {deliveryDate ? new Date(deliveryDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'dd/mm/yyyy'}
@@ -518,26 +518,33 @@ export default function StitchingPage() {
               <CalendarIcon className="w-5 h-5 text-[#64748B]" />
             </button>
 
-            <p className="text-[12px] text-[#64748B] mt-4 font-medium">
+            <p className="text-[12px] text-[#64748B] mt-4 font-medium shrink-0">
               Note: The boutique will confirm the final delivery date after reviewing your request.
             </p>
 
             {termsText && (
-              <div className="mt-6">
+              <div className="mt-6 flex flex-col flex-1 min-h-0">
                 <h3 className="text-[14px] font-bold text-[#0F172A] mb-2">Terms and Conditions</h3>
-                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 h-[120px] overflow-y-auto mb-3">
-                  <p className="text-[12px] text-[#475569] whitespace-pre-wrap">{termsText}</p>
+                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 flex-1 overflow-y-auto mb-4 min-h-[180px] shadow-inner">
+                  <p className="text-[13px] text-[#475569] leading-relaxed whitespace-pre-wrap">{termsText}</p>
                 </div>
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <div className="pt-0.5">
-                    <input 
-                      type="checkbox" 
-                      className="w-4 h-4 rounded border-[#CBD5E1] text-[#5B43EE] focus:ring-[#5B43EE]"
-                      checked={agreedToTerms}
-                      onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    />
+                <label className="flex items-center gap-3 cursor-pointer p-1">
+                  <div 
+                    className={`w-5 h-5 shrink-0 rounded-md flex items-center justify-center transition-all duration-200 ${
+                      agreedToTerms 
+                        ? 'bg-[#5B43EE] border-[#5B43EE] shadow-[0_2px_8px_rgba(91,67,238,0.3)]' 
+                        : 'border-[1.5px] border-[#CBD5E1] bg-white hover:border-[#5B43EE]'
+                    }`}
+                  >
+                    {agreedToTerms && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
                   </div>
-                  <span className="text-[13px] font-medium text-[#334155] leading-snug">
+                  <input 
+                    type="checkbox" 
+                    className="hidden"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  />
+                  <span className="text-[14px] font-semibold text-[#334155] select-none">
                     I agree to the Terms and Conditions
                   </span>
                 </label>
