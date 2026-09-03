@@ -30,12 +30,10 @@ export default function StitchingPage() {
     }
   }, [selectedBoutiqueId, router, showToast]);
 
-  // Ensure boutiques are loaded so the header can show the name
+  // Ensure boutiques are fresh so we get latest T&C
   useEffect(() => {
-    if (boutiques.length === 0) {
-      fetchBoutiques();
-    }
-  }, [boutiques.length, fetchBoutiques]);
+    fetchBoutiques();
+  }, [fetchBoutiques]);
   
   // Step 2
   const fileInputRef = useRef<HTMLInputElement>(null);
