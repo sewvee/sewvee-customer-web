@@ -33,6 +33,7 @@ export default function OrderDetailPage() {
   const refreshOrders = useOrdersStore(s => s.refreshOrders);
   
   const order = orders.find((o) => o.id === id);
+  console.log("ORDER DATA:", JSON.stringify(order, null, 2));
 
   const [activeTab, setActiveTab] = useState<'details' | 'payments'>('details');
   const [activeOutfitIndex, setActiveOutfitIndex] = useState(0);
@@ -413,8 +414,12 @@ export default function OrderDetailPage() {
                   // PRIMARY: data saved in localStorage at submission time
                   const localConfig = (localRichData.outfit_configs && localRichData.outfit_configs[activeOutfitIndex]) || null;
 
-                  // FALLBACK: parse from customer_notes text blob (for orders created before this fix)
-                  const rawNotes = activeOutfit.customer_notes || activeOutfit.notes || '';
+                                    // FALLBACK: parse from customer_notes or outfitRequests (which the backend uses to store the form data)
+                  const activeOutfitIdStr = String(activeOutfit.id || activeOutfit.order_outfit_id || '');
+                  const outfitReqs = outfitRequests.filter((r: any) => String(r.outfit_id || r.order_outfit_id || r.outfitId || '') === activeOutfitIdStr || !r.outfit_id);
+                  const firstCustomerReq = outfitReqs.find((r: any) => r.sender_type === 'CUSTOMER' && r.message && r.message.includes('Category:'));
+                  const rawNotes = activeOutfit.customer_notes || activeOutfit.notes || (firstCustomerReq ? firstCustomerReq.message : '');
+                  
                   const extractField = (label: string) => {
                     const match = rawNotes.match(new RegExp(`${label}:\\s*(.+)`, 'i'));
                     return match ? match[1].trim() : '';
@@ -429,12 +434,13 @@ export default function OrderDetailPage() {
                   const measurement = localConfig?.measurement_option || extractField('Measurement') || activeOutfit.measurement_option || '';
                   const delivDate = localConfig?.delivery_date || localRichData.delivery_date || extractField('Expected Date') || activeOutfit.deliveryDate || (order as any).deliveryDate || '';
 
-                  // Photos: from localStorage OR from outfit.photos (attached via /requests)
+                  // Photos: from localStorage OR from outfit.photos OR from outfitRequests
                   const localPhotoUrls: string[] = localConfig?.photo_urls || [];
                   const outfitPhotoUrls: string[] = (activeOutfit.photos || []).map((p: any) =>
                     typeof p === 'string' ? p : (p.file_url || p.url || p.attachment_url || p.image || '')
                   ).filter(Boolean);
-                  const allUrls: string[] = [...new Set([...localPhotoUrls, ...outfitPhotoUrls])];
+                  const requestUrls: string[] = outfitReqs.map((r: any) => r.attachment_url || r.file_url).filter(Boolean);
+                  const allUrls: string[] = [...new Set([...localPhotoUrls, ...outfitPhotoUrls, ...requestUrls])];
                   
                   const audioUrls = allUrls.filter((url: string) => url.match(/\.(webm|mp3|m4a|wav|ogg|aac)$/i) || url.includes('voice_note'));
                   const imageUrls = allUrls.filter((url: string) => !audioUrls.includes(url));
