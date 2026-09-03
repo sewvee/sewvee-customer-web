@@ -575,7 +575,7 @@ export default function HomePage() {
               <XCircle className="w-5 h-5" />
             </button>
             <div 
-              className="w-full cursor-pointer max-h-[70vh] overflow-y-auto no-scrollbar"
+              className="w-full min-h-[300px] cursor-pointer max-h-[70vh] overflow-y-auto no-scrollbar bg-slate-100 flex items-center justify-center"
               onClick={() => {
                 setShowWelcomePopup(false);
                 if (typeof window !== 'undefined') {
