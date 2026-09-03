@@ -225,7 +225,7 @@ export default function ShopPage() {
             onClick={() => setShopMode('BOUTIQUE')}
             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${shopMode === 'BOUTIQUE' ? 'bg-white text-[#5B43EE] shadow-sm' : 'text-gray-500'}`}
           >
-            My Boutique
+            Boutique
           </button>
         </div>
 
