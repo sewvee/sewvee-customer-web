@@ -11,7 +11,7 @@ export default function RootPage() {
     if (token) {
       router.replace('/home');
     } else {
-      router.replace('/login');
+      router.replace('/signup');
     }
   }, [token, router]);
 

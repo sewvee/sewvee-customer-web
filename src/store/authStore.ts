@@ -68,7 +68,7 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, token: null, error: null });
         // Also force a reload to completely clear all zustand stores in memory
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          window.location.href = '/signup';
         }
       },
 

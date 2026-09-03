@@ -53,7 +53,7 @@ api.interceptors.response.use(
       if (!isLoginRequest && typeof window !== 'undefined') {
         localStorage.removeItem('sewvee_customer_token');
         localStorage.removeItem('sewvee_customer_user');
-        window.location.href = '/login';
+        window.location.href = '/signup';
       }
     }
     return Promise.reject(error);
