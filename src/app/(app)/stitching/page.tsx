@@ -76,7 +76,7 @@ export default function StitchingPage() {
   const measurementOptions = ['Use Previous Measurements', 'I will provide later', 'Take measurements at store'];
 
   const selectedBoutique = boutiques.find((b) => b.id === selectedBoutiqueId);
-  const termsText = selectedBoutique?.terms_and_conditions || "MOCK TERMS FOR TESTING: If you see this, the UI works but the backend returned null.";
+  const termsText = selectedBoutique?.terms_and_conditions;
 
   const pastStitchingOrders = useMemo(() => {
     return orders.filter(o => o.order_type === 'TAILORING' || o.order_type === 'STITCHING_REQUEST');
