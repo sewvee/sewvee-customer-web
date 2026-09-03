@@ -66,6 +66,7 @@ export default function StitchingPage() {
   const [outfits, setOutfits] = useState<any[]>([]);
   const [editingOutfitId, setEditingOutfitId] = useState<string | null>(null);
   const [deliveryDate, setDeliveryDate] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const [formData, setFormData] = useState({
     description: '',
@@ -75,6 +76,9 @@ export default function StitchingPage() {
 
   const categories = ['Blouse', 'Kurta / Kurti', 'Lehenga', 'Suit / Salwar', 'Dress / Gown', 'Pants / Trousers', 'Other'];
   const measurementOptions = ['Use Previous Measurements', 'I will provide later', 'Take measurements at store'];
+
+  const selectedBoutique = boutiques.find((b) => b.id === selectedBoutiqueId);
+  const termsText = selectedBoutique?.terms_and_conditions;
 
   const pastStitchingOrders = useMemo(() => {
     return orders.filter(o => o.order_type === 'TAILORING' || o.order_type === 'STITCHING_REQUEST');
@@ -259,6 +263,7 @@ export default function StitchingPage() {
         if (outfit.description) lines.push(`Description: ${outfit.description}`);
         if (outfit.measurement_option) lines.push(`Measurement: ${outfit.measurement_option}`);
         if (deliveryDate) lines.push(`Expected Date: ${deliveryDate}`);
+        if (termsText && agreedToTerms) lines.push(`Terms & Conditions: Agreed`);
         
         return {
           name: outfit.category,
@@ -307,6 +312,7 @@ export default function StitchingPage() {
             selected_past_order_id: outfit.selected_past_order_id || '',
             delivery_date: deliveryDate,
             photo_urls: outfitUploadedUrls[idx] || [],
+            terms_agreed: !!(termsText && agreedToTerms),
           })),
         };
         try {
@@ -518,6 +524,28 @@ export default function StitchingPage() {
               Note: The boutique will confirm the final delivery date after reviewing your request.
             </p>
 
+            {termsText && (
+              <div className="mt-6">
+                <h3 className="text-[14px] font-bold text-[#0F172A] mb-2">Terms and Conditions</h3>
+                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 h-[120px] overflow-y-auto mb-3">
+                  <p className="text-[12px] text-[#475569] whitespace-pre-wrap">{termsText}</p>
+                </div>
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <div className="pt-0.5">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 rounded border-[#CBD5E1] text-[#5B43EE] focus:ring-[#5B43EE]"
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    />
+                  </div>
+                  <span className="text-[13px] font-medium text-[#334155] leading-snug">
+                    I agree to the Terms and Conditions
+                  </span>
+                </label>
+              </div>
+            )}
+
             {/* CUSTOM CALENDAR POPUP */}
             {showCalendar && (
               <div className="absolute top-[180px] left-5 right-5 bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] border border-[#E2E8F0] p-4 z-20 animate-in fade-in zoom-in-95 duration-200">
@@ -611,7 +639,7 @@ export default function StitchingPage() {
             loading || 
             (step === 1 && Object.values(categoryCounts).reduce((a, b) => a + b, 0) === 0) || 
             (step === 2 && (outfits.length === 0 || outfits.some(o => !o.isConfigured))) || 
-            (step === 3 && !deliveryDate)
+            (step === 3 && (!deliveryDate || !!(termsText && !agreedToTerms)))
           }
           className={`flex-1 py-4 rounded-[14px] font-bold text-[15px] flex items-center justify-center transition-opacity bg-[#5B43EE] text-white disabled:opacity-50`}
         >

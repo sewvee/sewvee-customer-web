@@ -8,6 +8,7 @@ export interface Boutique {
   address: string | null;
   city_name: string | null;
   profile_icon_url: string | null;
+  terms_and_conditions?: string | null;
 }
 
 interface BoutiquesState {
