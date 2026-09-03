@@ -1,7 +1,7 @@
 // Mirrors the mobile app's src/config/env.js exactly
 // All URL constants must match backend routes
 
-const API_DOMAIN =
+export const API_DOMAIN =
   process.env.NEXT_PUBLIC_API_URL ?? 'https://api.sewvee.com';
 
 export const BASE_URL = `${API_DOMAIN}/mobile/`;
