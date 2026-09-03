@@ -73,7 +73,7 @@ export default function StitchingPage() {
   });
 
   const categories = ['Blouse', 'Kurta / Kurti', 'Lehenga', 'Suit / Salwar', 'Dress / Gown', 'Pants / Trousers', 'Other'];
-  const measurementOptions = ['Use Previous Measurements', 'I will provide later', 'Take measurements at store', 'Send sample garment via courier'];
+  const measurementOptions = ['Use Previous Measurements', 'I will provide later', 'Take measurements at store', 'Send sample dress via courier'];
 
   const selectedBoutique = boutiques.find((b) => b.id === selectedBoutiqueId);
   const termsText = selectedBoutique?.terms_and_conditions;
