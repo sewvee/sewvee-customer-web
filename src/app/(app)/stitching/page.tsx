@@ -523,17 +523,17 @@ export default function StitchingPage() {
             </p>
 
             {termsText && (
-              <div className="mt-6 flex flex-col flex-1 min-h-0">
+              <div className="mt-6 flex flex-col">
                 <h3 className="text-[14px] font-bold text-[#0F172A] mb-2">Terms and Conditions</h3>
-                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 flex-1 overflow-y-auto mb-4 min-h-[180px] shadow-inner">
+                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 overflow-y-auto mb-4 h-[130px] shrink-0 shadow-inner">
                   <p className="text-[13px] text-[#475569] leading-relaxed whitespace-pre-wrap">{termsText}</p>
                 </div>
-                <label className="flex items-center gap-3 cursor-pointer p-1">
+                <label className={`flex items-center gap-3 cursor-pointer p-4 border rounded-xl transition-colors shadow-sm ${agreedToTerms ? 'border-[#5B43EE] bg-[#5B43EE]/5' : 'border-[#E2E8F0] bg-white'}`}>
                   <div 
                     className={`w-5 h-5 shrink-0 rounded-md flex items-center justify-center transition-all duration-200 ${
                       agreedToTerms 
                         ? 'bg-[#5B43EE] border-[#5B43EE] shadow-[0_2px_8px_rgba(91,67,238,0.3)]' 
-                        : 'border-[1.5px] border-[#CBD5E1] bg-white hover:border-[#5B43EE]'
+                        : 'border-[1.5px] border-[#CBD5E1] bg-white'
                     }`}
                   >
                     {agreedToTerms && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
@@ -544,7 +544,7 @@ export default function StitchingPage() {
                     checked={agreedToTerms}
                     onChange={(e) => setAgreedToTerms(e.target.checked)}
                   />
-                  <span className="text-[14px] font-semibold text-[#334155] select-none">
+                  <span className={`text-[14px] font-semibold select-none ${agreedToTerms ? 'text-[#5B43EE]' : 'text-[#334155]'}`}>
                     I agree to the Terms and Conditions
                   </span>
                 </label>
