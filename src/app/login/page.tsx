@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 export default function LoginPage() {
   const router = useRouter();
   const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
   const [pin, setPin] = useState('');
   const [validationError, setValidationError] = useState('');
   const [expanding, setExpanding] = useState(false);
@@ -73,8 +74,8 @@ export default function LoginPage() {
                   setValidationError('');
                   clearError();
                 }}
-                maxLength={10}
-                placeholder="10-digit number"
+                maxLength={15}
+                placeholder="Mobile number"
                 className="flex-1 bg-transparent text-[15px] font-medium text-slate-900 outline-none placeholder:text-slate-400 placeholder:font-normal"
                 disabled={loading}
               />

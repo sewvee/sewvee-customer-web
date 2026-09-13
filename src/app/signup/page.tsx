@@ -17,6 +17,7 @@ export default function SignupPage() {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
   const [email, setEmail] = useState('');
   
   // Location state
@@ -115,7 +116,7 @@ export default function SignupPage() {
 
       await api.post(URL_CUSTOMER_REGISTER, {
         name: name.trim(),
-        mobile: cleanedPhone,
+        mobile: countryCode === '+91' ? cleanedPhone : countryCode + cleanedPhone,
         email: email.trim(),
         pin: pin,
         state: stateName,
@@ -123,7 +124,7 @@ export default function SignupPage() {
       });
       
       // Auto login after successful signup
-      await login(cleanedPhone, pin);
+      await login(countryCode === '+91' ? cleanedPhone : countryCode + cleanedPhone, pin);
       
       // No auto-redirect so they have time to read the banner. They will click to continue.
     } catch (err: any) {
@@ -179,13 +180,25 @@ export default function SignupPage() {
                 Mobile Number
               </label>
               <div className="flex items-center h-12 px-4 rounded-xl border border-slate-200 bg-white focus-within:border-[#5B43EE] transition-all">
-                <Phone className="w-5 h-5 text-slate-400 mr-3 shrink-0" />
+                <Phone className="w-4 h-4 text-slate-400 mr-2 shrink-0 hidden sm:block" />
+                <select 
+                  value={countryCode} 
+                  onChange={(e) => setCountryCode(e.target.value)}
+                  className="bg-transparent text-[14px] font-medium text-slate-900 outline-none mr-2 pr-1 cursor-pointer"
+                >
+                  <option value="+91">🇮🇳 +91</option>
+                  <option value="+1">🇺🇸 +1</option>
+                  <option value="+44">🇬🇧 +44</option>
+                  <option value="+61">🇦🇺 +61</option>
+                  <option value="+971">🇦🇪 +971</option>
+                </select>
+                <div className="w-[1px] h-5 bg-slate-200 mr-2"></div>
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => { setPhone(e.target.value.replace(/[^0-9]/g, '')); setValidationError(''); }}
-                  maxLength={10}
-                  placeholder="10-digit number"
+                  maxLength={15}
+                  placeholder="Mobile number"
                   className="flex-1 min-w-0 bg-transparent text-[14px] font-medium text-slate-900 outline-none placeholder:text-slate-400 placeholder:font-normal"
                 />
               </div>
