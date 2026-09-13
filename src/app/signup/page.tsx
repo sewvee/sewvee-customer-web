@@ -12,6 +12,7 @@ import {
   URL_LOCATION_CITIES 
 } from '@/lib/env';
 
+const COUNTRY_CODES = [{ code: "+91", label: "IN", flag: "🇮🇳" }, { code: "+1", label: "US", flag: "🇺🇸" }, { code: "+44", label: "UK", flag: "🇬🇧" }, { code: "+61", label: "AU", flag: "🇦🇺" }, { code: "+971", label: "AE", flag: "🇦🇪" }];
 export default function SignupPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);

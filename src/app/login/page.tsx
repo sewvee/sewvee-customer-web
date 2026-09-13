@@ -65,7 +65,18 @@ export default function LoginPage() {
               Mobile Number
             </label>
             <div className={`flex items-center h-14 px-4 rounded-xl border bg-white transition-all ${(validationError && !pin) || error ? 'border-red-500' : 'border-slate-200 focus-within:border-[#5B43EE]'}`}>
-              <span className="text-slate-400 mr-2 font-medium text-lg">+91</span>
+              <select 
+                  value={countryCode} 
+                  onChange={(e) => setCountryCode(e.target.value)}
+                  className="bg-transparent text-[14px] font-medium text-slate-900 outline-none mr-2 pr-1 cursor-pointer"
+                >
+                  <option value="+91">🇮🇳 +91</option>
+                  <option value="+1">🇺🇸 +1</option>
+                  <option value="+44">🇬🇧 +44</option>
+                  <option value="+61">🇦🇺 +61</option>
+                  <option value="+971">🇦🇪 +971</option>
+                </select>
+                <div className="w-[1px] h-5 bg-slate-200 mr-2"></div>
               <input
                 type="tel"
                 value={phone}
