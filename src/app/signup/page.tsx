@@ -181,16 +181,14 @@ export default function SignupPage() {
               </label>
               <div className="flex items-center h-12 px-4 rounded-xl border border-slate-200 bg-white focus-within:border-[#5B43EE] transition-all">
                 <Phone className="w-4 h-4 text-slate-400 mr-2 shrink-0 hidden sm:block" />
-                <select 
-                  value={countryCode} 
+                <select
+                  value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
                   className="bg-transparent text-[14px] font-medium text-slate-900 outline-none mr-2 pr-1 cursor-pointer"
                 >
-                  <option value="+91">🇮🇳 +91</option>
-                  <option value="+1">🇺🇸 +1</option>
-                  <option value="+44">🇬🇧 +44</option>
-                  <option value="+61">🇦🇺 +61</option>
-                  <option value="+971">🇦🇪 +971</option>
+                  {COUNTRY_CODES.map(c => (
+                    <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
+                  ))}
                 </select>
                 <div className="w-[1px] h-5 bg-slate-200 mr-2"></div>
                 <input
