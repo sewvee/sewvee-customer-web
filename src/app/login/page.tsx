@@ -39,7 +39,7 @@ export default function LoginPage() {
       return;
     }
 
-    await login(cleaned, pin);
+    await login(countryCode === '+91' ? cleaned : countryCode + cleaned, pin);
   };
 
   return (
@@ -68,13 +68,11 @@ export default function LoginPage() {
               <select 
                   value={countryCode} 
                   onChange={(e) => setCountryCode(e.target.value)}
-                  className="bg-transparent text-[14px] font-medium text-slate-900 outline-none mr-2 pr-1 cursor-pointer"
+                  className="shrink-0 min-w-[80px] bg-transparent text-[14px] font-medium text-slate-900 outline-none mr-2 pr-1 cursor-pointer"
                 >
-                  <option value="+91">🇮🇳 +91</option>
-                  <option value="+1">🇺🇸 +1</option>
-                  <option value="+44">🇬🇧 +44</option>
-                  <option value="+61">🇦🇺 +61</option>
-                  <option value="+971">🇦🇪 +971</option>
+                  {COUNTRY_CODES.map(c => (
+                    <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
+                  ))}
                 </select>
                 <div className="w-[1px] h-5 bg-slate-200 mr-2"></div>
               <input
