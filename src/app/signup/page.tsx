@@ -185,7 +185,7 @@ export default function SignupPage() {
                 <select
                   value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
-                  className="bg-transparent text-[14px] font-medium text-slate-900 outline-none mr-2 pr-1 cursor-pointer"
+                  className="shrink-0 min-w-[80px] bg-transparent text-[14px] font-medium text-slate-900 outline-none mr-2 pr-1 cursor-pointer"
                 >
                   {COUNTRY_CODES.map(c => (
                     <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
