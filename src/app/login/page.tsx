@@ -282,9 +282,14 @@ export default function LoginPage() {
           </div>
 
           <div className="mb-6 text-left">
-            <label className="block text-[11px] uppercase tracking-wider font-bold text-slate-500 mb-2">
-              4-Digit PIN
-            </label>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-[11px] uppercase tracking-wider font-bold text-slate-500">
+                4-Digit PIN
+              </label>
+              <button type="button" onClick={() => router.push('/forgot-pin')} className="text-[12px] text-[#5B43EE] font-semibold hover:underline focus:outline-none">
+                Forgot PIN?
+              </button>
+            </div>
             <div className={`flex items-center h-14 px-4 rounded-xl border bg-white transition-all ${(validationError && pin.length !== 4) || error ? 'border-red-500' : 'border-slate-200 focus-within:border-[#5B43EE]'}`}>
               <input
                 type="password"
@@ -306,12 +311,6 @@ export default function LoginPage() {
                 {validationError || error}
               </p>
             )}
-          </div>
-
-          <div className="flex justify-end mb-5 -mt-2">
-            <button type="button" onClick={() => router.push('/forgot-pin')} className="text-[13px] text-[#5B43EE] font-medium hover:underline focus:outline-none">
-              Forgot PIN?
-            </button>
           </div>
 
           <Button type="submit" fullWidth size="lg" loading={loading} className="mb-6 bg-[#5B43EE] hover:bg-[#4935bf] h-12 rounded-xl text-[15px] font-semibold relative overflow-hidden">
