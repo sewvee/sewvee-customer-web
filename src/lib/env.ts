@@ -9,6 +9,8 @@ export const BASE_URL = `${API_DOMAIN}/mobile/`;
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 export const URL_CUSTOMER_LOGIN = `${BASE_URL}customer-auth/login`;
 export const URL_CUSTOMER_REGISTER = `${BASE_URL}customer-auth/register`;
+export const URL_CUSTOMER_FORGOT_PIN = `${BASE_URL}customer-auth/forgot-pin`;
+export const URL_CUSTOMER_RESET_PIN = `${BASE_URL}customer-auth/reset-pin`;
 
 // ─── Customer Portal ─────────────────────────────────────────────────────────
 export const URL_CUSTOMER_PORTAL_ORDERS = `${BASE_URL}customer-portal/orders`;
