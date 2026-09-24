@@ -230,7 +230,9 @@ export default function StitchingPage() {
         // Upload voice recording if present
         if (outfit.audioBlob) {
           try {
-            const audioFile = new File([outfit.audioBlob], `voice_note_${Date.now()}.webm`, { type: 'audio/webm' });
+            const mimeType = outfit.audioBlob.type || 'audio/webm';
+            const ext = mimeType.includes('mp4') ? 'm4a' : mimeType.includes('mpeg') ? 'mp3' : mimeType.includes('wav') ? 'wav' : 'webm';
+            const audioFile = new File([outfit.audioBlob], `voice_note_${Date.now()}.${ext}`, { type: mimeType });
             const fd = new FormData();
             fd.append('file', audioFile);
             fd.append('key_name', 'order_audios');
