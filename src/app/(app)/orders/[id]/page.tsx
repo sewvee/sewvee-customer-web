@@ -369,14 +369,14 @@ export default function OrderDetailPage() {
 
               <div className="flex justify-between items-center px-4 py-3">
                 <span className="text-[13px] font-medium text-[#64748B]">Advance / Paid Amount</span>
-                <span className="text-[13px] font-bold text-[#10B981]">₹{Number(order.advanceAmount || order.advance || order.paid_amount || 0).toFixed(2)}</span>
+                <span className="text-[13px] font-bold text-[#10B981]">₹{Number(order.paid_amount || order.advanceAmount || order.advance || 0).toFixed(2)}</span>
               </div>
 
               <div className="h-[1px] bg-[#F1F5F9] w-full" />
 
               <div className="flex justify-between items-center px-4 py-3">
                 <span className="text-[13px] font-bold text-[#EF4444]">DUE BALANCE</span>
-                <span className="text-[15px] font-bold text-[#EF4444]">₹{Number((order.totalAmount || order.total || order.total_amount || 0) - (order.advanceAmount || order.advance || order.paid_amount || 0)).toFixed(2)}</span>
+                <span className="text-[15px] font-bold text-[#EF4444]">₹{Number(order.balance_amount ?? order.balance ?? ((order.totalAmount || order.total || order.total_amount || 0) - (order.paid_amount || order.advanceAmount || order.advance || 0))).toFixed(2)}</span>
               </div>
             </div>
 

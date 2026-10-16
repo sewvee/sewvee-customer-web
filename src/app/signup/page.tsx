@@ -5,12 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/Button';
 import { User, Phone, Mail, ArrowLeft, ArrowRight } from 'lucide-react';
 import api from '@/lib/api';
-import { 
-  URL_CUSTOMER_REGISTER, 
-  URL_LOCATION_COUNTRIES, 
-  URL_LOCATION_STATES, 
-  URL_LOCATION_CITIES 
-} from '@/lib/env';
+import { URL_CUSTOMER_REGISTER } from '@/lib/env';
 
 const COUNTRY_CODES = [{ code: "+91", label: "IN", flag: "🇮🇳" }, { code: "+1", label: "US", flag: "🇺🇸" }, { code: "+44", label: "UK", flag: "🇬🇧" }, { code: "+61", label: "AU", flag: "🇦🇺" }, { code: "+971", label: "AE", flag: "🇦🇪" }];
 export default function SignupPage() {
@@ -21,11 +16,7 @@ export default function SignupPage() {
   const [countryCode, setCountryCode] = useState('+91');
   const [email, setEmail] = useState('');
   
-  // Location state
-  const [statesList, setStatesList] = useState<any[]>([]);
-  const [citiesList, setCitiesList] = useState<any[]>([]);
-  const [stateId, setStateId] = useState('');
-  const [cityId, setCityId] = useState('');
+
 
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -46,41 +37,7 @@ export default function SignupPage() {
     }
   }, [token, showSuccess, router]);
 
-  // Fetch States on Mount
-  useEffect(() => {
-    const initLocation = async () => {
-      try {
-        const countriesRes = await api.get(URL_LOCATION_COUNTRIES);
-        if (countriesRes.data?.data?.length > 0) {
-          // Specifically find India, fallback to 101 if not found by name
-          const india = countriesRes.data.data.find((c: any) => c.countryName === 'India' || c.iso === 'IND');
-          const defaultCountryId = india ? india.countryId : countriesRes.data.data[0].countryId;
-          
-          const statesRes = await api.get(`${URL_LOCATION_STATES}?countryId=${defaultCountryId}`);
-          setStatesList(statesRes.data?.data || []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch location data", error);
-      }
-    };
-    initLocation();
-  }, []);
 
-  const handleStateChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
-    setStateId(val);
-    setCityId('');
-    setCitiesList([]);
-    setValidationError('');
-    if (val) {
-      try {
-        const res = await api.get(`${URL_LOCATION_CITIES}?stateId=${val}`);
-        setCitiesList(res.data?.data || []);
-      } catch (error) {
-        console.error("Failed to fetch cities", error);
-      }
-    }
-  };
 
   const nextStep = () => {
     setValidationError('');
@@ -96,8 +53,7 @@ export default function SignupPage() {
       return setValidationError('Please enter a valid email address');
     }
 
-    if (!stateId) return setValidationError('Please select a state');
-    if (!cityId) return setValidationError('Please select a city');
+
 
     setStep(2);
   };
@@ -112,16 +68,13 @@ export default function SignupPage() {
     
     try {
       const cleanedPhone = phone.replace(/[^0-9]/g, '');
-      const stateName = statesList.find(s => String(s.stateId) === stateId)?.stateName || '';
-      const cityName = citiesList.find(c => String(c.cityId) === cityId)?.cityName || '';
-
       await api.post(URL_CUSTOMER_REGISTER, {
         name: name.trim(),
         mobile: countryCode === '+91' ? cleanedPhone : countryCode + cleanedPhone,
         email: email.trim(),
         pin: pin,
-        state: stateName,
-        city: cityName
+        state: '',
+        city: ''
       });
       
       // Auto login after successful signup
@@ -219,50 +172,7 @@ export default function SignupPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 mb-6">
-              <div className="flex-1">
-                <label className="block text-[11px] uppercase tracking-wider font-bold text-slate-500 mb-2">
-                  State
-                </label>
-                <div className="flex items-center h-12 px-3 rounded-xl border border-slate-200 bg-white focus-within:border-[#5B43EE] transition-all relative">
-                  <select
-                    value={stateId}
-                    onChange={handleStateChange}
-                    className="w-full h-full bg-transparent text-[14px] font-medium text-slate-900 outline-none appearance-none pr-6 cursor-pointer z-10 relative"
-                  >
-                    <option value="" disabled className="text-slate-400">Select</option>
-                    {statesList.map(s => (
-                      <option key={s.stateId} value={s.stateId}>{s.stateName}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-0">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                  </div>
-                </div>
-              </div>
 
-              <div className="flex-1">
-                <label className="block text-[11px] uppercase tracking-wider font-bold text-slate-500 mb-2">
-                  City
-                </label>
-                <div className="flex items-center h-12 px-3 rounded-xl border border-slate-200 bg-white focus-within:border-[#5B43EE] transition-all relative">
-                  <select
-                    value={cityId}
-                    onChange={(e) => { setCityId(e.target.value); setValidationError(''); }}
-                    disabled={!stateId || citiesList.length === 0}
-                    className="w-full h-full bg-transparent text-[14px] font-medium text-slate-900 outline-none appearance-none pr-6 cursor-pointer z-10 relative disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="" disabled className="text-slate-400">Select</option>
-                    {citiesList.map(c => (
-                      <option key={c.cityId} value={c.cityId}>{c.cityName}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-0">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {validationError && (
               <p className="text-red-500 text-sm font-semibold mb-4 text-center">

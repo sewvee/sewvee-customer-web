@@ -251,7 +251,7 @@ export default function StitchingPage() {
         if (outfit.audioBlob) {
           try {
             const audioMime = outfit.audioBlob.type || 'audio/mp4';
-            const ext = audioMime.includes('mp4') || audioMime.includes('aac') ? 'm4a' : audioMime.includes('webm') ? 'webm' : 'wav';
+            const ext = audioMime.includes('mp4') || audioMime.includes('aac') ? 'm4a' : audioMime.includes('mpeg') ? 'mp3' : audioMime.includes('wav') ? 'wav' : 'webm';
             const audioFile = new File([outfit.audioBlob], `voice_note_${Date.now()}.${ext}`, { type: audioMime });
             const fd = new FormData();
             fd.append('file', audioFile);
