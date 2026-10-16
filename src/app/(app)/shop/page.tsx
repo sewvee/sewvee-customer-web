@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
-import { ShoppingBag, Search, ChevronDown, Store, X, Plus, Minus } from 'lucide-react';
+import { ShoppingBag, Search, ChevronDown, Store, X, Plus, Minus, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
@@ -45,6 +45,20 @@ export default function ShopPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
 
+  const selectedBoutique = useMemo(() => (
+    boutiques.find(b => b.id === selectedBoutiqueId)
+  ), [boutiques, selectedBoutiqueId]);
+
+  const isInba = Boolean(
+    selectedBoutique && (
+      selectedBoutique.id === 6 ||
+      (typeof selectedBoutique.boutique_name === 'string' && selectedBoutique.boutique_name.toLowerCase().includes('inba')) ||
+      (typeof (selectedBoutique as any).name === 'string' && (selectedBoutique as any).name.toLowerCase().includes('inba'))
+    )
+  );
+
+  const boutiqueWebsite = isInba ? 'https://theinba.com' : ((selectedBoutique as any)?.website || null);
+
   useEffect(() => {
     fetchBoutiques();
   }, [fetchBoutiques]);
@@ -53,12 +67,17 @@ export default function ShopPage() {
     if (shopMode === 'DIRECT') {
       fetchProducts();
     } else if (selectedBoutiqueId) {
-      fetchProducts(selectedBoutiqueId.toString());
+      if (boutiqueWebsite) {
+        setProducts([]);
+        setLoading(false);
+      } else {
+        fetchProducts(selectedBoutiqueId.toString());
+      }
     } else {
       setProducts([]);
       setLoading(false);
     }
-  }, [shopMode, selectedBoutiqueId]);
+  }, [shopMode, selectedBoutiqueId, boutiqueWebsite]);
 
   const fetchProducts = async (companyId?: string) => {
     setLoading(true);
@@ -195,8 +214,6 @@ export default function ShopPage() {
   const cartCount = cart.reduce((acc, c) => acc + (c.quantity || 1), 0);
   const cartTotal = cart.reduce((acc, c) => acc + (Number(c.selling_price || c.price || 0) * (c.quantity || 1)), 0);
 
-  const selectedBoutique = boutiques.find(b => b.id === selectedBoutiqueId);
-
   return (
     <div className="bg-[#F8FAFC] min-h-screen pb-20">
       {/* Header */}
@@ -231,94 +248,120 @@ export default function ShopPage() {
 
         {/* Boutique Selector (Only shown if BOUTIQUE mode) */}
         {shopMode === 'BOUTIQUE' && (
-          <button
-            onClick={() => setIsBoutiqueDrawerOpen(true)}
-            className="flex items-center gap-2 max-w-[100%] w-full mt-3 bg-gray-50 p-2 rounded-xl border border-gray-200"
-          >
-            <div className="bg-indigo-50 p-2 rounded-full shrink-0">
-              <Store className="w-5 h-5 text-[#5B43EE]" />
-            </div>
-            <div className="text-left flex-1 min-w-0">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Shopping At</p>
-              <div className="flex items-center gap-1 overflow-hidden pr-2">
-                <p className="text-sm font-bold text-gray-900 truncate">
-                  {selectedBoutique ? (selectedBoutique.boutique_name || (selectedBoutique as any).name) : 'Select Boutique'}
-                </p>
-                <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
+          <div className="flex items-center gap-2 max-w-[100%] w-full mt-3 bg-gray-50 p-2 rounded-xl border border-gray-200">
+            <button
+              onClick={() => setIsBoutiqueDrawerOpen(true)}
+              className="flex items-center gap-2 flex-1 min-w-0 text-left"
+            >
+              <div className="bg-indigo-50 p-2 rounded-full shrink-0">
+                <Store className="w-5 h-5 text-[#5B43EE]" />
               </div>
-            </div>
-          </button>
+              <div className="text-left flex-1 min-w-0">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Shopping At</p>
+                <div className="flex items-center gap-1 overflow-hidden pr-2">
+                  <p className="text-sm font-bold text-gray-900 truncate">
+                    {selectedBoutique ? (selectedBoutique.boutique_name || (selectedBoutique as any).name) : 'Select Boutique'}
+                  </p>
+                  <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
+                </div>
+              </div>
+            </button>
+            {boutiqueWebsite && (
+              <a
+                href={boutiqueWebsite}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-gray-500 hover:text-[#5B43EE] hover:bg-indigo-50 rounded-lg transition-colors shrink-0"
+                title="Open website in new tab"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
+          </div>
         )}
       </div>
 
-      <div className="p-4">
-        {loading ? (
-          <div className="flex justify-center p-10"><div className="w-8 h-8 rounded-full border-4 border-[#5B43EE] border-t-transparent animate-spin" /></div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-20">
-            <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-lg font-bold text-gray-900">No products available</p>
-            <p className="text-gray-500 mt-1">This boutique hasn't added any readymades.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4">
-            {products.map((p) => {
-              const img = formatImageUrl(p.image_url);
-              return (
-                <div 
-                  key={p.id || p.item_id} 
-                  className="bg-white rounded-[16px] overflow-hidden shadow-sm border border-gray-100/80 p-2.5 relative flex flex-col cursor-pointer transition-transform active:scale-[0.98]"
-                  onClick={() => {
-                    setSelectedProduct(p);
-                    logEvent('view_item', (p.id || p.item_id)?.toString(), p.name, { price: p.selling_price || p.price, shopMode });
-                  }}
-                >
-                  <div className="h-40 bg-gray-50 w-full relative rounded-[12px] overflow-hidden">
-                    {img ? (
-                      <img src={img || undefined} alt={p.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300">
-                        <ShoppingBag className="w-8 h-8" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 flex flex-col flex-1">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase">{p.readymade_category?.name || p.category_name || 'RAW SILK'}</p>
-                    <p className="font-bold text-[#0F172A] text-sm mt-0.5 line-clamp-1">{p.name}</p>
-                    <div className="mt-auto pt-3 flex items-center justify-between">
-                      <span className="font-bold text-[#5B43EE]">₹{p.selling_price || p.price}</span>
-                      {(() => {
-                        const cartItem = cart.find(c => c.id === (p.id || p.item_id) || c.item_id === (p.id || p.item_id));
-                        if (cartItem) {
+      {shopMode === 'BOUTIQUE' && boutiqueWebsite ? (
+        <div className="w-full flex-1 flex flex-col h-[calc(100vh-175px)] bg-white relative">
+          <iframe
+            src={boutiqueWebsite}
+            title={selectedBoutique ? (selectedBoutique.boutique_name || (selectedBoutique as any).name) : 'Boutique Store'}
+            className="w-full h-full border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+          />
+        </div>
+      ) : (
+        <div className="p-4">
+          {loading ? (
+            <div className="flex justify-center p-10"><div className="w-8 h-8 rounded-full border-4 border-[#5B43EE] border-t-transparent animate-spin" /></div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-20">
+              <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-lg font-bold text-gray-900">No products available</p>
+              <p className="text-gray-500 mt-1">This boutique hasn't added any readymades.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              {products.map((p) => {
+                const img = formatImageUrl(p.image_url);
+                return (
+                  <div 
+                    key={p.id || p.item_id} 
+                    className="bg-white rounded-[16px] overflow-hidden shadow-sm border border-gray-100/80 p-2.5 relative flex flex-col cursor-pointer transition-transform active:scale-[0.98]"
+                    onClick={() => {
+                      setSelectedProduct(p);
+                      logEvent('view_item', (p.id || p.item_id)?.toString(), p.name, { price: p.selling_price || p.price, shopMode });
+                    }}
+                  >
+                    <div className="h-40 bg-gray-50 w-full relative rounded-[12px] overflow-hidden">
+                      {img ? (
+                        <img src={img || undefined} alt={p.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                          <ShoppingBag className="w-8 h-8" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3 flex flex-col flex-1">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase">{p.readymade_category?.name || p.category_name || 'RAW SILK'}</p>
+                      <p className="font-bold text-[#0F172A] text-sm mt-0.5 line-clamp-1">{p.name}</p>
+                      <div className="mt-auto pt-3 flex items-center justify-between">
+                        <span className="font-bold text-[#5B43EE]">₹{p.selling_price || p.price}</span>
+                        {(() => {
+                          const cartItem = cart.find(c => c.id === (p.id || p.item_id) || c.item_id === (p.id || p.item_id));
+                          if (cartItem) {
+                            return (
+                              <div className="flex items-center gap-1 border border-[#5B43EE] rounded-xl p-0.5" onClick={(e) => e.stopPropagation()}>
+                                <button onClick={() => updateQuantity(p.id || p.item_id, -1)} className="w-6 h-6 flex items-center justify-center text-[#5B43EE] hover:bg-indigo-50 rounded-lg transition-colors">
+                                  <Minus className="w-3 h-3" />
+                                </button>
+                                <span className="text-xs font-bold w-4 text-center text-[#5B43EE]">{cartItem.quantity}</span>
+                                <button onClick={() => updateQuantity(p.id || p.item_id, 1)} className="w-6 h-6 flex items-center justify-center text-[#5B43EE] hover:bg-indigo-50 rounded-lg transition-colors">
+                                  <Plus className="w-3 h-3" />
+                                </button>
+                              </div>
+                            );
+                          }
                           return (
-                            <div className="flex items-center gap-1 border border-[#5B43EE] rounded-xl p-0.5" onClick={(e) => e.stopPropagation()}>
-                              <button onClick={() => updateQuantity(p.id || p.item_id, -1)} className="w-6 h-6 flex items-center justify-center text-[#5B43EE] hover:bg-indigo-50 rounded-lg transition-colors">
-                                <Minus className="w-3 h-3" />
-                              </button>
-                              <span className="text-xs font-bold w-4 text-center text-[#5B43EE]">{cartItem.quantity}</span>
-                              <button onClick={() => updateQuantity(p.id || p.item_id, 1)} className="w-6 h-6 flex items-center justify-center text-[#5B43EE] hover:bg-indigo-50 rounded-lg transition-colors">
-                                <Plus className="w-3 h-3" />
-                              </button>
-                            </div>
+                            <button 
+                              onClick={(e) => addToCart(p, e)}
+                              className="px-4 py-1.5 border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#5B43EE] hover:bg-indigo-50 transition-colors"
+                            >
+                              Add
+                            </button>
                           );
-                        }
-                        return (
-                          <button 
-                            onClick={(e) => addToCart(p, e)}
-                            className="px-4 py-1.5 border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#5B43EE] hover:bg-indigo-50 transition-colors"
-                          >
-                            Add
-                          </button>
-                        );
-                      })()}
+                        })()}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Cart Modal */}
       <BottomSheet

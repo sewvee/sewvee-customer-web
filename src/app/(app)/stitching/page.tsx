@@ -137,15 +137,35 @@ export default function StitchingPage() {
     setPreviewUrls(prev => prev.filter((_, i) => i !== idx));
   };
 
+  const getSupportedAudioMimeType = () => {
+    if (typeof MediaRecorder === 'undefined') return '';
+    const candidates = [
+      'audio/mp4;codecs=mp4a.40.2',
+      'audio/mp4',
+      'audio/aac',
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+      'audio/wav',
+    ];
+    for (const type of candidates) {
+      if (MediaRecorder.isTypeSupported(type)) return type;
+    }
+    return '';
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream);
+      const mimeType = getSupportedAudioMimeType();
+      const options = mimeType ? { mimeType } : undefined;
+      const mr = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mr;
       audioChunksRef.current = [];
       mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
       mr.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const finalMime = mr.mimeType || mimeType || 'audio/mp4';
+        const blob = new Blob(audioChunksRef.current, { type: finalMime });
         setAudioBlob(blob);
         setAudioUrl(URL.createObjectURL(blob));
         stream.getTracks().forEach(t => t.stop());
@@ -230,7 +250,9 @@ export default function StitchingPage() {
         // Upload voice recording if present
         if (outfit.audioBlob) {
           try {
-            const audioFile = new File([outfit.audioBlob], `voice_note_${Date.now()}.webm`, { type: 'audio/webm' });
+            const audioMime = outfit.audioBlob.type || 'audio/mp4';
+            const ext = audioMime.includes('mp4') || audioMime.includes('aac') ? 'm4a' : audioMime.includes('webm') ? 'webm' : 'wav';
+            const audioFile = new File([outfit.audioBlob], `voice_note_${Date.now()}.${ext}`, { type: audioMime });
             const fd = new FormData();
             fd.append('file', audioFile);
             fd.append('key_name', 'order_audios');
