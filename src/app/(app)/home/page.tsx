@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useOrdersStore } from '@/store/ordersStore';
 import { useBoutiquesStore } from '@/store/boutiquesStore';
 import { OrderCard } from '@/components/order/OrderCard';
-import { ShoppingBag, MessageCircle, Store, ChevronDown, Bell, Scissors, Camera, ArrowRight, XCircle } from 'lucide-react';
+import { ShoppingBag, MessageCircle, Store, ChevronDown, Bell, Scissors, ArrowRight, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { BoutiqueDrawer } from '@/components/home/BoutiqueDrawer';
 import { BASE_URL, URL_CUSTOMER_PORTAL_SHOP, URL_CUSTOMER_STORE_CATALOGUE } from '@/lib/env';
@@ -332,18 +332,18 @@ export default function HomePage() {
       <div className="flex items-center px-5 py-4 bg-white border-b border-gray-100">
         <button 
           onClick={() => setDrawerOpen(true)}
-          className="flex-1 flex items-center text-left"
+          className="flex-1 flex items-center text-left min-w-0"
         >
           <div className="w-12 h-12 bg-[#EEF2FF] rounded-full flex items-center justify-center shrink-0 mr-3">
             <Store className="w-6 h-6 text-[#4F46E5]" />
           </div>
-          <div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">SHOPPING AT</p>
-            <div className="flex items-center">
-              <h1 className="text-[18px] font-bold text-[#0F172A] font-inter">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 truncate">SHOPPING AT</p>
+            <div className="flex items-center min-w-0">
+              <h1 className="text-[18px] font-bold text-[#0F172A] font-inter truncate">
                 {selectedBoutique ? selectedBoutique.boutique_name : 'All Boutiques'}
               </h1>
-              <ChevronDown className="w-4 h-4 ml-1.5 text-gray-500" />
+              <ChevronDown className="w-4 h-4 ml-1.5 text-gray-500 shrink-0" />
             </div>
           </div>
         </button>
@@ -359,7 +359,7 @@ export default function HomePage() {
         {/* QUICK ACTIONS */}
         <div className="px-5 mt-6">
           <h2 className="text-[18px] font-bold text-[#0F172A] font-inter mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <Link href="/stitching" className="relative flex flex-col items-center p-4 bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm animate-border-glow">
               <div className="absolute -top-2.5 bg-[linear-gradient(110deg,#4F46E5,45%,#818cf8,55%,#4F46E5)] text-white text-[9px] font-bold px-2 py-0.5 rounded-full animate-shimmer shadow-sm whitespace-nowrap">
                 Online Order
@@ -376,13 +376,6 @@ export default function HomePage() {
               </div>
               <span className="text-[13px] font-bold text-[#0F172A]">Readymade</span>
               <span className="text-[10px] font-medium text-slate-500 mt-0.5 tracking-tight">Shop readymades</span>
-            </Link>
-            <Link href="/gallery" className="flex flex-col items-center p-4 bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm">
-              <div className="w-10 h-10 bg-[#ECFDF5] rounded-full flex items-center justify-center mb-2">
-                <Camera className="w-5 h-5 text-[#059669]" />
-              </div>
-              <span className="text-[13px] font-bold text-[#0F172A]">My Designs</span>
-              <span className="text-[10px] font-medium text-slate-500 mt-0.5 tracking-tight">View my designs</span>
             </Link>
           </div>
         </div>

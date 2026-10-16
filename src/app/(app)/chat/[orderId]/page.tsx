@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { ChevronLeft, Send, ShoppingBag, Image as ImageIcon, Loader2, MessageCircle, MoreVertical, Mic, Edit2, Trash2, Download, Receipt, Paperclip, Camera, Smile } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -132,6 +132,23 @@ export default function ChatDetailPage() {
   const [freshOrder, setFreshOrder] = useState<any>(null);
   const order = freshOrder || storeOrder;
   const isCancelled = String(order?.status).toUpperCase() === 'CANCELLED' || (order?.status as any)?.id === 4 || (order?.status as any)?.name === 'CANCELLED';
+
+  const convertedId = useMemo(() => {
+    if ((order as any)?.order_notes?.startsWith('CONVERTED_TO_')) {
+      const parts = ((order as any)?.order_notes || '').split('_');
+      if (parts.length >= 3 && parts[2]) return parts[2];
+    }
+    return null;
+  }, [order]);
+
+  const effectiveOrderId = convertedId || orderId;
+
+  // Auto-redirect to the active converted order if this inquiry was converted
+  useEffect(() => {
+    if (convertedId && convertedId !== orderId) {
+      router.replace(`/chat/${convertedId}`);
+    }
+  }, [convertedId, orderId, router]);
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -188,7 +205,7 @@ export default function ChatDetailPage() {
       const fileUrl = (uploadJson.data?.full_url || uploadJson.data?.url || uploadJson.file_url || uploadJson.data?.file_url || uploadJson.full_url || uploadJson.url || '');
       
       if (fileUrl) {
-        await api.post(`/customer-portal/orders/${orderId}/outfits/${contextOutfitId}/requests`, {
+        await api.post(`/customer-portal/orders/${effectiveOrderId}/outfits/${contextOutfitId}/requests`, {
           message: 'Uploaded Photo',
           attachment_url: fileUrl
         });
@@ -220,36 +237,36 @@ export default function ChatDetailPage() {
   // Using the orders list API so we always get the latest outfit count regardless of
   // the Zustand store cache (avoids missing tabs when admin adds outfits).
   const loadChat = useCallback(async () => {
-    if (!orderId) { setLoading(false); return; }
+    if (!effectiveOrderId) { setLoading(false); return; }
     try {
       const [chatRes, ordersListRes] = await Promise.all([
-        api.get(`/customer-portal/orders/${orderId}/requests`),
+        api.get(`/customer-portal/orders/${effectiveOrderId}/requests`),
         api.get(`/customer-portal/orders`, { params: { limit: 100 } }),
       ]);
       const data = chatRes.data?.data || chatRes.data;
       setMessages(Array.isArray(data) ? data : []);
       // Pick the fresh order from the list so outfit tabs always reflect current state
       const allOrders = ordersListRes.data?.data || ordersListRes.data || [];
-      const found = Array.isArray(allOrders) ? allOrders.find((o: any) => String(o.id) === String(orderId)) : null;
+      const found = Array.isArray(allOrders) ? allOrders.find((o: any) => String(o.id) === String(effectiveOrderId)) : null;
       if (found) {
         setFreshOrder(found);
         // Also update the Zustand store so other pages (order detail, home) benefit
         useOrdersStore.setState(s => ({
-          orders: s.orders.map(o => String(o.id) === String(orderId) ? { ...o, ...found } : o),
+          orders: s.orders.map(o => String(o.id) === String(effectiveOrderId) ? { ...o, ...found } : o),
           lastFetched: Date.now(),
         }));
       }
     } catch (err) {
       console.error('Failed to load messages:', err);
     } finally {
-      console.log("SETTING LOADING FALSE");
       setLoading(false);
     }
-  }, [orderId]);
+  }, [effectiveOrderId]);
 
   useEffect(() => {
-    console.log("LOAD CHAT CALLED", { userMobile: user?.mobile, orderId });
     loadChat();
+    const interval = setInterval(loadChat, 3000);
+    return () => clearInterval(interval);
   }, [loadChat, user?.mobile]);
 
   useEffect(() => {
@@ -275,10 +292,10 @@ export default function ChatDetailPage() {
       ));
       
       // Call API
-      api.post(`/customer-portal/orders/${orderId}/outfits/${contextOutfitId}/requests/read`)
+      api.post(`/customer-portal/orders/${effectiveOrderId}/outfits/${contextOutfitId}/requests/read`)
         .catch(err => console.error('Failed to mark read', err));
     }
-  }, [contextOutfitId, messages.length, orderId]);
+  }, [contextOutfitId, messages.length, effectiveOrderId]);
 
 
   const handleSend = async () => {
@@ -286,7 +303,7 @@ export default function ChatDetailPage() {
     
     setSending(true);
     try {
-      const res = await api.post(`/customer-portal/orders/${orderId}/outfits/${contextOutfitId}/requests`, {
+      const res = await api.post(`/customer-portal/orders/${effectiveOrderId}/outfits/${contextOutfitId}/requests`, {
         message: inputText.trim()
       });
       
@@ -294,7 +311,7 @@ export default function ChatDetailPage() {
       
       const chatMsg: ChatMessage = {
         id: Date.now(),
-        order_id: orderId,
+        order_id: effectiveOrderId,
         order_outfit_id: parseInt(contextOutfitId),
         sender_type: 'CUSTOMER',
         message: inputText.trim(),
@@ -367,7 +384,9 @@ export default function ChatDetailPage() {
 
   const headerTitle = order ? `${displayId}` : `Order #${orderId}`;
   const headerSubtitle = order?.boutiqueName || '';
-  const outfits = order?.outfits || order?.items || [];
+  const convertedOrder = convertedId ? orders.find(o => String(o.id) === convertedId) : null;
+  const activeOrder = convertedOrder || order;
+  const outfits = activeOrder?.outfits || activeOrder?.items || [];
 
   return (
     <div className="bg-[#F8FAFC] min-h-screen flex flex-col h-screen max-h-screen">
@@ -435,7 +454,15 @@ export default function ChatDetailPage() {
           </div>
         ) : (
           (() => {
-            const filteredMessages = contextOutfitId ? messages.filter(m => String(m.order_outfit_id) === String(contextOutfitId)) : messages;
+            const filteredMessages = contextOutfitId 
+              ? messages.filter(m => {
+                  if (String(m.order_outfit_id) === String(contextOutfitId)) return true;
+                  const isFirstOutfit = outfits.length > 0 && String(outfits[0].id || outfits[0].order_outfit_id) === String(contextOutfitId);
+                  const isKnownOutfit = outfits.some((o: any) => String(o.id || o.order_outfit_id) === String(m.order_outfit_id));
+                  if ((!m.order_outfit_id || !isKnownOutfit) && isFirstOutfit) return true;
+                  return false;
+                })
+              : messages;
             return filteredMessages.map((msg, idx) => {
               const isCustomer = msg.sender_type === 'CUSTOMER';
               const showDate = idx === 0 || new Date(filteredMessages[idx-1].created_at).toDateString() !== new Date(msg.created_at).toDateString();

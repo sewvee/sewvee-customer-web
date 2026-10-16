@@ -8,13 +8,52 @@ import { useParams, useRouter } from 'next/navigation';
 import { URL_ORDER_INVOICE_DOWNLOAD, URL_CUSTOMER_PORTAL_ORDERS, URL_UPLOAD } from '@/lib/env';
 import { CollageMaker } from '@/components/CollageMaker';
 
+function AudioPlayerItem({ src, className = "w-full h-8 rounded-lg" }: { src: string; className?: string }) {
+  const [error, setError] = useState(false);
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-between px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+        <span className="flex items-center gap-1 font-medium">⚠️ Voice note</span>
+        <a href={src} target="_blank" rel="noopener noreferrer" className="font-bold underline text-amber-900 hover:text-amber-950">
+          Open In Player ↗
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <audio
+      controls
+      preload="metadata"
+      src={src}
+      onError={() => setError(true)}
+      className={className}
+    />
+  );
+}
+
 export default function OrderDetailPage() {
   const getImageUrl = (url: string) => {
     if (!url) return '';
-    if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+    let processed = String(url).trim();
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://api.sewvee.com';
+
+    if (processed.includes('localhost:3021') || processed.includes('127.0.0.1:3021')) {
+      processed = processed.replace(/https?:\/\/(localhost|127\.0\.0\.1):3021/, apiBase);
+    }
+
+    if (processed.startsWith('data:') || processed.startsWith('blob:')) return processed;
+
+    if (processed.startsWith('http://') || processed.startsWith('https://')) {
+      if (typeof window !== 'undefined' && window.location.protocol === 'https:' && processed.startsWith('http://api.sewvee.com')) {
+        processed = processed.replace('http://', 'https://');
+      }
+      return processed;
+    }
     
     // Ensure the path has a leading slash
-    let path = url.startsWith('/') ? url : `/${url}`;
+    let path = processed.startsWith('/') ? processed : `/${processed}`;
     
     // If the path doesn't start with /uploads/ and the backend is serving from /uploads
     // (e.g. order_photos/file.png), prepend /uploads
@@ -22,7 +61,7 @@ export default function OrderDetailPage() {
        path = `/uploads${path}`;
     }
     
-    return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3021'}${path}`;
+    return `${apiBase}${path}`;
   };
 
   const params = useParams();
@@ -516,7 +555,7 @@ export default function OrderDetailPage() {
                               <Mic className="w-3.5 h-3.5 text-[#5B43EE]" /> Voice Notes
                             </span>
                             {audioUrls.map((url: string, i: number) => (
-                              <audio key={i} controls src={getImageUrl(url)} className="w-full h-9 rounded-lg" />
+                              <AudioPlayerItem key={i} src={getImageUrl(url)} className="w-full h-9 rounded-lg" />
                             ))}
                           </div>
                         )}
@@ -801,7 +840,7 @@ export default function OrderDetailPage() {
                                         <p className={`text-[11px] font-semibold mb-2 flex items-center gap-1.5 ${isCustomer ? 'text-[#4F46E5]' : 'text-[#B45309]'}`}>
                                           <Mic className="w-3.5 h-3.5" /> Voice Note
                                         </p>
-                                        <audio controls src={getImageUrl(url)} className="w-full h-8 rounded-lg" />
+                                        <AudioPlayerItem src={getImageUrl(url)} className="w-full h-8 rounded-lg" />
                                       </div>
                                     )}
 
