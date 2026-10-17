@@ -358,24 +358,24 @@ export default function HomePage() {
 
         {/* QUICK ACTIONS */}
         <div className="px-5 mt-6">
-          <h2 className="text-[18px] font-bold text-[#0F172A] font-inter mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <Link href="/stitching" className="relative flex flex-col items-center p-4 bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm animate-border-glow">
-              <div className="absolute -top-2.5 bg-[linear-gradient(110deg,#4F46E5,45%,#818cf8,55%,#4F46E5)] text-white text-[9px] font-bold px-2 py-0.5 rounded-full animate-shimmer shadow-sm whitespace-nowrap">
+          <h2 className="text-[18px] font-bold text-[#0F172A] font-inter mb-3">Quick Actions</h2>
+          <div className="grid grid-cols-2 gap-3.5">
+            <Link href="/stitching" className="relative flex flex-col items-center p-4 sm:p-5 bg-white rounded-[20px] border border-[#E2E8F0] shadow-sm hover:shadow-md transition-all active:scale-[0.98] animate-border-glow">
+              <div className="absolute -top-2.5 bg-[linear-gradient(110deg,#4F46E5,45%,#818cf8,55%,#4F46E5)] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full animate-shimmer shadow-sm whitespace-nowrap">
                 Online Order
               </div>
-              <div className="w-10 h-10 bg-[#EEF2FF] rounded-full flex items-center justify-center mb-2 mt-0.5">
-                <Scissors className="w-5 h-5 text-[#4F46E5]" />
+              <div className="w-12 h-12 bg-indigo-50 border border-indigo-100/60 rounded-2xl flex items-center justify-center mb-2.5 mt-0.5 shadow-sm">
+                <Scissors className="w-6 h-6 text-[#4F46E5]" />
               </div>
-              <span className="text-[13px] font-bold text-[#0F172A]">Stitching</span>
-              <span className="text-[10px] font-medium text-slate-500 mt-0.5 tracking-tight">Online stitching</span>
+              <span className="text-[16px] font-bold text-[#0F172A] tracking-tight">Stitching</span>
+              <span className="text-[12px] font-medium text-slate-500 text-center mt-1 leading-snug">Custom tailoring & blouses</span>
             </Link>
-            <Link href="/shop" className="flex flex-col items-center p-4 bg-white rounded-[16px] border border-[#E2E8F0] shadow-sm">
-              <div className="w-10 h-10 bg-[#FEF3C7] rounded-full flex items-center justify-center mb-2">
-                <ShoppingBag className="w-5 h-5 text-[#D97706]" />
+            <Link href="/shop" className="flex flex-col items-center p-4 sm:p-5 bg-white rounded-[20px] border border-[#E2E8F0] shadow-sm hover:shadow-md transition-all active:scale-[0.98]">
+              <div className="w-12 h-12 bg-amber-50 border border-amber-100/60 rounded-2xl flex items-center justify-center mb-2.5 mt-0.5 shadow-sm">
+                <ShoppingBag className="w-6 h-6 text-[#D97706]" />
               </div>
-              <span className="text-[13px] font-bold text-[#0F172A]">Readymade</span>
-              <span className="text-[10px] font-medium text-slate-500 mt-0.5 tracking-tight">Shop readymades</span>
+              <span className="text-[16px] font-bold text-[#0F172A] tracking-tight">Readymade</span>
+              <span className="text-[12px] font-medium text-slate-500 text-center mt-1 leading-snug">Explore kurtis & sarees</span>
             </Link>
           </div>
         </div>

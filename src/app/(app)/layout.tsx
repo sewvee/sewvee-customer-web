@@ -21,10 +21,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!isClient || !token) return null;
 
   const isMainTab = ['/home', '/orders', '/chat', '/shop', '/profile'].includes(pathname);
+  const isShop = pathname === '/shop';
 
   return (
-    <div className={`min-h-[100dvh] flex flex-col ${isMainTab ? 'pb-20' : ''}`}>
-      <main className={`flex-1 max-w-lg mx-auto w-full bg-[#F8FAFC] ${isMainTab ? 'min-h-[calc(100vh-5rem)]' : 'min-h-[100dvh]'}`}>
+    <div className={`min-h-[100dvh] ${isShop ? 'h-[100dvh] overflow-hidden pb-16' : (isMainTab ? 'pb-20' : '')} flex flex-col`}>
+      <main className={`flex-1 max-w-lg mx-auto w-full bg-[#F8FAFC] ${isShop ? 'h-full flex flex-col overflow-hidden min-h-0' : (isMainTab ? 'min-h-[calc(100vh-5rem)]' : 'min-h-[100dvh]')}`}>
         {children}
       </main>
       {isMainTab && <BottomNav />}

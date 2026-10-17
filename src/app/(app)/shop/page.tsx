@@ -26,9 +26,8 @@ export default function ShopPage() {
   const { user, token } = useAuthStore();
   
   // Use Global Boutiques Store
-  const { boutiques, selectedBoutiqueId, fetchBoutiques } = useBoutiquesStore();
+  const { boutiques, selectedBoutiqueId, fetchBoutiques, setSelectedBoutiqueId } = useBoutiquesStore();
 
-  const [shopMode, setShopMode] = useState<'DIRECT'|'BOUTIQUE'>('DIRECT');
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -57,16 +56,32 @@ export default function ShopPage() {
     )
   );
 
-  const boutiqueWebsite = isInba ? 'https://theinba.com' : ((selectedBoutique as any)?.website || null);
+  const rawWebsite = isInba ? 'https://theinba.com' : ((selectedBoutique as any)?.website || null);
+  const boutiqueWebsite = useMemo(() => {
+    if (!rawWebsite) return null;
+    return rawWebsite.includes('?') ? `${rawWebsite}&embedded=true` : `${rawWebsite}?embedded=true`;
+  }, [rawWebsite]);
 
   useEffect(() => {
     fetchBoutiques();
   }, [fetchBoutiques]);
 
   useEffect(() => {
-    if (shopMode === 'DIRECT') {
-      fetchProducts();
-    } else if (selectedBoutiqueId) {
+    if (!selectedBoutiqueId && boutiques.length > 0) {
+      const inba = boutiques.find(b => 
+        b.id === 6 || 
+        (typeof b.boutique_name === 'string' && b.boutique_name.toLowerCase().includes('inba'))
+      );
+      if (inba) {
+        setSelectedBoutiqueId(inba.id);
+      } else {
+        setSelectedBoutiqueId(boutiques[0].id);
+      }
+    }
+  }, [selectedBoutiqueId, boutiques, setSelectedBoutiqueId]);
+
+  useEffect(() => {
+    if (selectedBoutiqueId) {
       if (boutiqueWebsite) {
         setProducts([]);
         setLoading(false);
@@ -77,27 +92,17 @@ export default function ShopPage() {
       setProducts([]);
       setLoading(false);
     }
-  }, [shopMode, selectedBoutiqueId, boutiqueWebsite]);
+  }, [selectedBoutiqueId, boutiqueWebsite]);
 
   const fetchProducts = async (companyId?: string) => {
+    if (!companyId) return;
     setLoading(true);
     try {
-      let url = '';
-      if (shopMode === 'DIRECT') {
-        url = URL_CUSTOMER_STORE_CATALOGUE;
-      } else {
-        if (!companyId) {
-          setProducts([]);
-          setLoading(false);
-          return;
-        }
-        url = `${URL_CUSTOMER_PORTAL_SHOP}?companyId=${companyId}`;
-      }
-      
+      const url = `${URL_CUSTOMER_PORTAL_SHOP}?companyId=${companyId}`;
       const res = await fetch(url);
       const json = await res.json();
       if (json.success || Array.isArray(json.data) || Array.isArray(json.products)) {
-        const data = shopMode === 'DIRECT' ? (json.data || json.products) : json.data;
+        const data = json.data || json.products;
         setProducts(data || []);
       }
     } catch (e) {
@@ -109,9 +114,9 @@ export default function ShopPage() {
 
   const addToCart = (product: any, e: any) => {
     e.stopPropagation();
-    storeAddToCart({ ...product, _company_id: shopMode === 'BOUTIQUE' ? selectedBoutiqueId : 'DIRECT' });
+    storeAddToCart({ ...product, _company_id: selectedBoutiqueId });
     showToast(`${product.name} added to cart`, 'success');
-    logEvent('add_to_cart', product.id?.toString(), product.name, { price: product.selling_price || product.price, shopMode });
+    logEvent('add_to_cart', product.id?.toString(), product.name, { price: product.selling_price || product.price });
   };
   
   const updateQuantity = (productId: string | number, delta: number) => {
@@ -215,85 +220,69 @@ export default function ShopPage() {
   const cartTotal = cart.reduce((acc, c) => acc + (Number(c.selling_price || c.price || 0) * (c.quantity || 1)), 0);
 
   return (
-    <div className="bg-[#F8FAFC] min-h-screen pb-20">
+    <div className="bg-[#F8FAFC] h-full flex flex-col overflow-hidden w-full">
       {/* Header */}
-      <div className="bg-white px-4 pt-6 pb-4 sticky top-0 z-20 border-b border-gray-100">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">Shop</h1>
-          <button onClick={() => setIsCartOpen(true)} className="relative p-2 text-gray-700 bg-gray-50 rounded-full">
-            <ShoppingBag className="w-6 h-6" />
-            {cartCount > 0 && (
-              <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">
-                {cartCount}
-              </div>
-            )}
-          </button>
-        </div>
-
-        {/* Tab Selection */}
-        <div className="flex bg-gray-100 p-1 rounded-xl">
-          <button 
-            onClick={() => setShopMode('DIRECT')}
-            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${shopMode === 'DIRECT' ? 'bg-white text-[#5B43EE] shadow-sm' : 'text-gray-500'}`}
-          >
-            Sewvee Originals
-          </button>
-          <button 
-            onClick={() => setShopMode('BOUTIQUE')}
-            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${shopMode === 'BOUTIQUE' ? 'bg-white text-[#5B43EE] shadow-sm' : 'text-gray-500'}`}
-          >
-            Boutique
-          </button>
-        </div>
-
-        {/* Boutique Selector (Only shown if BOUTIQUE mode) */}
-        {shopMode === 'BOUTIQUE' && (
-          <div className="flex items-center gap-2 max-w-[100%] w-full mt-3 bg-gray-50 p-2 rounded-xl border border-gray-200">
-            <button
-              onClick={() => setIsBoutiqueDrawerOpen(true)}
-              className="flex items-center gap-2 flex-1 min-w-0 text-left"
-            >
-              <div className="bg-indigo-50 p-2 rounded-full shrink-0">
-                <Store className="w-5 h-5 text-[#5B43EE]" />
-              </div>
-              <div className="text-left flex-1 min-w-0">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Shopping At</p>
-                <div className="flex items-center gap-1 overflow-hidden pr-2">
-                  <p className="text-sm font-bold text-gray-900 truncate">
-                    {selectedBoutique ? (selectedBoutique.boutique_name || (selectedBoutique as any).name) : 'Select Boutique'}
-                  </p>
-                  <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
+      <div className="bg-white px-4 py-3 sticky top-0 z-20 border-b border-gray-100 shrink-0">
+        <div className="flex justify-between items-center mb-3">
+          <h1 className="text-xl font-bold text-gray-900">Shop</h1>
+          {!boutiqueWebsite && (
+            <button onClick={() => setIsCartOpen(true)} className="relative p-2 text-gray-700 bg-gray-50 rounded-full">
+              <ShoppingBag className="w-5 h-5" />
+              {cartCount > 0 && (
+                <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">
+                  {cartCount}
                 </div>
-              </div>
+              )}
             </button>
-            {boutiqueWebsite && (
-              <a
-                href={boutiqueWebsite}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-gray-500 hover:text-[#5B43EE] hover:bg-indigo-50 rounded-lg transition-colors shrink-0"
-                title="Open website in new tab"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ExternalLink className="w-4 h-4" />
-              </a>
-            )}
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* Boutique Selector */}
+        <div className="flex items-center gap-2 max-w-[100%] w-full bg-gray-50 p-2 rounded-xl border border-gray-200">
+          <button
+            onClick={() => setIsBoutiqueDrawerOpen(true)}
+            className="flex items-center gap-2 flex-1 min-w-0 text-left"
+          >
+            <div className="bg-indigo-50 p-2 rounded-full shrink-0">
+              <Store className="w-5 h-5 text-[#5B43EE]" />
+            </div>
+            <div className="text-left flex-1 min-w-0">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Shopping At</p>
+              <div className="flex items-center gap-1 overflow-hidden pr-2">
+                <p className="text-sm font-bold text-gray-900 truncate">
+                  {selectedBoutique ? (selectedBoutique.boutique_name || (selectedBoutique as any).name) : 'Select Boutique'}
+                </p>
+                <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
+              </div>
+            </div>
+          </button>
+          {rawWebsite && (
+            <a
+              href={rawWebsite}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 text-gray-500 hover:text-[#5B43EE] hover:bg-indigo-50 rounded-lg transition-colors shrink-0"
+              title="Open website in new tab"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          )}
+        </div>
       </div>
 
-      {shopMode === 'BOUTIQUE' && boutiqueWebsite ? (
-        <div className="w-full flex-1 flex flex-col h-[calc(100vh-175px)] bg-white relative">
+      {boutiqueWebsite ? (
+        <div className="w-full flex-1 min-h-0 bg-white relative">
           <iframe
             src={boutiqueWebsite}
             title={selectedBoutique ? (selectedBoutique.boutique_name || (selectedBoutique as any).name) : 'Boutique Store'}
-            className="w-full h-full border-0"
+            className="w-full h-full border-0 block"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
           />
         </div>
       ) : (
-        <div className="p-4">
+        <div className="p-4 flex-1 overflow-y-auto pb-20">
           {loading ? (
             <div className="flex justify-center p-10"><div className="w-8 h-8 rounded-full border-4 border-[#5B43EE] border-t-transparent animate-spin" /></div>
           ) : products.length === 0 ? (
@@ -312,7 +301,7 @@ export default function ShopPage() {
                     className="bg-white rounded-[16px] overflow-hidden shadow-sm border border-gray-100/80 p-2.5 relative flex flex-col cursor-pointer transition-transform active:scale-[0.98]"
                     onClick={() => {
                       setSelectedProduct(p);
-                      logEvent('view_item', (p.id || p.item_id)?.toString(), p.name, { price: p.selling_price || p.price, shopMode });
+                      logEvent('view_item', (p.id || p.item_id)?.toString(), p.name, { price: p.selling_price || p.price });
                     }}
                   >
                     <div className="h-40 bg-gray-50 w-full relative rounded-[12px] overflow-hidden">
