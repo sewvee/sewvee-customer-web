@@ -50,6 +50,15 @@ function SafeImage({ src, alt, className }: { src: string | null; alt: string; c
 
 
 
+function recordBannerInteraction(bannerId: number, action: 'SEEN' | 'CTA_CLICKED' | 'DISMISSED') {
+  if (!bannerId) return;
+  api.post('marketing/banners/interaction', {
+    banner_id: bannerId,
+    action,
+    platform: 'WEB',
+  }).catch(() => {});
+}
+
 function StripBanners({ strips }: { strips: any[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -66,6 +75,9 @@ function StripBanners({ strips }: { strips: any[] }) {
   
   const handleCta = (e: any) => {
     e.stopPropagation();
+    if (activeBanner?.id) {
+      recordBannerInteraction(activeBanner.id, 'CTA_CLICKED');
+    }
     if (activeBanner.cta_action_value) {
       window.open(activeBanner.cta_action_value, '_blank');
     }
@@ -170,7 +182,14 @@ function InlineBanners({ banners }: { banners: any[] }) {
               className={`shrink-0 h-[160px] rounded-[16px] overflow-hidden bg-gray-200 relative border border-gray-200 shadow-sm cursor-pointer ${
                 banners.length > 1 ? 'snap-center w-[90%] md:w-[400px]' : 'w-full'
               }`}
-              onClick={() => banner.cta_action_value && window.open(banner.cta_action_value, '_blank')}
+              onClick={() => {
+                if (banner?.id) {
+                  recordBannerInteraction(banner.id, 'CTA_CLICKED');
+                }
+                if (banner.cta_action_value) {
+                  window.open(banner.cta_action_value, '_blank');
+                }
+              }}
             >
               <SafeImage 
                 src={formatImageUrl(imgUrl) || imgUrl} 
@@ -255,8 +274,13 @@ export default function HomePage() {
     api.get('marketing/banners?platform=WEB&target_app=CUSTOMER_APP')
       .then(res => {
         const data = res.data;
-        if (data.banners) setBanners(data.banners);
-        else if (Array.isArray(data)) setBanners(data);
+        const fetchedBanners = data.banners || (Array.isArray(data) ? data : (data.data || []));
+        setBanners(fetchedBanners);
+        fetchedBanners.forEach((b: any) => {
+          if (b.id) {
+            recordBannerInteraction(b.id, 'SEEN');
+          }
+        });
       })
       .catch(console.error);
   }, []);
@@ -591,9 +615,12 @@ export default function HomePage() {
                 onClick={() => {
                 setDismissedPopup(true);
                 const popup = banners.find(b => b.type === "POPUP");
-                if (popup && typeof window !== 'undefined') {
-                  localStorage.setItem('sewvee_dismissed_popup', popup.id.toString());
-                  setDismissedBannerId(popup.id);
+                if (popup) {
+                  recordBannerInteraction(popup.id, 'DISMISSED');
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('sewvee_dismissed_popup', popup.id.toString());
+                    setDismissedBannerId(popup.id);
+                  }
                 }
               }}
                 className="absolute top-3 right-3 w-8 h-8 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors z-10"
@@ -604,12 +631,15 @@ export default function HomePage() {
             
             {(() => {
               const popup = banners.find(b => b.type === "POPUP");
-              const imgUrl = popup.image_url || popup.mobile_image_url;
+              const imgUrl = popup?.image_url || popup?.mobile_image_url;
               return (
                 <div 
                   className="w-full cursor-pointer max-h-[70vh] overflow-y-auto no-scrollbar"
                   onClick={() => {
-                    if (popup.cta_action_value) {
+                    if (popup?.id) {
+                      recordBannerInteraction(popup.id, 'CTA_CLICKED');
+                    }
+                    if (popup?.cta_action_value) {
                       window.open(popup.cta_action_value.startsWith('http') ? popup.cta_action_value : `https://${popup.cta_action_value}`, '_blank');
                     }
                   }}
