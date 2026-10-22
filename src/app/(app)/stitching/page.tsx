@@ -64,12 +64,38 @@ const HOOK_OPTIONS = [
   'No Opening / Elastic',
 ];
 
-const MEASUREMENT_OPTIONS = [
-  'Use Previous Measurements (Saved in Profile)',
-  'Send Reference Garment with Fabric (Boutique pickup/courier)',
-  'Store Visit (Tailor will measure me at boutique)',
-  'I will provide measurements later via chat',
+const MEASUREMENT_CONFIGS = [
+  {
+    id: 'Use Previous Measurements (Saved in Profile)',
+    title: 'Use Saved Profile Measurements',
+    subtitle: 'We will use your body measurements already stored in your Sewvee profile.',
+    icon: '📐',
+    tag: 'Recommended',
+  },
+  {
+    id: 'Send Reference Garment with Fabric (Boutique pickup/courier)',
+    title: 'Send Sample / Reference Garment',
+    subtitle: 'Send your best-fitting garment along with fabric (Boutique pickup or courier).',
+    icon: '📦',
+    tag: 'Popular',
+  },
+  {
+    id: 'Store Visit (Tailor will measure me at boutique)',
+    title: 'Store Visit for Measurement',
+    subtitle: 'Visit the boutique in person to have the master tailor take your measurements.',
+    icon: '🏬',
+    tag: 'Accurate',
+  },
+  {
+    id: 'I will provide measurements later via chat',
+    title: 'Coordinate Later via Chat',
+    subtitle: 'Submit now and provide custom measurements or notes directly in the chat.',
+    icon: '💬',
+    tag: 'Flexible',
+  },
 ];
+
+const MEASUREMENT_OPTIONS = MEASUREMENT_CONFIGS.map(m => m.id);
 
 interface AttachedPhoto {
   id: string;
@@ -160,9 +186,11 @@ export default function StitchingPage() {
 
   // Final ticket state
   const [deliveryDate, setDeliveryDate] = useState('');
-  const [measurementOption, setMeasurementOption] = useState('Use Previous Measurements');
+  const [measurementOption, setMeasurementOption] = useState('Use Previous Measurements (Saved in Profile)');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [measurementDrawerOpen, setMeasurementDrawerOpen] = useState(false);
+  const [deliveryDateDrawerOpen, setDeliveryDateDrawerOpen] = useState(false);
 
   // Autosave status
   const [autosaveText, setAutosaveText] = useState('Autosaved Draft');
@@ -1995,23 +2023,25 @@ export default function StitchingPage() {
                       </span>
                       <button
                         type="button"
-                        onClick={() =>
-                          openDrawer(
-                            'Select Measurement Option',
-                            MEASUREMENT_OPTIONS,
-                            measurementOption,
-                            (val) => setMeasurementOption(val)
-                          )
-                        }
-                        className="w-full bg-white border border-slate-200 hover:border-[#5B43EE] p-2.5 rounded-xl flex items-center justify-between text-left transition-all shadow-2xs"
+                        onClick={() => setMeasurementDrawerOpen(true)}
+                        className="w-full bg-white border border-slate-200 hover:border-[#5B43EE] p-3 rounded-xl flex items-center justify-between text-left transition-all shadow-2xs group"
                       >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="w-2 h-2 rounded-full bg-[#5B43EE] shrink-0"></span>
-                          <span className="text-xs font-semibold text-slate-800 truncate">
-                            {measurementOption}
-                          </span>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-purple-50 text-[#5B43EE] flex items-center justify-center font-bold text-sm shrink-0 group-hover:bg-[#5B43EE] group-hover:text-white transition-colors">
+                            {MEASUREMENT_CONFIGS.find(m => m.id === measurementOption)?.icon || '📐'}
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-slate-900 block truncate">
+                              {MEASUREMENT_CONFIGS.find(m => m.id === measurementOption)?.title || measurementOption}
+                            </span>
+                            <span className="text-[11px] text-slate-500 block truncate">
+                              {MEASUREMENT_CONFIGS.find(m => m.id === measurementOption)?.subtitle || 'Tap to choose measurement option'}
+                            </span>
+                          </div>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
+                        <span className="text-xs font-bold text-[#5B43EE] px-2.5 py-1 bg-purple-50 rounded-lg shrink-0 group-hover:bg-purple-100 transition-colors ml-2">
+                          Change
+                        </span>
                       </button>
                     </div>
 
@@ -2019,13 +2049,30 @@ export default function StitchingPage() {
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
                         Target Delivery Date:
                       </span>
-                      <input
-                        type="date"
-                        value={deliveryDate}
-                        min={new Date().toISOString().split('T')[0]}
-                        onChange={(e) => setDeliveryDate(e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 outline-none focus:border-[#5B43EE] shadow-2xs transition-all"
-                      />
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryDateDrawerOpen(true)}
+                        className="w-full bg-white border border-slate-200 hover:border-[#5B43EE] p-3 rounded-xl flex items-center justify-between text-left transition-all shadow-2xs group"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 group-hover:bg-[#5B43EE] group-hover:text-white transition-colors">
+                            <CalendarIcon className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-slate-900 block truncate">
+                              {deliveryDate 
+                                ? new Date(deliveryDate).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+                                : 'Select Target Delivery Date'}
+                            </span>
+                            <span className="text-[11px] text-slate-500 block truncate">
+                              {deliveryDate ? 'Tailor will deliver on or before this date' : 'Tap to select delivery timeline'}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-xs font-bold text-[#5B43EE] px-2.5 py-1 bg-purple-50 rounded-lg shrink-0 group-hover:bg-purple-100 transition-colors ml-2">
+                          {deliveryDate ? 'Change' : 'Select'}
+                        </span>
+                      </button>
                     </div>
                   </div>
 
@@ -2195,6 +2242,143 @@ export default function StitchingPage() {
               </button>
             );
           })}
+        </div>
+      </BottomSheet>
+
+      {/* 8. REVAMPED MEASUREMENT DRAWER */}
+      <BottomSheet
+        open={measurementDrawerOpen}
+        onClose={() => setMeasurementDrawerOpen(false)}
+        title="Select Measurement Option"
+      >
+        <div className="space-y-2.5 py-1 pb-6">
+          <p className="text-xs text-slate-500 mb-1">
+            How would you like the boutique tailor to take your measurements?
+          </p>
+          {MEASUREMENT_CONFIGS.map((cfg) => {
+            const isSelected = measurementOption === cfg.id;
+            return (
+              <button
+                key={cfg.id}
+                type="button"
+                onClick={() => {
+                  setMeasurementOption(cfg.id);
+                  setMeasurementDrawerOpen(false);
+                }}
+                className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-start gap-3.5 ${
+                  isSelected
+                    ? 'border-[#5B43EE] bg-[#5B43EE]/5 shadow-sm ring-1 ring-[#5B43EE]/30'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${
+                  isSelected ? 'bg-[#5B43EE] text-white shadow-xs' : 'bg-slate-100 text-slate-700'
+                }`}>
+                  {cfg.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs sm:text-sm text-slate-900">
+                      {cfg.title}
+                    </span>
+                    {cfg.tag && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-[#5B43EE] border border-[#5B43EE]/20">
+                        {cfg.tag}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11.5px] text-slate-500 mt-0.5 leading-snug">
+                    {cfg.subtitle}
+                  </p>
+                </div>
+                <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                  isSelected ? 'border-[#5B43EE] bg-[#5B43EE] text-white' : 'border-slate-300 bg-white'
+                }`}>
+                  {isSelected && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </BottomSheet>
+
+      {/* 9. REVAMPED DELIVERY DATE DRAWER (COMES ON TOP) */}
+      <BottomSheet
+        open={deliveryDateDrawerOpen}
+        onClose={() => setDeliveryDateDrawerOpen(false)}
+        title="Choose Target Delivery Date"
+      >
+        <div className="space-y-4 py-1 pb-6">
+          <p className="text-xs text-slate-500">
+            Select a quick delivery preset or pick your preferred completion date.
+          </p>
+
+          {/* Quick Presets */}
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { days: 7, label: 'Express Stitching', tag: '7 Days' },
+              { days: 14, label: 'Standard Timeline', tag: '14 Days' },
+              { days: 21, label: 'Relaxed Timeline', tag: '21 Days' },
+              { days: 30, label: '1 Month Timeline', tag: '30 Days' },
+            ].map((preset) => {
+              const d = new Date();
+              d.setDate(d.getDate() + preset.days);
+              const dateVal = d.toISOString().split('T')[0];
+              const isSelected = deliveryDate === dateVal;
+
+              return (
+                <button
+                  key={preset.days}
+                  type="button"
+                  onClick={() => {
+                    setDeliveryDate(dateVal);
+                  }}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    isSelected
+                      ? 'border-[#5B43EE] bg-[#5B43EE]/5 ring-1 ring-[#5B43EE]/30'
+                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#5B43EE] bg-purple-50 px-2 py-0.5 rounded-md">
+                      {preset.tag}
+                    </span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-[#5B43EE]" strokeWidth={3} />}
+                  </div>
+                  <span className="font-bold text-xs text-slate-800 block">
+                    {preset.label}
+                  </span>
+                  <span className="text-[11px] text-slate-500 block mt-0.5">
+                    {d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Custom Date Input */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5">
+            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+              <CalendarIcon className="w-3.5 h-3.5 text-[#5B43EE]" /> Or Pick Exact Date:
+            </span>
+            <input
+              type="date"
+              value={deliveryDate}
+              min={new Date().toISOString().split('T')[0]}
+              onChange={(e) => setDeliveryDate(e.target.value)}
+              className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 outline-none focus:border-[#5B43EE] shadow-2xs transition-all"
+            />
+          </div>
+
+          {/* Confirm Button */}
+          <button
+            type="button"
+            disabled={!deliveryDate}
+            onClick={() => setDeliveryDateDrawerOpen(false)}
+            className="w-full py-3 bg-[#5B43EE] hover:bg-[#4d36dc] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all disabled:opacity-50 active:scale-98"
+          >
+            Confirm Delivery Date {deliveryDate ? `(${new Date(deliveryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })})` : ''}
+          </button>
         </div>
       </BottomSheet>
 

@@ -10,11 +10,34 @@ import { useChatStore } from '@/store/chatStore';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { API_DOMAIN } from '@/lib/env';
 
-const formatImageUrl = (urlStr: string | null): string | undefined => {
+const formatImageUrl = (urlStr?: string | null): string | undefined => {
   if (!urlStr) return undefined;
   if (urlStr.startsWith('http')) return urlStr;
   return `${API_DOMAIN}/${urlStr.replace(/^\//, '')}`;
 };
+
+function BoutiqueAvatar({ name, iconUrl, size = 'w-[50px] h-[50px]' }: { name: string; iconUrl?: string | null; size?: string }) {
+  const [imgError, setImgError] = useState(false);
+  const initials = (name || 'B').slice(0, 2).toUpperCase();
+  const formatted = formatImageUrl(iconUrl);
+
+  if (!formatted || imgError) {
+    return (
+      <div className={`${size} rounded-full bg-gradient-to-tr from-[#5B43EE] to-[#8E7CFF] text-white font-bold text-sm flex items-center justify-center shadow-xs shrink-0 select-none`}>
+        {initials}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={formatted}
+      alt={name}
+      onError={() => setImgError(true)}
+      className={`${size} rounded-full object-cover border border-slate-200/80 shrink-0`}
+    />
+  );
+}
 
 interface ChatThread {
   order_id: number;
@@ -92,13 +115,7 @@ export default function ChatListPage() {
                 className="flex items-center px-4 py-4 hover:bg-gray-50 transition-colors"
               >
                 {/* Avatar */}
-                <div className="w-[50px] h-[50px] rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0 overflow-hidden">
-                  {t.profile_icon_url ? (
-                    <img src={formatImageUrl(t.profile_icon_url)} alt={t.boutique_name} className="w-full h-full object-cover" />
-                  ) : (
-                    <ShoppingBag className="w-6 h-6 text-indigo-400" />
-                  )}
-                </div>
+                <BoutiqueAvatar name={t.boutique_name} iconUrl={t.profile_icon_url} size="w-[50px] h-[50px]" />
                 
                 {/* Content */}
                 <div className="ml-3 flex-1 min-w-0">
@@ -205,13 +222,11 @@ export default function ChatListPage() {
       <BottomSheet open={!!selectedThreadForOptions} onClose={() => setSelectedThreadForOptions(null)}>
         <div className="p-2 pb-6">
           <div className="flex items-center gap-3 mb-6 px-2">
-            <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center shrink-0">
-              {selectedThreadForOptions?.profile_icon_url ? (
-                <img src={formatImageUrl(selectedThreadForOptions.profile_icon_url)} alt="" className="w-full h-full object-cover rounded-full" />
-              ) : (
-                <ShoppingBag className="w-5 h-5 text-indigo-400" />
-              )}
-            </div>
+            <BoutiqueAvatar 
+              name={selectedThreadForOptions?.boutique_name || ''} 
+              iconUrl={selectedThreadForOptions?.profile_icon_url} 
+              size="w-10 h-10" 
+            />
             <div>
               <h3 className="text-[16px] font-bold text-[#0F172A]">{selectedThreadForOptions?.boutique_name}</h3>
               <p className="text-[12px] text-gray-500">#{selectedThreadForOptions?.order_number}</p>
