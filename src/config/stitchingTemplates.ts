@@ -1,0 +1,336 @@
+export interface TemplateSectionOption {
+  id: string;
+  title: string;
+  emoji: string;
+  options: string[];
+  allowPhoto: boolean;
+  photoLabel: string;
+  allowNote: boolean;
+  notePlaceholder: string;
+  fieldKey: 'frontNeck' | 'backNeck' | 'sleeve' | 'hook' | 'lining' | 'cut' | 'bottom';
+  photosKey: 'frontNeckPhotos' | 'backNeckPhotos' | 'sleevePhotos' | 'extraPhotos';
+  noteKey: 'frontNeckNote' | 'backNeckNote' | 'sleeveNote' | 'extraNote';
+}
+
+export interface OutfitTemplate {
+  category: string;
+  icon: string;
+  sections: TemplateSectionOption[];
+}
+
+export const OUTFIT_CATEGORIES = [
+  { name: 'Blouse', icon: '👚' },
+  { name: 'Kurti / Kurta', icon: '👗' },
+  { name: 'Salwar / Chudithar', icon: '✨' },
+  { name: 'Lehenga', icon: '💃' },
+  { name: 'Dress / Gown', icon: '👘' },
+  { name: 'Pants / Trousers', icon: '👖' },
+  { name: 'Other', icon: '✂️' },
+];
+
+export const STITCHING_TEMPLATES: Record<string, OutfitTemplate> = {
+  'Blouse': {
+    category: 'Blouse',
+    icon: '👚',
+    sections: [
+      {
+        id: 'front_neck',
+        title: 'Front Neck Style',
+        emoji: '👚',
+        options: ['Boat Neck', 'Round Neck', 'Sweetheart', 'V-Neck', 'Square Neck', 'U-Neck', 'Custom Cut'],
+        allowPhoto: true,
+        photoLabel: 'Upload Front Neck Photo',
+        allowNote: true,
+        notePlaceholder: 'Front neck depth (e.g. 6.5 inch), shape adjustments...',
+        fieldKey: 'frontNeck',
+        photosKey: 'frontNeckPhotos',
+        noteKey: 'frontNeckNote',
+      },
+      {
+        id: 'back_neck',
+        title: 'Back Neck Style',
+        emoji: '✨',
+        options: ['Deep Pot Neck', 'Drop Cut', 'Square Back', 'High Neck', 'Covered Back', 'V-Back', 'Custom Cut'],
+        allowPhoto: true,
+        photoLabel: 'Upload Back Neck Photo',
+        allowNote: true,
+        notePlaceholder: 'Back neck depth (e.g. 8.5 inch), dori / tassels notes...',
+        fieldKey: 'backNeck',
+        photosKey: 'backNeckPhotos',
+        noteKey: 'backNeckNote',
+      },
+      {
+        id: 'sleeve',
+        title: 'Sleeve Length & Pattern',
+        emoji: '🧵',
+        options: ['Elbow Length', 'Short Sleeve (4-5 in)', 'Puff Sleeve', 'Sleeveless', 'Full Length', 'Cap Sleeve'],
+        allowPhoto: true,
+        photoLabel: 'Upload Sleeve Reference Photo',
+        allowNote: true,
+        notePlaceholder: 'Sleeve border, piping, or fit details...',
+        fieldKey: 'sleeve',
+        photosKey: 'sleevePhotos',
+        noteKey: 'sleeveNote',
+      },
+      {
+        id: 'extra_ref',
+        title: 'Extra Reference / Fabric Photos',
+        emoji: '📸',
+        options: ['Fabric Cloth Photo', 'Model Inspiration', 'Embroidery / Aari Work', 'Lining Provided'],
+        allowPhoto: true,
+        photoLabel: 'Upload Extra / Fabric Reference Photo',
+        allowNote: true,
+        notePlaceholder: 'Notes about the fabric, lining, or overall inspiration...',
+        fieldKey: 'lining',
+        photosKey: 'extraPhotos',
+        noteKey: 'extraNote',
+      },
+    ],
+  },
+  'Kurti / Kurta': {
+    category: 'Kurti / Kurta',
+    icon: '👗',
+    sections: [
+      {
+        id: 'front_neck',
+        title: 'Kurti Neck Pattern',
+        emoji: '👗',
+        options: ['Mandarin Collar', 'V-Neck with Placket', 'Round Neck with Slit', 'Angrakha Pattern', 'Boat Neck', 'Square Neck'],
+        allowPhoto: true,
+        photoLabel: 'Upload Neck Reference Photo',
+        allowNote: true,
+        notePlaceholder: 'Placket length, button details, collar height...',
+        fieldKey: 'frontNeck',
+        photosKey: 'frontNeckPhotos',
+        noteKey: 'frontNeckNote',
+      },
+      {
+        id: 'cut_flare',
+        title: 'Cut & Flare Pattern',
+        emoji: '✨',
+        options: ['Straight Cut (Side Slit)', 'A-Line Flared', 'Full Anarkali (No Slit)', 'High-Low Cut', 'Front Slit'],
+        allowPhoto: true,
+        photoLabel: 'Upload Flare Reference Photo',
+        allowNote: true,
+        notePlaceholder: 'Slit height, flare circumference, length...',
+        fieldKey: 'cut',
+        photosKey: 'backNeckPhotos',
+        noteKey: 'backNeckNote',
+      },
+      {
+        id: 'sleeve',
+        title: 'Sleeve Style',
+        emoji: '🧵',
+        options: ['3/4th Sleeve', 'Full Sleeve', 'Short Sleeve', 'Sleeveless', 'Bell Sleeve', 'Cuff Sleeve'],
+        allowPhoto: true,
+        photoLabel: 'Upload Sleeve Reference Photo',
+        allowNote: true,
+        notePlaceholder: 'Sleeve border or cuff details...',
+        fieldKey: 'sleeve',
+        photosKey: 'sleevePhotos',
+        noteKey: 'sleeveNote',
+      },
+      {
+        id: 'extra_ref',
+        title: 'Extra Reference / Bottom Fabric',
+        emoji: '📸',
+        options: ['Fabric Photo', 'Model Inspiration Photo', 'Piping / Lace Reference'],
+        allowPhoto: true,
+        photoLabel: 'Upload Extra Reference Photo',
+        allowNote: true,
+        notePlaceholder: 'General instructions for Kurti...',
+        fieldKey: 'lining',
+        photosKey: 'extraPhotos',
+        noteKey: 'extraNote',
+      },
+    ],
+  },
+  'Salwar / Suit': {
+    category: 'Salwar / Suit',
+    icon: '✨',
+    sections: [
+      {
+        id: 'top_neck',
+        title: 'Kameez Neck Style',
+        emoji: '✨',
+        options: ['Sweetheart Neck', 'Round Neck with Dori', 'Collar Neck', 'V-Neck', 'Boat Neck'],
+        allowPhoto: true,
+        photoLabel: 'Upload Top Neck Reference Photo',
+        allowNote: true,
+        notePlaceholder: 'Neck depth, button or lace placement...',
+        fieldKey: 'frontNeck',
+        photosKey: 'frontNeckPhotos',
+        noteKey: 'frontNeckNote',
+      },
+      {
+        id: 'bottom_style',
+        title: 'Salwar Bottom / Pant Style',
+        emoji: '👖',
+        options: ['Cigarette Pant with Pocket', 'Palazzo Pant', 'Chudithar Gathered', 'Patiala Salwar', 'Tulip Pant'],
+        allowPhoto: true,
+        photoLabel: 'Upload Bottom Pant Reference Photo',
+        allowNote: true,
+        notePlaceholder: 'Bottom opening width, pocket requirements, elastic / drawstring...',
+        fieldKey: 'bottom',
+        photosKey: 'backNeckPhotos',
+        noteKey: 'backNeckNote',
+      },
+      {
+        id: 'sleeve',
+        title: 'Sleeve Style',
+        emoji: '🧵',
+        options: ['3/4th Sleeve', 'Full Sleeve', 'Short Sleeve', 'Sleeveless'],
+        allowPhoto: true,
+        photoLabel: 'Upload Sleeve Reference Photo',
+        allowNote: true,
+        notePlaceholder: 'Sleeve notes...',
+        fieldKey: 'sleeve',
+        photosKey: 'sleevePhotos',
+        noteKey: 'sleeveNote',
+      },
+      {
+        id: 'extra_ref',
+        title: 'Extra Reference / Dupatta / Fabric',
+        emoji: '📸',
+        options: ['Full Suit Fabric', 'Dupatta Styling Reference', 'Lining Material'],
+        allowPhoto: true,
+        photoLabel: 'Upload Extra Reference Photo',
+        allowNote: true,
+        notePlaceholder: 'Any other instructions...',
+        fieldKey: 'lining',
+        photosKey: 'extraPhotos',
+        noteKey: 'extraNote',
+      },
+    ],
+  },
+  'Lehenga': {
+    category: 'Lehenga',
+    icon: '💃',
+    sections: [
+      {
+        id: 'front_neck',
+        title: 'Lehenga Blouse Front Neck',
+        emoji: '💃',
+        options: ['Sweetheart Neck', 'Deep V-Neck', 'Square Neck', 'Round Neck', 'Boat Neck'],
+        allowPhoto: true,
+        photoLabel: 'Upload Blouse Front Photo',
+        allowNote: true,
+        notePlaceholder: 'Padded blouse, neck depth...',
+        fieldKey: 'frontNeck',
+        photosKey: 'frontNeckPhotos',
+        noteKey: 'frontNeckNote',
+      },
+      {
+        id: 'back_neck',
+        title: 'Lehenga Blouse Back Neck',
+        emoji: '✨',
+        options: ['Deep Back with Heavy Tassels', 'Backless with Ties', 'Drop Cut', 'Covered Back'],
+        allowPhoto: true,
+        photoLabel: 'Upload Blouse Back Photo',
+        allowNote: true,
+        notePlaceholder: 'Tassels (latkan) details, back hook/tie...',
+        fieldKey: 'backNeck',
+        photosKey: 'backNeckPhotos',
+        noteKey: 'backNeckNote',
+      },
+      {
+        id: 'skirt_flare',
+        title: 'Skirt / Gher Details',
+        emoji: '👗',
+        options: ['Full Kalidar Gher', 'Can-Can Included', 'Double Can-Can', 'Simple A-Line Gher'],
+        allowPhoto: true,
+        photoLabel: 'Upload Skirt Flare Reference',
+        allowNote: true,
+        notePlaceholder: 'Can-can stiffening, waist belt, zipper...',
+        fieldKey: 'cut',
+        photosKey: 'sleevePhotos',
+        noteKey: 'sleeveNote',
+      },
+      {
+        id: 'extra_ref',
+        title: 'Dupatta & Extra Reference Photos',
+        emoji: '📸',
+        options: ['Dupatta Border Reference', 'Fabric & Can-Can Material', 'Inspiration Picture'],
+        allowPhoto: true,
+        photoLabel: 'Upload Extra Reference Photo',
+        allowNote: true,
+        notePlaceholder: 'Overall lehenga instructions...',
+        fieldKey: 'lining',
+        photosKey: 'extraPhotos',
+        noteKey: 'extraNote',
+      },
+    ],
+  },
+  'Dress / Gown': {
+    category: 'Dress / Gown',
+    icon: '👘',
+    sections: [
+      {
+        id: 'front_neck',
+        title: 'Gown Neckline',
+        emoji: '👘',
+        options: ['Round Neck', 'V-Neck', 'Boat Neck', 'Off-Shoulder', 'Sweetheart', 'One-Shoulder'],
+        allowPhoto: true,
+        photoLabel: 'Upload Neckline Reference Photo',
+        allowNote: true,
+        notePlaceholder: 'Neckline depth or sheer net details...',
+        fieldKey: 'frontNeck',
+        photosKey: 'frontNeckPhotos',
+        noteKey: 'frontNeckNote',
+      },
+      {
+        id: 'back_neck',
+        title: 'Back Style & Zipper',
+        emoji: '✨',
+        options: ['Concealed Back Zipper', 'Deep V-Back', 'Keyhole Back', 'Covered Back with Buttons'],
+        allowPhoto: true,
+        photoLabel: 'Upload Back Style Photo',
+        allowNote: true,
+        notePlaceholder: 'Zipper placement, back design...',
+        fieldKey: 'backNeck',
+        photosKey: 'backNeckPhotos',
+        noteKey: 'backNeckNote',
+      },
+      {
+        id: 'sleeve',
+        title: 'Sleeve & Silhouette',
+        emoji: '🧵',
+        options: ['Full Sleeves with Cuffs', 'Bell Sleeves', 'Sleeveless', 'Cape Sleeves', 'Short Puff'],
+        allowPhoto: true,
+        photoLabel: 'Upload Sleeve / Silhouette Photo',
+        allowNote: true,
+        notePlaceholder: 'Sleeve or silhouette details...',
+        fieldKey: 'sleeve',
+        photosKey: 'sleevePhotos',
+        noteKey: 'sleeveNote',
+      },
+      {
+        id: 'extra_ref',
+        title: 'Extra Reference / Fabric Photos',
+        emoji: '📸',
+        options: ['Full Gown Inspiration', 'Fabric & Net Details', 'Lining & Can-Can'],
+        allowPhoto: true,
+        photoLabel: 'Upload Extra Reference Photo',
+        allowNote: true,
+        notePlaceholder: 'Gown length, footwear heel height, etc...',
+        fieldKey: 'lining',
+        photosKey: 'extraPhotos',
+        noteKey: 'extraNote',
+      },
+    ],
+  },
+};
+
+export function getOutfitTemplate(category: string): OutfitTemplate {
+  // Exact match
+  if (STITCHING_TEMPLATES[category]) {
+    return STITCHING_TEMPLATES[category];
+  }
+  // Substring match
+  const match = Object.keys(STITCHING_TEMPLATES).find(k => category.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(category.toLowerCase()));
+  if (match) {
+    return STITCHING_TEMPLATES[match];
+  }
+  // Default to Blouse / Custom
+  return STITCHING_TEMPLATES['Blouse'];
+}

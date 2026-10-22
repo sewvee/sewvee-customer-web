@@ -1,16 +1,78 @@
 'use client';
-import { useState, useRef, useEffect, useMemo } from 'react';
+
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { useBoutiquesStore } from '@/store/boutiquesStore';
 import { useOrdersStore } from '@/store/ordersStore';
-import { ArrowLeft, CheckCircle, UploadCloud, X, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check, ImagePlus, Mic, Square, Trash2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  X,
+  Calendar as CalendarIcon,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  RotateCcw,
+  Trash2,
+  Edit2,
+  Mic,
+  Square,
+  Play,
+  Pause,
+  UploadCloud,
+  Send,
+  Camera,
+  Image as ImageIcon,
+  Sparkles,
+  ExternalLink,
+} from 'lucide-react';
 import { URL_ORDERS, URL_CUSTOMER_PORTAL_ORDERS, URL_UPLOAD } from '@/lib/env';
-// API domain needed to turn relative upload paths into full URLs
-const API_DOMAIN = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.sewvee.com';
-import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useToast } from '@/hooks/useToast';
-import { CollageMaker } from '@/components/CollageMaker';
+import { OUTFIT_CATEGORIES, getOutfitTemplate, OutfitTemplate } from '@/config/stitchingTemplates';
+import { ImageCropModal } from '@/components/ImageCropModal';
+import { generateMasterCollage } from '@/utils/masterCollageGenerator';
+
+const API_DOMAIN = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.sewvee.com';
+
+interface AttachedPhoto {
+  id: string;
+  section: string;
+  fileName: string;
+  dataUrl: string;
+  emoji: string;
+  comment: string;
+}
+
+interface OutfitConfig {
+  number: number;
+  category: string;
+  name: string;
+  icon: string;
+  frontNeck: string;
+  frontNeckNote: string;
+  frontNeckPhotos: AttachedPhoto[];
+  backNeck: string;
+  backNeckNote: string;
+  backNeckPhotos: AttachedPhoto[];
+  sleeve: string;
+  sleevePhotos: AttachedPhoto[];
+  hook: string;
+  extraPhotos: AttachedPhoto[];
+  notes: string;
+  voiceNoteBlob: Blob | null;
+  voiceNoteUrl: string | null;
+  voiceNoteDuration: string | null;
+  masterCollageUrl: string | null;
+  isCompleted: boolean;
+}
+
+interface ChatMessage {
+  id: string;
+  sender: 'bot' | 'user';
+  text?: string;
+  type?: 'text' | 'selection' | 'questionnaire' | 'add_another_prompt' | 'summary_ticket';
+  outfitIndex?: number;
+}
 
 export default function StitchingPage() {
   const router = useRouter();
@@ -19,10 +81,13 @@ export default function StitchingPage() {
   const { orders } = useOrdersStore();
   const { showToast } = useToast();
 
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const selectedBoutique = useMemo(
+    () => boutiques.find((b) => b.id === selectedBoutiqueId),
+    [boutiques, selectedBoutiqueId]
+  );
+  const termsText = selectedBoutique?.terms_and_conditions;
 
-  // Guard: Ensure a boutique is selected before allowing order placement
+  // Guard: Ensure a boutique is selected
   useEffect(() => {
     if (selectedBoutiqueId === null) {
       showToast('Please select a boutique first from the home dashboard.', 'error');
@@ -30,113 +95,137 @@ export default function StitchingPage() {
     }
   }, [selectedBoutiqueId, router, showToast]);
 
-  // Ensure boutiques are fresh so we get latest T&C
   useEffect(() => {
     fetchBoutiques();
   }, [fetchBoutiques]);
-  
-  // Step 2
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [images, setImages] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [collageOpen, setCollageOpen] = useState(false);
-  const [collageDataUrl, setCollageDataUrl] = useState<string | null>(null);
 
-  // Step 3 – Voice recording
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  // Main State
+  const [outfits, setOutfits] = useState<OutfitConfig[]>([]);
+  const [currentOutfitIndex, setCurrentOutfitIndex] = useState<number>(0);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    {
+      id: 'welcome',
+      sender: 'bot',
+      text: `Vanakkam ${user?.name || 'Customer'}! 👋 Welcome to ${selectedBoutique?.boutique_name || 'Inba Boutique'}. What would you like us to stitch for you today?`,
+      type: 'selection',
+    },
+  ]);
+
+  // Final ticket state
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [measurementOption, setMeasurementOption] = useState('Use Previous Measurements');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Autosave status
+  const [autosaveText, setAutosaveText] = useState('Autosaved Draft');
+
+  // Crop Modal State
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [cropTarget, setCropTarget] = useState<{
+    outfitIndex: number;
+    sectionKey: 'frontNeckPhotos' | 'backNeckPhotos' | 'sleevePhotos' | 'extraPhotos';
+    sectionTitle: string;
+    emoji: string;
+  } | null>(null);
+
+  // Voice Recording Per Outfit State
+  const [recordingOutfitIdx, setRecordingOutfitIdx] = useState<number | null>(null);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Step 4
-  const [measurementDrawerOpen, setMeasurementDrawerOpen] = useState(false);
-  const [viewingPastOrderId, setViewingPastOrderId] = useState<string | null>(null);
+  // Full view preview of master collage
+  const [previewCollageUrl, setPreviewCollageUrl] = useState<string | null>(null);
 
-  // Step 5 - Custom Calendar
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  // Bottom manual message text input
+  const [bottomInputText, setBottomInputText] = useState('');
 
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
-  const [otherCategoryName, setOtherCategoryName] = useState('');
-  const [outfits, setOutfits] = useState<any[]>([]);
-  const [editingOutfitId, setEditingOutfitId] = useState<string | null>(null);
-  const [deliveryDate, setDeliveryDate] = useState('');
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  // Draft Key
+  const draftKey = useMemo(
+    () => `sewvee_stitching_chat_draft_${selectedBoutiqueId || 'default'}`,
+    [selectedBoutiqueId]
+  );
 
-  const [formData, setFormData] = useState({
-    description: '',
-    measurement_option: 'Use Previous Measurements',
-    selected_past_order_id: '',
-  });
+  // Restore Draft on Mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(draftKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.outfits && Array.isArray(parsed.outfits) && parsed.outfits.length > 0) {
+          setOutfits(parsed.outfits);
+          if (parsed.deliveryDate) setDeliveryDate(parsed.deliveryDate);
+          if (parsed.measurementOption) setMeasurementOption(parsed.measurementOption);
+          if (parsed.agreedToTerms) setAgreedToTerms(parsed.agreedToTerms);
+          
+          // Reconstruct chat flow
+          const restoredMessages: ChatMessage[] = [
+            {
+              id: 'welcome',
+              sender: 'bot',
+              text: `Vanakkam ${user?.name || 'Customer'}! 👋 Welcome to ${selectedBoutique?.boutique_name || 'Inba Boutique'}. What would you like us to stitch for you today?`,
+              type: 'selection',
+            },
+          ];
 
-  const categories = ['Blouse', 'Chudithar', 'Kurta / Kurti', 'Lehenga', 'Suit / Salwar', 'Dress / Gown', 'Pants / Trousers', 'Other'];
-  const measurementOptions = ['Use Previous Measurements', 'I will provide later', 'Take measurements at store', 'Send sample dress via courier', 'Measurement dress given'];
+          parsed.outfits.forEach((o: OutfitConfig, idx: number) => {
+            restoredMessages.push({
+              id: `user_pick_${idx}`,
+              sender: 'user',
+              text: `I would like to stitch ${o.name}`,
+            });
+            restoredMessages.push({
+              id: `questionnaire_${idx}`,
+              sender: 'bot',
+              type: 'questionnaire',
+              outfitIndex: idx,
+            });
+          });
 
-  const selectedBoutique = boutiques.find((b) => b.id === selectedBoutiqueId);
-  const termsText = selectedBoutique?.terms_and_conditions;
-
-  const pastStitchingOrders = useMemo(() => {
-    return orders.filter(o => o.order_type === 'TAILORING' || o.order_type === 'STITCHING_REQUEST');
-  }, [orders]);
-
-  const handleNext = () => {
-    if (step === 1) {
-      const newOutfits: any[] = [];
-      Object.entries(categoryCounts).forEach(([cat, count]) => {
-        for (let i = 0; i < count; i++) {
-          const id = `${cat}-${i}`;
-          const existing = outfits.find(o => o.id === id);
-          if (existing) {
-            newOutfits.push(existing);
-          } else {
-            newOutfits.push({
-              id,
-              category: cat === 'Other' ? (otherCategoryName.trim() || 'Other') : cat,
-              name: cat === 'Other'
-                ? `${otherCategoryName.trim() || 'Other'}${count > 1 ? ` ${i + 1}` : ''}`.trim()
-                : `${cat}${count > 1 ? ` ${i + 1}` : ''}`.trim(),
-              images: [],
-              previewUrls: [],
-              collageDataUrl: null,
-              description: '',
-              audioBlob: null,
-              audioUrl: null,
-              measurement_option: 'Use Previous Measurements',
-              selected_past_order_id: '',
-              isConfigured: false
+          const allCompleted = parsed.outfits.every((o: OutfitConfig) => o.isCompleted);
+          if (allCompleted) {
+            restoredMessages.push({
+              id: 'add_another_prompt',
+              sender: 'bot',
+              type: 'add_another_prompt',
             });
           }
+
+          setChatMessages(restoredMessages);
+          setAutosaveText('Draft Restored');
+          setTimeout(() => setAutosaveText('Autosaved Draft'), 2000);
         }
-      });
-      setOutfits(newOutfits);
-      setStep(2);
-    } else if (step === 2) {
-      setStep(3);
+      }
+    } catch (e) {
+      console.error('Failed to load draft:', e);
     }
-  };
-  const handlePrev = () => {
-    if (step === 1) router.back();
-    else setStep((s) => s - 1);
-  };
+  }, [draftKey, selectedBoutique, user]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setImages((prev) => [...prev, ...newFiles]);
-      
-      const newUrls = newFiles.map(f => URL.createObjectURL(f));
-      setPreviewUrls((prev) => [...prev, ...newUrls]);
-    }
-  };
+  // Trigger Autosave
+  const triggerAutosave = useCallback(
+    (updatedOutfits: OutfitConfig[]) => {
+      try {
+        const payload = {
+          outfits: updatedOutfits.map((o) => ({
+            ...o,
+            voiceNoteBlob: null, // Blobs cannot be directly stringified to localStorage
+          })),
+          deliveryDate,
+          measurementOption,
+          agreedToTerms,
+        };
+        localStorage.setItem(draftKey, JSON.stringify(payload));
+        setAutosaveText('Saved just now');
+        setTimeout(() => setAutosaveText('Autosaved Draft'), 1500);
+      } catch (e) {}
+    },
+    [draftKey, deliveryDate, measurementOption, agreedToTerms]
+  );
 
-  const removeImage = (idx: number) => {
-    setImages(prev => prev.filter((_, i) => i !== idx));
-    setPreviewUrls(prev => prev.filter((_, i) => i !== idx));
-  };
-
+  // Audio compatibility helper
   const getSupportedAudioMimeType = () => {
     if (typeof MediaRecorder === 'undefined') return '';
     const candidates = [
@@ -154,7 +243,7 @@ export default function StitchingPage() {
     return '';
   };
 
-  const startRecording = async () => {
+  const startVoiceRecording = async (outfitIdx: number) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mimeType = getSupportedAudioMimeType();
@@ -162,97 +251,485 @@ export default function StitchingPage() {
       const mr = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mr;
       audioChunksRef.current = [];
-      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
       mr.onstop = () => {
         const finalMime = mr.mimeType || mimeType || 'audio/mp4';
         const blob = new Blob(audioChunksRef.current, { type: finalMime });
-        setAudioBlob(blob);
-        setAudioUrl(URL.createObjectURL(blob));
-        stream.getTracks().forEach(t => t.stop());
+        const audioUrl = URL.createObjectURL(blob);
+        const mins = Math.floor(recordingSeconds / 60);
+        const secs = recordingSeconds % 60;
+        const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+        setOutfits((prev) => {
+          const next = [...prev];
+          next[outfitIdx] = {
+            ...next[outfitIdx],
+            voiceNoteBlob: blob,
+            voiceNoteUrl: audioUrl,
+            voiceNoteDuration: durationStr,
+          };
+          triggerAutosave(next);
+          return next;
+        });
+
+        stream.getTracks().forEach((t) => t.stop());
       };
+
       mr.start();
-      setIsRecording(true);
+      setRecordingOutfitIdx(outfitIdx);
       setRecordingSeconds(0);
-      timerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
+      timerRef.current = setInterval(() => setRecordingSeconds((s) => s + 1), 1000);
     } catch {
       showToast('Microphone access denied', 'error');
     }
   };
 
-  const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
-    setIsRecording(false);
+  const stopVoiceRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    setRecordingOutfitIdx(null);
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
-  const discardRecording = () => {
-    setAudioBlob(null);
-    setAudioUrl(null);
-    setRecordingSeconds(0);
+  const deleteVoiceRecording = (outfitIdx: number) => {
+    setOutfits((prev) => {
+      const next = [...prev];
+      next[outfitIdx] = {
+        ...next[outfitIdx],
+        voiceNoteBlob: null,
+        voiceNoteUrl: null,
+        voiceNoteDuration: null,
+      };
+      triggerAutosave(next);
+      return next;
+    });
   };
 
-  const handleSubmit = async () => {
-    setLoading(true);
+  // Step 1: User Chooses an Outfit
+  const handleSelectOutfit = (categoryName: string) => {
+    const nextNum = outfits.length + 1;
+    const template = getOutfitTemplate(categoryName);
+
+    const newOutfit: OutfitConfig = {
+      number: nextNum,
+      category: categoryName,
+      name: `Outfit ${nextNum}: ${categoryName}`,
+      icon: template.icon,
+      frontNeck: template.sections[0]?.options[0] || 'Standard Front Neck',
+      frontNeckNote: '',
+      frontNeckPhotos: [],
+      backNeck: template.sections[1]?.options[0] || 'Standard Back Neck',
+      backNeckNote: '',
+      backNeckPhotos: [],
+      sleeve: template.sections[2]?.options[0] || 'Elbow Length',
+      sleevePhotos: [],
+      hook: 'Front Hook',
+      extraPhotos: [],
+      notes: '',
+      voiceNoteBlob: null,
+      voiceNoteUrl: null,
+      voiceNoteDuration: null,
+      masterCollageUrl: null,
+      isCompleted: false,
+    };
+
+    const newOutfits = [...outfits, newOutfit];
+    setOutfits(newOutfits);
+    setCurrentOutfitIndex(newOutfits.length - 1);
+    triggerAutosave(newOutfits);
+
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: `user_pick_${nextNum}`,
+        sender: 'user',
+        text: `I would like to stitch ${newOutfit.name}`,
+      },
+      {
+        id: `questionnaire_${newOutfits.length - 1}`,
+        sender: 'bot',
+        type: 'questionnaire',
+        outfitIndex: newOutfits.length - 1,
+      },
+    ]);
+  };
+
+  // Photo Upload Trigger with Crop
+  const handleTriggerPhotoUpload = (
+    outfitIndex: number,
+    sectionKey: 'frontNeckPhotos' | 'backNeckPhotos' | 'sleevePhotos' | 'extraPhotos',
+    sectionTitle: string,
+    emoji: string
+  ) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e: any) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setCropImageSrc(reader.result as string);
+          setCropTarget({ outfitIndex, sectionKey, sectionTitle, emoji });
+          setCropModalOpen(true);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+  };
+
+  const handleCropComplete = (croppedDataUrl: string) => {
+    if (!cropTarget) return;
+    const { outfitIndex, sectionKey, sectionTitle, emoji } = cropTarget;
+    const newPhoto: AttachedPhoto = {
+      id: `photo_${Date.now()}`,
+      section: sectionTitle,
+      fileName: `${sectionTitle.toLowerCase().replace(/[^a-z0-9]/g, '_')}_ref.jpg`,
+      dataUrl: croppedDataUrl,
+      emoji: emoji,
+      comment: '',
+    };
+
+    setOutfits((prev) => {
+      const next = [...prev];
+      next[outfitIndex] = {
+        ...next[outfitIndex],
+        [sectionKey]: [...next[outfitIndex][sectionKey], newPhoto],
+      };
+      triggerAutosave(next);
+      return next;
+    });
+
+    setCropModalOpen(false);
+    setCropImageSrc(null);
+    setCropTarget(null);
+  };
+
+  const handleRemovePhoto = (
+    outfitIndex: number,
+    sectionKey: 'frontNeckPhotos' | 'backNeckPhotos' | 'sleevePhotos' | 'extraPhotos',
+    photoId: string
+  ) => {
+    setOutfits((prev) => {
+      const next = [...prev];
+      next[outfitIndex] = {
+        ...next[outfitIndex],
+        [sectionKey]: next[outfitIndex][sectionKey].filter((p) => p.id !== photoId),
+      };
+      triggerAutosave(next);
+      return next;
+    });
+  };
+
+  const handleUpdatePhotoComment = (
+    outfitIndex: number,
+    sectionKey: 'frontNeckPhotos' | 'backNeckPhotos' | 'sleevePhotos' | 'extraPhotos',
+    photoId: string,
+    comment: string
+  ) => {
+    setOutfits((prev) => {
+      const next = [...prev];
+      next[outfitIndex] = {
+        ...next[outfitIndex],
+        [sectionKey]: next[outfitIndex][sectionKey].map((p) =>
+          p.id === photoId ? { ...p, comment } : p
+        ),
+      };
+      triggerAutosave(next);
+      return next;
+    });
+  };
+
+  // Cancel an in-progress outfit (returns cleanly to outfit picker)
+  const handleCancelOutfit = (idx: number) => {
+    if (!confirm('Discard this outfit customization?')) return;
+
+    const remainingOutfits = outfits.filter((_, i) => i !== idx);
+    const reindexed = remainingOutfits.map((o, i) => ({
+      ...o,
+      number: i + 1,
+      name: `Outfit ${i + 1}: ${o.category}`,
+    }));
+
+    setOutfits(reindexed);
+    triggerAutosave(reindexed);
+
+    if (reindexed.length === 0) {
+      setChatMessages([
+        {
+          id: 'welcome',
+          sender: 'bot',
+          text: `Vanakkam ${user?.name || 'Customer'}! 👋 Welcome to ${selectedBoutique?.boutique_name || 'Inba Boutique'}. What would you like us to stitch for you today?`,
+          type: 'selection',
+        },
+      ]);
+    } else {
+      setChatMessages((prev) => [
+        ...prev.filter((m) => m.outfitIndex !== idx),
+        {
+          id: 'add_another_prompt',
+          sender: 'bot',
+          type: 'add_another_prompt',
+        },
+      ]);
+    }
+  };
+
+  // Complete an outfit & Automatically Generate Master Collage
+  const handleCompleteOutfit = async (idx: number) => {
+    const outfit = outfits[idx];
+
+    // Build Tiles for Automated Master Collage
+    const tiles = [
+      {
+        label: 'FRONT NECK',
+        styleName: outfit.frontNeck,
+        note: outfit.frontNeckNote,
+        imageSrc: outfit.frontNeckPhotos[0]?.dataUrl,
+        emoji: '👚',
+      },
+      {
+        label: 'BACK NECK',
+        styleName: outfit.backNeck,
+        note: outfit.backNeckNote,
+        imageSrc: outfit.backNeckPhotos[0]?.dataUrl,
+        emoji: '✨',
+      },
+      {
+        label: 'SLEEVE & HOOK',
+        styleName: `${outfit.sleeve} • ${outfit.hook}`,
+        imageSrc: outfit.sleevePhotos[0]?.dataUrl,
+        emoji: '🧵',
+      },
+      {
+        label: 'EXTRA / FABRIC NOTES',
+        styleName: outfit.notes || 'Standard Customization',
+        imageSrc: outfit.extraPhotos[0]?.dataUrl,
+        emoji: '📸',
+      },
+    ];
+
+    let masterCollageUrl: string | null = null;
+    try {
+      masterCollageUrl = await generateMasterCollage({
+        outfitName: outfit.name,
+        boutiqueName: selectedBoutique?.boutique_name || 'Inba Boutique',
+        inquiryNumber: '#ENQ-NEW',
+        tiles,
+        generalNotes: outfit.notes,
+        voiceNoteDuration: outfit.voiceNoteDuration || undefined,
+      });
+    } catch (e) {
+      console.error('Failed to auto-generate master collage:', e);
+    }
+
+    const updatedOutfits = [...outfits];
+    updatedOutfits[idx] = {
+      ...outfit,
+      isCompleted: true,
+      masterCollageUrl,
+    };
+
+    setOutfits(updatedOutfits);
+    triggerAutosave(updatedOutfits);
+
+    // Remove any previous add_another_prompt and append fresh prompt
+    setChatMessages((prev) => [
+      ...prev.filter((m) => m.type !== 'add_another_prompt' && m.type !== 'summary_ticket'),
+      {
+        id: `prompt_after_${idx}`,
+        sender: 'bot',
+        type: 'add_another_prompt',
+      },
+    ]);
+  };
+
+  // Edit an already completed outfit
+  const handleEditOutfit = (idx: number) => {
+    setOutfits((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], isCompleted: false };
+      triggerAutosave(next);
+      return next;
+    });
+
+    setChatMessages((prev) =>
+      prev.filter((m) => m.type !== 'add_another_prompt' && m.type !== 'summary_ticket')
+    );
+  };
+
+  // Delete an outfit
+  const handleDeleteOutfit = (idx: number) => {
+    if (!confirm(`Delete ${outfits[idx].name}?`)) return;
+
+    const remaining = outfits.filter((_, i) => i !== idx);
+    if (remaining.length === 0) {
+      setOutfits([]);
+      localStorage.removeItem(draftKey);
+      setChatMessages([
+        {
+          id: 'welcome',
+          sender: 'bot',
+          text: `Vanakkam ${user?.name || 'Customer'}! 👋 Welcome to ${selectedBoutique?.boutique_name || 'Inba Boutique'}. What would you like us to stitch for you today?`,
+          type: 'selection',
+        },
+      ]);
+      return;
+    }
+
+    const reindexed = remaining.map((o, i) => ({
+      ...o,
+      number: i + 1,
+      name: `Outfit ${i + 1}: ${o.category}`,
+    }));
+
+    setOutfits(reindexed);
+    triggerAutosave(reindexed);
+
+    setChatMessages((prev) => [
+      ...prev.filter((m) => m.outfitIndex !== idx),
+      {
+        id: 'add_another_prompt',
+        sender: 'bot',
+        type: 'add_another_prompt',
+      },
+    ]);
+  };
+
+  // Proceed to Final Consolidated Inquiry Ticket
+  const handleProceedToFinal = () => {
+    setChatMessages((prev) => [
+      ...prev.filter((m) => m.type !== 'summary_ticket'),
+      {
+        id: `user_ready`,
+        sender: 'user',
+        text: `I am ready with my ${outfits.length} outfit${outfits.length > 1 ? 's' : ''}`,
+      },
+      {
+        id: 'summary_ticket',
+        sender: 'bot',
+        type: 'summary_ticket',
+      },
+    ]);
+  };
+
+  // Discard / Reset entire inquiry
+  const handleDiscardEntireInquiry = () => {
+    if (confirm('Discard this entire stitching inquiry draft?')) {
+      setOutfits([]);
+      localStorage.removeItem(draftKey);
+      setChatMessages([
+        {
+          id: 'welcome',
+          sender: 'bot',
+          text: `Vanakkam ${user?.name || 'Customer'}! 👋 Welcome to ${selectedBoutique?.boutique_name || 'Inba Boutique'}. What would you like us to stitch for you today?`,
+          type: 'selection',
+        },
+      ]);
+    }
+  };
+
+  // Helper to convert base64 dataUrl to File
+  const dataUrlToFile = (dataUrl: string, filename: string): File => {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
+  // Final Submit to Backend API
+  const handleSubmitInquiry = async () => {
+    if (!deliveryDate) {
+      showToast('Please select your expected delivery date', 'error');
+      return;
+    }
+    if (termsText && !agreedToTerms) {
+      showToast('Please agree to the boutique terms and conditions', 'error');
+      return;
+    }
+
+    setSubmitting(true);
     try {
       const token = localStorage.getItem('sewvee_customer_token') ?? '';
       const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-      
+
       const outfitUploadedUrls: string[][] = [];
 
       for (const outfit of outfits) {
         const uploadedUrls: string[] = [];
-        
-        // Upload images
-        for (const file of outfit.images || []) {
-          const fd = new FormData();
-          fd.append('file', file);
-          fd.append('key_name', 'order_photos');
-          
-          const uploadRes = await fetch(URL_UPLOAD, {
-            method: 'POST',
-            headers: { Authorization: formattedToken },
-            body: fd,
-          });
-          
-          if (uploadRes.ok) {
-            const json = await uploadRes.json();
-            const rawUrl = json.file_url ?? json.data?.file_url ?? json.url ?? json.data?.url;
-            const url = rawUrl ? (rawUrl.startsWith('/') ? `${API_DOMAIN}${rawUrl}` : rawUrl) : null;
-            if (url) uploadedUrls.push(url);
-          }
-        }
 
-        // Upload collage if created
-        if (outfit.collageDataUrl) {
+        // 1. Upload Master Collage if present
+        if (outfit.masterCollageUrl) {
           try {
-            const res = await fetch(outfit.collageDataUrl);
-            const blob = await res.blob();
-            const collageFile = new File([blob], `collage_${Date.now()}.jpg`, { type: 'image/jpeg' });
+            const collageFile = dataUrlToFile(outfit.masterCollageUrl, `master_collage_${outfit.number}.jpg`);
             const fd = new FormData();
             fd.append('file', collageFile);
             fd.append('key_name', 'order_photos');
-            const collageUploadRes = await fetch(URL_UPLOAD, {
+            const uploadRes = await fetch(URL_UPLOAD, {
               method: 'POST',
               headers: { Authorization: formattedToken },
               body: fd,
             });
-            if (collageUploadRes.ok) {
-              const json = await collageUploadRes.json();
+            if (uploadRes.ok) {
+              const json = await uploadRes.json();
               const rawUrl = json.file_url ?? json.data?.file_url ?? json.url ?? json.data?.url;
               const url = rawUrl ? (rawUrl.startsWith('/') ? `${API_DOMAIN}${rawUrl}` : rawUrl) : null;
               if (url) uploadedUrls.push(url);
             }
-          } catch(e) {
-            console.error('Failed to upload collage:', e);
+          } catch (e) {
+            console.error('Failed to upload master collage:', e);
           }
         }
 
-        // Upload voice recording if present
-        if (outfit.audioBlob) {
+        // 2. Upload Individual Section Photos
+        const allPhotos = [
+          ...outfit.frontNeckPhotos,
+          ...outfit.backNeckPhotos,
+          ...outfit.sleevePhotos,
+          ...outfit.extraPhotos,
+        ];
+
+        for (const p of allPhotos) {
           try {
-            const audioMime = outfit.audioBlob.type || 'audio/mp4';
-            const ext = audioMime.includes('mp4') || audioMime.includes('aac') ? 'm4a' : audioMime.includes('mpeg') ? 'mp3' : audioMime.includes('wav') ? 'wav' : 'webm';
-            const audioFile = new File([outfit.audioBlob], `voice_note_${Date.now()}.${ext}`, { type: audioMime });
+            const photoFile = dataUrlToFile(p.dataUrl, p.fileName);
+            const fd = new FormData();
+            fd.append('file', photoFile);
+            fd.append('key_name', 'order_photos');
+            const uploadRes = await fetch(URL_UPLOAD, {
+              method: 'POST',
+              headers: { Authorization: formattedToken },
+              body: fd,
+            });
+            if (uploadRes.ok) {
+              const json = await uploadRes.json();
+              const rawUrl = json.file_url ?? json.data?.file_url ?? json.url ?? json.data?.url;
+              const url = rawUrl ? (rawUrl.startsWith('/') ? `${API_DOMAIN}${rawUrl}` : rawUrl) : null;
+              if (url) uploadedUrls.push(url);
+            }
+          } catch (e) {
+            console.error('Failed to upload section photo:', e);
+          }
+        }
+
+        // 3. Upload Voice Note if present
+        if (outfit.voiceNoteBlob) {
+          try {
+            const audioMime = outfit.voiceNoteBlob.type || 'audio/mp4';
+            const ext = audioMime.includes('mp4') || audioMime.includes('aac') ? 'm4a' : 'webm';
+            const audioFile = new File([outfit.voiceNoteBlob], `voice_note_${Date.now()}.${ext}`, {
+              type: audioMime,
+            });
             const fd = new FormData();
             fd.append('file', audioFile);
             fd.append('key_name', 'order_audios');
@@ -267,30 +744,35 @@ export default function StitchingPage() {
               const url = rawUrl ? (rawUrl.startsWith('/') ? `${API_DOMAIN}${rawUrl}` : rawUrl) : null;
               if (url) uploadedUrls.push(url);
             }
-          } catch(e) { console.error('Failed to upload voice note:', e); }
+          } catch (e) {
+            console.error('Failed to upload voice note:', e);
+          }
         }
 
         outfitUploadedUrls.push(uploadedUrls);
       }
 
-      // Step 2: Build payload — store ALL data in `notes` as JSON (backend DOES persist this field)
+      // Compile payload
       const payloadOutfits = outfits.map((outfit, idx) => {
         const urls = outfitUploadedUrls[idx] || [];
-        
-        // Build the precise text string the backend expects for the Boutique Panel card
-        const lines = [];
-        lines.push(`Category: ${outfit.category}`);
-        if (outfit.description) lines.push(`Description: ${outfit.description}`);
-        if (outfit.measurement_option) lines.push(`Measurement: ${outfit.measurement_option}`);
+        const lines = [
+          `Category: ${outfit.category}`,
+          `Outfit Name: ${outfit.name}`,
+          `Front Neck: ${outfit.frontNeck}${outfit.frontNeckNote ? ` (${outfit.frontNeckNote})` : ''}`,
+          `Back Neck: ${outfit.backNeck}${outfit.backNeckNote ? ` (${outfit.backNeckNote})` : ''}`,
+          `Sleeve: ${outfit.sleeve} | Hook: ${outfit.hook}`,
+        ];
+        if (outfit.notes) lines.push(`Specific Notes: ${outfit.notes}`);
+        lines.push(`Measurement: ${measurementOption}`);
         if (deliveryDate) lines.push(`Expected Date: ${deliveryDate}`);
         if (termsText && agreedToTerms) lines.push(`Terms & Conditions: Agreed`);
-        
+
         return {
           name: outfit.category,
           quantity: 1,
           total_amount: 0,
           customer_notes: lines.join('\n'),
-          photos: urls.map(u => ({ file_url: u })),
+          photos: urls.map((u) => ({ file_url: u })),
           items: [],
         };
       });
@@ -303,7 +785,6 @@ export default function StitchingPage() {
         outfits: payloadOutfits,
       };
 
-      // Step 3: Create the order
       const res = await fetch(URL_CUSTOMER_PORTAL_ORDERS, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: formattedToken },
@@ -311,7 +792,7 @@ export default function StitchingPage() {
       });
 
       if (!res.ok) {
-        showToast('Failed to submit request', 'error');
+        showToast('Failed to submit inquiry', 'error');
         return;
       }
 
@@ -319,28 +800,7 @@ export default function StitchingPage() {
       const createdOrderId = resJson?.data?.id ?? resJson?.id;
       const createdOutfits: any[] = resJson?.data?.outfits ?? resJson?.outfits ?? [];
 
-      // Step 4: Save ALL rich data to localStorage (backend drops this data)
-      // This is the only reliable way to persist it for the Order Details view
-      if (createdOrderId) {
-        const richData = {
-          delivery_date: deliveryDate,
-          outfit_configs: outfits.map((outfit, idx) => ({
-            category: outfit.category,
-            name: outfit.name,
-            description: outfit.description || '',
-            measurement_option: outfit.measurement_option || '',
-            selected_past_order_id: outfit.selected_past_order_id || '',
-            delivery_date: deliveryDate,
-            photo_urls: outfitUploadedUrls[idx] || [],
-            terms_agreed: !!(termsText && agreedToTerms),
-          })),
-        };
-        try {
-          localStorage.setItem(`sewvee_order_${createdOrderId}`, JSON.stringify(richData));
-        } catch(e) { console.error('Failed to save order data to localStorage:', e); }
-      }
-
-      // Step 5: Attach uploaded photos to each outfit via /requests endpoint
+      // Attach photos to outfits via /requests
       if (createdOrderId && createdOutfits.length > 0) {
         for (let i = 0; i < createdOutfits.length; i++) {
           const outfitId = createdOutfits[i]?.id;
@@ -348,681 +808,1134 @@ export default function StitchingPage() {
           if (!outfitId || urls.length === 0) continue;
           for (const url of urls) {
             try {
-              await fetch(`${URL_CUSTOMER_PORTAL_ORDERS}/${createdOrderId}/outfits/${outfitId}/requests`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: formattedToken },
-                body: JSON.stringify({ attachment_url: url, message: 'Customer reference photo', phone: user?.mobile ?? '' }),
-              });
-            } catch(e) { console.error('Failed to attach photo:', e); }
+              await fetch(
+                `${URL_CUSTOMER_PORTAL_ORDERS}/${createdOrderId}/outfits/${outfitId}/requests`,
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', Authorization: formattedToken },
+                  body: JSON.stringify({
+                    attachment_url: url,
+                    message: 'Stitching Reference & Master Sheet',
+                    phone: user?.mobile ?? '',
+                  }),
+                }
+              );
+            } catch (e) {}
           }
         }
       }
 
-      showToast('Request submitted successfully!', 'success');
-      router.push('/orders');
+      // Clear draft on successful placement
+      localStorage.removeItem(draftKey);
+
+      showToast('Stitching inquiry submitted successfully!', 'success');
+      router.push(`/orders`);
     } catch (e) {
       console.error(e);
-      showToast('Error submitting request', 'error');
+      showToast('Error submitting inquiry request', 'error');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  // Custom Calendar Logic
-  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
-  const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
-  
-  const days = [];
-  for (let i = 0; i < firstDayOfMonth; i++) days.push(null);
-  for (let i = 1; i <= daysInMonth; i++) days.push(i);
-
-  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const handleSendManualMessage = () => {
+    if (!bottomInputText.trim()) return;
+    const msg = bottomInputText.trim();
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: `manual_${Date.now()}`,
+        sender: 'user',
+        text: msg,
+      },
+      {
+        id: `bot_ack_${Date.now()}`,
+        sender: 'bot',
+        text: `Noted: "${msg}". I've included this in your inquiry notes for the master tailor.`,
+      },
+    ]);
+    setBottomInputText('');
+  };
 
   return (
-    <div className="bg-[#F8FAFC] min-h-screen flex flex-col">
-      <div className="flex items-center px-4 pt-6 pb-4 bg-white border-b border-gray-100">
-        <button onClick={handlePrev} className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full">
-          <ArrowLeft className="w-5 h-5 text-[#0F172A]" />
-        </button>
-        <div className="flex-1 ml-4">
-          <h1 className="text-[18px] font-bold text-[#0F172A] font-inter leading-tight">
-            New Stitching Request
-          </h1>
-          {selectedBoutiqueId && (
-            <p className="text-[12px] font-semibold text-[#5B43EE] mt-0.5">
-              to {boutiques.find(b => b.id === selectedBoutiqueId)?.boutique_name || 'Boutique'}
-            </p>
-          )}
-        </div>
-        <button 
-          onClick={() => router.back()}
-          className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors"
-        >
-          <X className="w-5 h-5 text-[#64748B]" />
-        </button>
-      </div>
-
-      <div className="flex-1 p-5 overflow-y-auto pb-24 flex flex-col">
-        {/* PROGRESS BAR */}
-        <div className="mb-8 px-4 shrink-0">
-          <div className="relative flex items-center justify-between">
-            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[3px] bg-[#E2E8F0] z-0 rounded-full" />
-            <div 
-              className="absolute left-0 top-1/2 -translate-y-1/2 h-[3px] bg-[#10B981] z-0 transition-all duration-300 rounded-full" 
-              style={{ width: `${((step - 1) / 2) * 100}%` }}
-            />
-            {[1, 2, 3].map((s) => {
-              const isCompleted = s < step;
-              const isActive = s === step;
-              return (
-                <div 
-                  key={s} 
-                  className={`relative z-10 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-colors ${
-                    isCompleted ? 'bg-[#10B981] text-white' : 
-                    isActive ? 'bg-[#5B43EE] text-white' : 
-                    'bg-[#E2E8F0] text-[#94A3B8]'
-                  }`}
-                >
-                  {isCompleted ? <Check className="w-4 h-4 text-white" strokeWidth={3} /> : s}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* STEP 1: CATEGORY SELECTION */}
-        {step === 1 && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-300 pb-16">
-            <h2 className="text-[20px] font-bold text-[#0F172A] mb-1">What would you like to stitch?</h2>
-            <p className="text-[13px] text-[#64748B] mb-5">Select the number of outfits for each category.</p>
-            <div className="flex flex-col gap-3">
-              {categories.map((c) => {
-                const count = categoryCounts[c] || 0;
-                return (
-                  <div key={c} className={`rounded-xl border transition-colors ${count > 0 ? 'border-[#5B43EE] bg-[#EEF2FF]' : 'border-[#E2E8F0] bg-white'}`}>
-                    <div className="p-4 flex items-center justify-between">
-                      <span className={`font-bold text-[15px] ${count > 0 ? 'text-[#5B43EE]' : 'text-[#475569]'}`}>{c}</span>
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => setCategoryCounts(prev => ({...prev, [c]: Math.max(0, count - 1)}))} className="w-8 h-8 rounded-full bg-white border border-[#CBD5E1] flex items-center justify-center text-[16px] font-bold text-[#475569] leading-none">−</button>
-                        <span className="w-4 text-center font-bold text-[15px] text-[#0F172A]">{count}</span>
-                        <button onClick={() => setCategoryCounts(prev => ({...prev, [c]: count + 1}))} className="w-8 h-8 rounded-full bg-white border border-[#CBD5E1] flex items-center justify-center text-[16px] font-bold text-[#475569] leading-none">+</button>
-                      </div>
-                    </div>
-                    {c === 'Other' && count > 0 && (
-                      <div className="px-4 pb-4">
-                        <input
-                          type="text"
-                          value={otherCategoryName}
-                          onChange={e => setOtherCategoryName(e.target.value)}
-                          placeholder="Enter outfit name (e.g. Jumpsuit)"
-                          className="w-full border border-[#C7D2FE] bg-white rounded-xl px-3 py-2.5 text-[14px] font-medium text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#5B43EE]"
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-                {/* STEP 2: OUTFIT CHECKLIST */}
-        {step === 2 && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-300 pb-20">
-            <h2 className="text-[20px] font-bold text-[#0F172A] mb-1">Configure Outfits</h2>
-            <p className="text-[13px] text-[#64748B] mb-5">Tap each outfit to provide design references, details, and measurements.</p>
-            
-            <div className="flex flex-col gap-3">
-              {outfits.map((outfit) => (
-                <div key={outfit.id} className="relative group">
-                  <button
-                    onClick={() => {
-                       setImages(outfit.images || []);
-                       setPreviewUrls(outfit.previewUrls || []);
-                       setCollageDataUrl(outfit.collageDataUrl || null);
-                       setAudioBlob(outfit.audioBlob || null);
-                       setAudioUrl(outfit.audioUrl || null);
-                       setFormData({
-                         description: outfit.description || '',
-                         measurement_option: outfit.measurement_option || 'Use Previous Measurements',
-                         selected_past_order_id: outfit.selected_past_order_id || ''
-                       });
-                       setEditingOutfitId(outfit.id);
-                    }}
-                    className={`w-full p-4 rounded-xl border flex items-center justify-between transition-colors pr-12 ${outfit.isConfigured ? 'border-[#22C55E] bg-[#F0FDF4]' : 'border-[#CBD5E1] bg-white'}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${outfit.isConfigured ? 'bg-[#DCFCE7]' : 'bg-[#F1F5F9]'}`}>
-                        {outfit.isConfigured ? <CheckCircle className="w-5 h-5 text-[#22C55E]" /> : <span className="text-[14px] font-bold text-[#64748B]">{outfits.indexOf(outfit) + 1}</span>}
-                      </div>
-                      <div className="text-left">
-                        <p className={`font-bold text-[15px] ${outfit.isConfigured ? 'text-[#166534]' : 'text-[#0F172A]'}`}>{outfit.name}</p>
-                        <p className={`text-[12px] mt-0.5 ${outfit.isConfigured ? 'text-[#15803D]' : 'text-[#94A3B8]'}`}>
-                          {outfit.isConfigured ? 'Configured • Tap to edit' : 'Tap to add details'}
-                        </p>
-                      </div>
-                    </div>
-                    <ChevronRight className={`w-5 h-5 ${outfit.isConfigured ? 'text-[#22C55E]' : 'text-[#CBD5E1]'}`} />
-                  </button>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (window.confirm(`Remove ${outfit.name}?`)) {
-                        setOutfits(prev => prev.filter(o => o.id !== outfit.id));
-                        setCategoryCounts(prev => ({
-                          ...prev,
-                          [outfit.category]: Math.max(0, (prev[outfit.category] || 1) - 1)
-                        }));
-                      }
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3: EXPECTED DELIVERY */}
-        {step === 3 && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col flex-1 min-h-0 pb-16">
-            <h2 className="text-[20px] font-bold text-[#0F172A] mb-4 shrink-0">Expected Delivery Date</h2>
-            
-            <button 
-              onClick={() => setShowCalendar(true)}
-              className="w-full shrink-0 bg-white border border-[#E2E8F0] rounded-xl p-4 flex items-center justify-between outline-none"
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-between text-slate-800 antialiased pb-20">
+      
+      {/* 1. TOP HEADER */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 px-4 py-3 shadow-xs">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-slate-100 text-slate-600 transition-colors"
             >
-              <span className={`text-[15px] font-bold ${deliveryDate ? 'text-[#0F172A]' : 'text-[#94A3B8]'}`}>
-                {deliveryDate ? new Date(deliveryDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'dd/mm/yyyy'}
-              </span>
-              <CalendarIcon className="w-5 h-5 text-[#64748B]" />
+              <ArrowLeft className="w-5 h-5" />
             </button>
-
-            <p className="text-[12px] text-[#64748B] mt-4 font-medium shrink-0">
-              Note: The boutique will confirm the final delivery date after reviewing your request.
-            </p>
-
-            {termsText && (
-              <div className="mt-6 flex flex-col">
-                <h3 className="text-[14px] font-bold text-[#0F172A] mb-2">Terms and Conditions</h3>
-                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 overflow-y-auto mb-4 h-[130px] shrink-0 shadow-inner">
-                  <p className="text-[13px] text-[#475569] leading-relaxed whitespace-pre-wrap">{termsText}</p>
-                </div>
-                <label className={`flex items-center gap-3 cursor-pointer p-4 border rounded-xl transition-colors shadow-sm ${agreedToTerms ? 'border-[#5B43EE] bg-[#5B43EE]/5' : 'border-[#E2E8F0] bg-white'}`}>
-                  <div 
-                    className={`w-5 h-5 shrink-0 rounded-md flex items-center justify-center transition-all duration-200 ${
-                      agreedToTerms 
-                        ? 'bg-[#5B43EE] border-[#5B43EE] shadow-[0_2px_8px_rgba(91,67,238,0.3)]' 
-                        : 'border-[1.5px] border-[#CBD5E1] bg-white'
-                    }`}
-                  >
-                    {agreedToTerms && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
-                  </div>
-                  <input 
-                    type="checkbox" 
-                    className="hidden"
-                    checked={agreedToTerms}
-                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#5B43EE] to-[#8E7CFF] flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden">
+                {selectedBoutique?.profile_icon_url ? (
+                  <img
+                    src={selectedBoutique.profile_icon_url}
+                    alt={selectedBoutique.boutique_name}
+                    className="w-full h-full object-cover"
                   />
-                  <span className={`text-[14px] font-semibold select-none ${agreedToTerms ? 'text-[#5B43EE]' : 'text-[#334155]'}`}>
-                    I agree to the Terms and Conditions
-                  </span>
-                </label>
-              </div>
-            )}
-
-            {/* CUSTOM CALENDAR POPUP */}
-            {showCalendar && (
-              <div className="absolute top-[180px] left-5 right-5 bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] border border-[#E2E8F0] p-4 z-20 animate-in fade-in zoom-in-95 duration-200">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="font-bold text-[#0F172A]">{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</span>
-                  <div className="flex gap-2">
-                    {(() => {
-                      const now = new Date();
-                      const isCurrentMonth = currentMonth.getMonth() === now.getMonth() && currentMonth.getFullYear() === now.getFullYear();
-                      return (
-                        <button 
-                          disabled={isCurrentMonth}
-                          onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} 
-                          className={`p-1 rounded-md ${isCurrentMonth ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-100'}`}
-                        >
-                          <ChevronLeft className="w-5 h-5" />
-                        </button>
-                      );
-                    })()}
-                    <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="p-1 rounded-md hover:bg-gray-100">
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                  {['S','M','T','W','T','F','S'].map((d, i) => (
-                    <span key={i} className="text-[12px] font-bold text-[#64748B] py-1">{d}</span>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-7 gap-y-2 text-center">
-                  {days.map((day, idx) => {
-                    if (!day) return <div key={idx} />;
-                    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    const isSelected = deliveryDate === dateStr;
-                    
-                    const cellDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-                    const today = new Date();
-                    today.setHours(0,0,0,0);
-                    const isPast = cellDate < today;
-
-                    return (
-                      <button
-                        key={idx}
-                        disabled={isPast}
-                        onClick={() => {
-                          if (isPast) return;
-                          setDeliveryDate(dateStr);
-                          setShowCalendar(false);
-                        }}
-                        className={`w-8 h-8 mx-auto rounded-md flex items-center justify-center text-[13px] font-medium transition-colors ${
-                          isSelected ? 'bg-[#5B43EE] text-white' : 
-                          isPast ? 'text-gray-300 cursor-not-allowed' : 'text-[#0F172A] hover:bg-gray-100'
-                        }`}
-                      >
-                        {day}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="flex justify-between mt-4 pt-3 border-t border-gray-100">
-                  <button onClick={() => { setDeliveryDate(''); setShowCalendar(false); }} className="text-[#5B43EE] text-[13px] font-bold">Clear</button>
-                  <button onClick={() => { 
-                    const today = new Date();
-                    setDeliveryDate(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`); 
-                    setShowCalendar(false); 
-                  }} className="text-[#5B43EE] text-[13px] font-bold">Today</button>
-                </div>
-              </div>
-            )}
-            
-            {showCalendar && (
-              <div className="fixed inset-0 z-10" onClick={() => setShowCalendar(false)} />
-            )}
-          </div>
-        )}
-      </div>
-<div className="fixed bottom-0 left-0 right-0 p-5 bg-white border-t border-gray-100 z-30 flex gap-3">
-        <button
-          onClick={handlePrev}
-          className="px-6 py-4 rounded-[14px] font-bold text-[15px] bg-[#F1F5F9] text-[#64748B] flex items-center justify-center gap-2 hover:bg-[#E2E8F0] transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
-        <button
-          onClick={step === 3 ? handleSubmit : handleNext}
-          disabled={
-            loading || 
-            (step === 1 && Object.values(categoryCounts).reduce((a, b) => a + b, 0) === 0) || 
-            (step === 2 && (outfits.length === 0 || outfits.some(o => !o.isConfigured))) || 
-            (step === 3 && (!deliveryDate || !!(termsText && !agreedToTerms)))
-          }
-          className={`flex-1 py-4 rounded-[14px] font-bold text-[15px] flex items-center justify-center transition-opacity bg-[#5B43EE] text-white disabled:opacity-50`}
-        >
-          {loading ? (
-             <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-             step === 3 ? 'Submit Request' : 'Continue'
-          )}
-        </button>
-      </div>
-
-            {/* OUTFIT CONFIGURATION DRAWER */}
-      <BottomSheet open={!!editingOutfitId} onClose={() => setEditingOutfitId(null)}>
-        <div className="p-2">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-[20px] font-bold text-[#0F172A]">
-              Configure {outfits.find(o => o.id === editingOutfitId)?.name}
-            </h3>
-          </div>
-
-          <div className="space-y-8">
-            {/* SECTION 1: REFERENCE PHOTOS */}
-            <div>
-              <h4 className="text-[16px] font-bold text-[#0F172A] mb-1">1. Reference Photos</h4>
-              <p className="text-[13px] text-[#64748B] mb-4">
-                Add your fabric &amp; design inspiration. 1) Collage your saree/outfit material, any embroidery or patterns, and reference images.
-              </p>
-
-              {!collageDataUrl ? (
-                <button
-                  onClick={() => setCollageOpen(true)}
-                  className="w-full border-2 border-dashed border-[#CBD5E1] rounded-2xl bg-[#F8FAFC] p-6 flex flex-col items-center justify-center text-center hover:border-[#5B43EE] transition-colors"
-                >
-                  <div className="w-14 h-14 bg-[#EEF2FF] rounded-full flex items-center justify-center mb-3">
-                    <ImagePlus className="w-7 h-7 text-[#5B43EE]" />
-                  </div>
-                  <p className="text-[15px] font-bold text-[#0F172A] mb-1">Build a Collage</p>
-                  <p className="text-[12px] text-[#94A3B8] mb-4 max-w-[220px]">
-                    Combine your fabric photos with design references in one image.
-                  </p>
-                  <span className="px-5 py-2 bg-[#5B43EE] text-white font-bold rounded-xl text-[13px]">
-                    Open Collage Maker
-                  </span>
-                </button>
-              ) : (
-                <div className="relative">
-                  <div className="rounded-2xl overflow-hidden border border-[#E2E8F0] shadow-sm">
-                    <img src={collageDataUrl} alt="Your collage" className="w-full object-cover" />
-                  </div>
-                  <div className="mt-3 flex gap-3">
-                    <button
-                      onClick={() => setCollageOpen(true)}
-                      className="flex-1 py-2.5 rounded-xl border border-[#5B43EE] text-[#5B43EE] font-bold text-[13px]"
-                    >
-                      Edit Collage
-                    </button>
-                    <button
-                      onClick={() => setCollageDataUrl(null)}
-                      className="flex-1 py-2.5 rounded-xl border border-red-200 text-red-500 font-bold text-[13px] bg-red-50"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* SECTION 2: DESCRIPTION & VOICE */}
-            <div>
-              <h4 className="text-[16px] font-bold text-[#0F172A] mb-3">2. Description &amp; Voice Note</h4>
-              <textarea
-                className="w-full bg-transparent border border-[#E2E8F0] focus:border-[#5B43EE] rounded-xl p-4 text-[14px] min-h-[120px] outline-none text-[#0F172A] transition-colors"
-                placeholder="Describe your design, specific requirements, fabric details..."
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-
-              <div className="mt-3">
-                <p className="text-[12px] font-semibold text-[#64748B] mb-2">Or record a voice note</p>
-                {!audioUrl ? (
-                  <button
-                    onClick={isRecording ? stopRecording : startRecording}
-                    className={`w-full flex items-center justify-center gap-3 py-3 rounded-xl border-2 transition-all ${
-                      isRecording
-                        ? 'border-red-400 bg-red-50 text-red-500'
-                        : 'border-dashed border-[#CBD5E1] bg-white text-[#5B43EE] hover:border-[#5B43EE]'
-                    }`}
-                  >
-                    {isRecording ? (
-                      <>
-                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                        <span className="font-bold text-[13px]">
-                          Recording… {Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}
-                        </span>
-                        <Square className="w-3 h-3" />
-                        <span className="font-bold text-[12px]">Stop</span>
-                      </>
-                    ) : (
-                      <>
-                        <Mic className="w-4 h-4" />
-                        <span className="font-bold text-[13px]">Record Voice Note</span>
-                      </>
-                    )}
-                  </button>
                 ) : (
-                  <div className="bg-white border border-[#E2E8F0] rounded-xl p-3">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 bg-[#EEF2FF] rounded-full flex items-center justify-center shrink-0">
-                        <Mic className="w-3.5 h-3.5 text-[#5B43EE]" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-[12px] font-bold text-[#0F172A]">Voice Note</p>
-                        <p className="text-[10px] text-[#94A3B8]">
-                          {Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')} recorded
-                        </p>
-                      </div>
-                      <button onClick={discardRecording} className="p-1.5 rounded-full hover:bg-red-50 text-red-400">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <audio controls src={audioUrl} className="w-full h-8 rounded-lg" />
-                  </div>
+                  (selectedBoutique?.boutique_name || 'B').slice(0, 2).toUpperCase()
                 )}
               </div>
+              <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
             </div>
-
-            {/* SECTION 3: MEASUREMENT */}
             <div>
-              <h4 className="text-[16px] font-bold text-[#0F172A] mb-3">3. Measurement Option</h4>
-              <div className="space-y-2">
-                {measurementOptions.map((o) => (
-                  <button
-                    key={o}
-                    onClick={() => {
-                      setFormData({ ...formData, measurement_option: o });
-                      if (o === 'Use Previous Measurements') {
-                        setMeasurementDrawerOpen(true);
-                      }
-                    }}
-                    className={`w-full p-3 text-left flex flex-col rounded-xl border transition-colors ${formData.measurement_option === o ? 'border-[#5B43EE] bg-[#EEF2FF]' : 'border-[#E2E8F0] bg-white'}`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className={`font-bold text-[13px] ${formData.measurement_option === o ? 'text-[#5B43EE]' : 'text-[#475569]'}`}>{o}</span>
-                      {formData.measurement_option === o && <CheckCircle className="w-4 h-4 text-[#5B43EE]" />}
-                    </div>
-                    
-                    {o === 'Use Previous Measurements' && formData.measurement_option === 'Use Previous Measurements' && (
-                      <span className="text-[11px] text-[#5B43EE] mt-1.5 font-semibold bg-white px-2 py-1 rounded-lg border border-[#5B43EE]/20 inline-block">
-                        {(() => {
-                          if (!formData.selected_past_order_id) return 'Tap to select an order...';
-                          const selectedOrder = pastStitchingOrders.find(po => po.id.toString() === formData.selected_past_order_id);
-                          return `Selected: ${selectedOrder ? (selectedOrder.billNo || '`ORD-${selectedOrder.id}`') : formData.selected_past_order_id} (Tap to change)`;
-                        })()}
-                      </span>
-                    )}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2">
+                <h1 className="font-bold text-[15px] sm:text-[16px] text-slate-900 leading-tight">
+                  {selectedBoutique?.boutique_name || 'Boutique'}
+                </h1>
+                <span className="px-2 py-0.5 bg-purple-50 text-[#5B43EE] font-semibold text-[11px] rounded-md border border-[#5B43EE]/20">
+                  Verified
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
+                <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
+                  New Stitching Inquiry
+                </span>
+                <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  {autosaveText}
+                </span>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="mt-8 pt-4 pb-safe bg-white border-t border-gray-100">
           <button
-            onClick={() => {
-              // Save buffer back to outfits array
-              setOutfits(prev => prev.map(o => {
-                if (o.id === editingOutfitId) {
-                  return {
-                    ...o,
-                    images,
-                    previewUrls,
-                    collageDataUrl,
-                    description: formData.description,
-                    audioBlob,
-                    audioUrl,
-                    measurement_option: formData.measurement_option,
-                    selected_past_order_id: formData.selected_past_order_id,
-                    isConfigured: true // mark as complete
-                  };
-                }
-                return o;
-              }));
-              setEditingOutfitId(null);
-            }}
-            disabled={formData.measurement_option === 'Use Previous Measurements' && !formData.selected_past_order_id}
-            className="w-full py-3.5 bg-[#5B43EE] text-white rounded-xl font-bold text-[14px] disabled:opacity-50"
+            onClick={handleDiscardEntireInquiry}
+            className="text-xs font-semibold text-slate-500 hover:text-red-500 bg-slate-50 hover:bg-red-50 border border-slate-200 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
           >
-            Save &amp; Close
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Reset</span>
           </button>
         </div>
-      </BottomSheet>
+      </header>
 
-
-      {/* MEASUREMENT DRAWER */}
-      <BottomSheet open={measurementDrawerOpen} onClose={() => setMeasurementDrawerOpen(false)}>
-        <div className="p-2">
-          <h3 className="text-[18px] font-bold text-[#0F172A] mb-4">Select Past Order</h3>
-          {pastStitchingOrders.length === 0 ? (
-            <p className="text-[14px] text-gray-500 text-center py-6">You have no past stitching orders.</p>
-          ) : (
-            <div className="max-h-[300px] overflow-y-auto space-y-3 pr-2">
-              {pastStitchingOrders.map(o => (
-                <div key={o.id} className={`w-full p-4 rounded-xl border flex justify-between items-center ${formData.selected_past_order_id === o.id.toString() ? 'border-[#5B43EE] bg-indigo-50' : 'border-gray-200'}`}>
-                  <button 
-                    onClick={() => {
-                      setFormData({ ...formData, selected_past_order_id: o.id.toString() });
-                      setMeasurementDrawerOpen(false);
-                    }}
-                    className="flex-1 text-left flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="text-[14px] font-bold text-[#0F172A]">Order: {o.billNo || `ORD-${o.id}`}</p>
-                      <p className="text-[12px] text-gray-500 mt-1">{new Date(o.createdAt || o.date || new Date()).toLocaleDateString()}</p>
-                    </div>
-                    {formData.selected_past_order_id === o.id.toString() && <CheckCircle className="w-5 h-5 text-[#5B43EE] mr-4" />}
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setViewingPastOrderId(o.id.toString());
-                    }}
-                    className="text-[12px] font-bold text-[#5B43EE] bg-[#EEF2FF] px-3 py-1.5 rounded-lg ml-2 shrink-0 border border-[#5B43EE]/20 hover:bg-[#E0E7FF] flex items-center gap-1"
-                  >
-                    View Order
-                    <ChevronRight size={14} />
-                  </button>
-                </div>
+      {/* 2. DYNAMIC STICKY MULTI-OUTFIT TABS TRAY */}
+      {outfits.length > 0 && (
+        <div className="bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-2 sticky top-[65px] z-30 shadow-2xs">
+          <div className="max-w-3xl mx-auto flex items-center justify-between gap-3 overflow-x-auto custom-scroll">
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 shrink-0">
+                Inquiry Outfits:
+              </span>
+              {outfits.map((outfit, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setCurrentOutfitIndex(idx);
+                    const el = document.getElementById(`outfitCard_${idx}`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs ${
+                    idx === currentOutfitIndex
+                      ? 'bg-[#5B43EE] text-white ring-2 ring-purple-300'
+                      : outfit.isCompleted
+                      ? 'bg-purple-50 text-[#5B43EE] border border-[#5B43EE]/30'
+                      : 'bg-slate-100 text-slate-600 border border-slate-200'
+                  }`}
+                >
+                  <span>
+                    {outfit.icon} Outfit {idx + 1}: {outfit.category}
+                  </span>
+                  {outfit.isCompleted ? (
+                    <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-bold">
+                      ✓
+                    </span>
+                  ) : (
+                    <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                  )}
+                </button>
               ))}
             </div>
-          )}
-        </div>
-      </BottomSheet>
 
-      
-      {/* Past Order Details Drawer */}
-      <BottomSheet open={!!viewingPastOrderId} onClose={() => setViewingPastOrderId(null)} title="Order Details">
-        {(() => {
-          const o = pastStitchingOrders.find(ord => ord.id.toString() === viewingPastOrderId);
-          if (!o) return null;
-          const outfits = o.outfits || o.items || [];
-          const totalAmount = o.totalAmount || o.total || o.paid_amount || 0;
-          
-          return (
-            <div className="pb-8 px-2 max-h-[80vh] overflow-y-auto">
-              <div className="bg-[#F8FAFC] rounded-xl p-4 mb-4 border border-[#E2E8F0]">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-[12px] font-bold text-gray-500 uppercase tracking-wide">Order No</span>
-                  <span className="text-[14px] font-bold text-[#0F172A]">{o.billNo || `ORD-${o.id}`}</span>
-                </div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-[12px] font-bold text-gray-500 uppercase tracking-wide">Date</span>
-                  <span className="text-[14px] font-bold text-[#0F172A]">{new Date(o.createdAt || o.date || new Date()).toLocaleDateString()}</span>
-                </div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-[12px] font-bold text-gray-500 uppercase tracking-wide">Total Amount</span>
-                  <span className="text-[14px] font-bold text-[#5B43EE]">₹{totalAmount}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[12px] font-bold text-gray-500 uppercase tracking-wide">Status</span>
-                  <span className="text-[12px] font-bold px-2 py-1 bg-indigo-100 text-indigo-700 rounded-md">{o.status || 'Received'}</span>
+            <button
+              onClick={() => {
+                setChatMessages((prev) => [
+                  ...prev.filter((m) => m.type !== 'add_another_prompt' && m.type !== 'summary_ticket'),
+                  {
+                    id: `prompt_manual_add_${Date.now()}`,
+                    sender: 'bot',
+                    type: 'selection',
+                  },
+                ]);
+              }}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-dashed border-[#5B43EE] text-[#5B43EE] hover:bg-purple-50 shrink-0 flex items-center gap-1 transition-colors"
+            >
+              <span>+ Add Outfit</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 3. MAIN CHAT TIMELINE STREAM */}
+      <main className="flex-1 max-w-3xl w-full mx-auto p-4 sm:p-6 space-y-4">
+        
+        <div className="flex justify-center">
+          <span className="text-xs font-semibold px-3 py-1 bg-white border border-slate-200 text-slate-400 rounded-full shadow-2xs">
+            Today • Guided Stitching Inquiry Session
+          </span>
+        </div>
+
+        {chatMessages.map((msg) => {
+          if (msg.sender === 'user') {
+            return (
+              <div key={msg.id} className="flex justify-end animate-in fade-in duration-200">
+                <div className="bg-[#5B43EE] text-white rounded-2xl rounded-tr-sm px-4 py-2.5 shadow-xs text-xs sm:text-sm font-medium max-w-[85%]">
+                  {msg.text}
                 </div>
               </div>
+            );
+          }
 
-              <h4 className="text-[14px] font-bold text-[#0F172A] mb-3 px-1">Outfits ({outfits.length})</h4>
-              <div className="space-y-3">
-                {outfits.map((outfit: any, idx: number) => (
-                  <div key={outfit.id || idx} className="border border-gray-200 rounded-xl p-4 bg-white">
-                    <h5 className="text-[14px] font-bold text-[#0F172A] mb-2">{outfit.outfit_type || outfit.name || `Outfit ${idx + 1}`}</h5>
-                    {(() => {
-                      const m = outfit.measurements || outfit.customer_measurements;
-                      if (!m || (Array.isArray(m) && m.length === 0)) return null;
-                      
-                      return (
-                        <div className="mt-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                          <span className="text-[11px] font-bold text-gray-400 uppercase block mb-1">Measurements</span>
-                          {Array.isArray(m) ? (
-                            <div className="grid grid-cols-2 gap-y-2 gap-x-4 mt-2">
-                              {m.map((meas: any, i: number) => {
-                                const name = meas.measurement_name || meas.name || meas.field_name || `M${i+1}`;
-                                const val = typeof meas.value === 'object' && meas.value !== null ? meas.value.value || JSON.stringify(meas.value) : meas.value;
-                                return (
-                                  <div key={i} className="flex flex-col">
-                                    <span className="text-[10px] text-gray-500 uppercase font-medium">{name}</span>
-                                    <span className="text-[13px] font-semibold text-gray-800">{val}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <p className="text-[13px] text-gray-700 whitespace-pre-wrap mt-1">{String(m)}</p>
-                          )}
+          // Bot Selection Chips
+          if (msg.type === 'selection') {
+            return (
+              <div key={msg.id} className="space-y-3 animate-in fade-in duration-200">
+                <div className="flex gap-3 max-w-xl items-start">
+                  <div className="w-8 h-8 rounded-full bg-[#5B43EE] flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm mt-0.5">
+                    🤖
+                  </div>
+                  <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-sm p-4 shadow-sm text-slate-800 text-sm leading-relaxed">
+                    <p className="font-bold text-slate-900 mb-1">
+                      {outfits.length === 0 ? `Hello ${user?.name || 'there'}! 👋` : `Add Next Outfit:`}
+                    </p>
+                    <p className="text-slate-600">
+                      {outfits.length === 0
+                        ? `Welcome to ${selectedBoutique?.boutique_name || 'Inba Boutique'}. What outfit would you like to stitch first?`
+                        : `What is the next outfit you would like to design?`}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pl-11 space-y-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Choose Outfit Type:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {OUTFIT_CATEGORIES.map((cat) => (
+                      <button
+                        key={cat.name}
+                        onClick={() => handleSelectOutfit(cat.name)}
+                        className="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:border-[#5B43EE] hover:bg-purple-50/70 text-slate-700 hover:text-[#5B43EE] font-bold text-xs sm:text-sm shadow-xs flex items-center gap-1.5 transition-all"
+                      >
+                        <span>{cat.icon}</span>
+                        <span>{cat.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // Bot Questionnaire Card
+          if (msg.type === 'questionnaire' && typeof msg.outfitIndex === 'number') {
+            const outfit = outfits[msg.outfitIndex];
+            if (!outfit) return null;
+            const idx = msg.outfitIndex;
+            const template = getOutfitTemplate(outfit.category);
+
+            // If already completed, show clean overview with generated Master Collage & Categorized Photos
+            if (outfit.isCompleted) {
+              const allSections = [
+                { title: 'Front Neck Photos', photos: outfit.frontNeckPhotos },
+                { title: 'Back Neck Photos', photos: outfit.backNeckPhotos },
+                { title: 'Sleeve Design Photos', photos: outfit.sleevePhotos },
+                { title: 'Extra Reference Photos', photos: outfit.extraPhotos },
+              ];
+
+              return (
+                <div key={msg.id} id={`outfitCard_${idx}`} className="flex gap-3 max-w-2xl items-start animate-in fade-in duration-200">
+                  <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm mt-0.5">
+                    ✓
+                  </div>
+                  <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-sm p-4 sm:p-5 shadow-sm w-full space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900 text-sm sm:text-base">{outfit.name}</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Collage Generated ✓
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEditOutfit(idx)}
+                          className="text-xs font-bold text-[#5B43EE] hover:bg-purple-50 px-2.5 py-1 rounded-lg transition-colors border border-[#5B43EE]/20 flex items-center gap-1"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteOutfit(idx)}
+                          className="text-xs font-bold text-red-500 hover:bg-red-50 px-2.5 py-1 rounded-lg transition-colors border border-red-200 flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Master Collage Card Preview */}
+                    {outfit.masterCollageUrl && (
+                      <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-3 shadow-md border border-slate-700 space-y-2">
+                        <div className="flex items-center justify-between text-xs border-b border-white/10 pb-1.5">
+                          <span className="font-bold text-purple-300">MASTER DESIGN COLLAGE</span>
+                          <button
+                            onClick={() => setPreviewCollageUrl(outfit.masterCollageUrl)}
+                            className="text-[11px] font-bold text-white hover:text-purple-300 flex items-center gap-1"
+                          >
+                            <span>View HD Fullscreen</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </button>
                         </div>
-                      );
-                    })()}
-                    {(outfit.notes || outfit.customer_notes) && (() => {
-                      const text = outfit.notes || outfit.customer_notes;
-                      if (text.includes('--- Boutique Notes ---')) {
-                        const parts = text.split('--- Boutique Notes ---');
-                        return (
-                          <div className="mt-3 flex flex-col gap-2">
-                            {parts[0].trim() && (
-                              <div className="bg-[#FEF3C7] rounded-lg p-3 border border-[#FDE68A]">
-                                <span className="text-[10px] font-bold text-[#B45309] uppercase block mb-1">Customer Notes</span>
-                                <p className="text-[13px] text-[#92400E] whitespace-pre-wrap">{parts[0].trim()}</p>
-                              </div>
-                            )}
-                            {parts[1] && parts[1].trim() && (
-                              <div className="bg-[#F0FDF4] rounded-lg p-3 border border-[#BBF7D0]">
-                                <span className="text-[10px] font-bold text-[#166534] uppercase block mb-1 flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]"></span> Boutique Notes
+                        <div
+                          onClick={() => setPreviewCollageUrl(outfit.masterCollageUrl)}
+                          className="w-full h-48 sm:h-56 rounded-xl overflow-hidden cursor-pointer relative group bg-black/40"
+                        >
+                          <img
+                            src={outfit.masterCollageUrl}
+                            alt="Master Collage"
+                            className="w-full h-full object-contain group-hover:scale-102 transition-transform duration-300"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Categorized Photos Breakdown */}
+                    <div className="space-y-2 pt-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+                        Attached Photos by Section:
+                      </span>
+                      <div className="space-y-2">
+                        {allSections.map(
+                          (sec) =>
+                            sec.photos.length > 0 && (
+                              <div
+                                key={sec.title}
+                                className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/70 space-y-1.5"
+                              >
+                                <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                                  <span>📁</span> {sec.title} ({sec.photos.length})
                                 </span>
-                                <p className="text-[13px] text-[#15803D] whitespace-pre-wrap">{parts[1].trim()}</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {sec.photos.map((p) => (
+                                    <div
+                                      key={p.id}
+                                      className="bg-white border border-slate-200 rounded-lg p-2 flex items-center gap-2 shadow-2xs"
+                                    >
+                                      <img
+                                        src={p.dataUrl}
+                                        alt={p.fileName}
+                                        className="w-10 h-10 rounded-md object-cover border border-slate-100 shrink-0"
+                                      />
+                                      <div className="overflow-hidden">
+                                        <span className="text-xs font-semibold text-slate-800 truncate block">
+                                          {p.fileName}
+                                        </span>
+                                        {p.comment && (
+                                          <span className="text-[10px] text-[#5B43EE] italic block truncate">
+                                            "{p.comment}"
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
+                            )
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Voice Note & General Notes */}
+                    {outfit.voiceNoteUrl && (
+                      <div className="bg-purple-50/70 border border-[#5B43EE]/20 rounded-xl p-2.5 flex items-center gap-3">
+                        <Mic className="w-4 h-4 text-[#5B43EE]" />
+                        <span className="text-xs font-bold text-slate-800">
+                          Voice Note Included ({outfit.voiceNoteDuration || '0:22'})
+                        </span>
+                      </div>
+                    )}
+                    {outfit.notes && (
+                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/70 text-xs text-slate-600">
+                        <b>Tailor Note:</b> "{outfit.notes}"
+                      </div>
+                    )}
+
+                  </div>
+                </div>
+              );
+            }
+
+            // ACTIVE QUESTIONNAIRE CARD
+            return (
+              <div key={msg.id} id={`outfitCard_${idx}`} className="flex gap-3 max-w-2xl items-start animate-in fade-in duration-200">
+                <div className="w-8 h-8 rounded-full bg-[#5B43EE] flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm mt-0.5">
+                  🤖
+                </div>
+                <div className="bg-white border-2 border-[#5B43EE]/30 rounded-2xl rounded-tl-sm p-4 sm:p-5 shadow-md w-full space-y-4">
+                  
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#5B43EE] bg-purple-50 px-2 py-0.5 rounded border border-purple-100">
+                        Pre-Loaded Template • Outfit #{outfit.number}
+                      </span>
+                      <h3 className="font-bold text-slate-900 text-base mt-1">{outfit.name} Customization</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Customize each section. Photos upload directly inside each corresponding section card:
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 1. FRONT NECK */}
+                  <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#5B43EE]"></span> 1. Front Neck Style:
+                      </span>
+                      <span className="text-[11px] font-bold text-[#5B43EE] bg-purple-50 px-2 py-0.5 rounded border border-purple-100">
+                        {outfit.frontNeck}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {template.sections[0]?.options.map((style) => (
+                        <button
+                          key={style}
+                          onClick={() => {
+                            setOutfits((prev) => {
+                              const next = [...prev];
+                              next[idx].frontNeck = style;
+                              triggerAutosave(next);
+                              return next;
+                            });
+                          }}
+                          className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${
+                            outfit.frontNeck === style
+                              ? 'bg-[#5B43EE] text-white'
+                              : 'bg-white border border-slate-200 hover:border-[#5B43EE] text-slate-700'
+                          }`}
+                        >
+                          {style}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div>
+                      <input
+                        type="text"
+                        value={outfit.frontNeckNote}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setOutfits((prev) => {
+                            const next = [...prev];
+                            next[idx].frontNeckNote = val;
+                            triggerAutosave(next);
+                            return next;
+                          });
+                        }}
+                        placeholder="💬 Specific Front Neck note (e.g. depth 6.5 inch, rounded corners...)"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] transition-all"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <button
+                        onClick={() =>
+                          handleTriggerPhotoUpload(idx, 'frontNeckPhotos', 'Front Neck', '👚')
+                        }
+                        className="text-[11px] font-bold text-[#5B43EE] bg-white border border-dashed border-[#5B43EE] px-2.5 py-1.5 rounded-lg flex items-center gap-1 hover:bg-purple-50 transition-colors"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>Upload Front Neck (Crop & Rotate)</span>
+                      </button>
+                      <span className="text-[10px] text-slate-400 italic">In-card upload</span>
+                    </div>
+
+                    {/* In-Card Photos List for Front Neck */}
+                    {outfit.frontNeckPhotos.length > 0 && (
+                      <div className="space-y-2 mt-2 pt-2 border-t border-slate-200/60">
+                        {outfit.frontNeckPhotos.map((p) => (
+                          <div
+                            key={p.id}
+                            className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                <img
+                                  src={p.dataUrl}
+                                  alt={p.fileName}
+                                  className="w-9 h-9 rounded-md object-cover border border-purple-200"
+                                />
+                                <div className="overflow-hidden">
+                                  <span className="text-[10px] font-bold text-slate-800 truncate block">
+                                    {p.fileName}
+                                  </span>
+                                  <span className="text-[9px] text-[#5B43EE] font-semibold uppercase tracking-wider">
+                                    [Front Neck • Cropped ✓]
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleRemovePhoto(idx, 'frontNeckPhotos', p.id)}
+                                className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
+                              >
+                                ✕ Remove
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              value={p.comment}
+                              onChange={(e) =>
+                                handleUpdatePhotoComment(idx, 'frontNeckPhotos', p.id, e.target.value)
+                              }
+                              placeholder="💬 Note for this photo..."
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2. BACK NECK */}
+                  <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-600"></span> 2. Back Neck Style:
+                      </span>
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                        {outfit.backNeck}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {template.sections[1]?.options.map((style) => (
+                        <button
+                          key={style}
+                          onClick={() => {
+                            setOutfits((prev) => {
+                              const next = [...prev];
+                              next[idx].backNeck = style;
+                              triggerAutosave(next);
+                              return next;
+                            });
+                          }}
+                          className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${
+                            outfit.backNeck === style
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-white border border-slate-200 hover:border-emerald-600 text-slate-700'
+                          }`}
+                        >
+                          {style}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div>
+                      <input
+                        type="text"
+                        value={outfit.backNeckNote}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setOutfits((prev) => {
+                            const next = [...prev];
+                            next[idx].backNeckNote = val;
+                            triggerAutosave(next);
+                            return next;
+                          });
+                        }}
+                        placeholder="💬 Specific Back Neck note (e.g. 8 inch deep cut, dori tassels...)"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-emerald-600 transition-all"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <button
+                        onClick={() =>
+                          handleTriggerPhotoUpload(idx, 'backNeckPhotos', 'Back Neck', '✨')
+                        }
+                        className="text-[11px] font-bold text-emerald-700 bg-white border border-dashed border-emerald-600 px-2.5 py-1.5 rounded-lg flex items-center gap-1 hover:bg-emerald-50 transition-colors"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>Upload Back Neck (Crop & Rotate)</span>
+                      </button>
+                      <span className="text-[10px] text-slate-400 italic">In-card upload</span>
+                    </div>
+
+                    {outfit.backNeckPhotos.length > 0 && (
+                      <div className="space-y-2 mt-2 pt-2 border-t border-slate-200/60">
+                        {outfit.backNeckPhotos.map((p) => (
+                          <div
+                            key={p.id}
+                            className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                <img
+                                  src={p.dataUrl}
+                                  alt={p.fileName}
+                                  className="w-9 h-9 rounded-md object-cover border border-emerald-200"
+                                />
+                                <div className="overflow-hidden">
+                                  <span className="text-[10px] font-bold text-slate-800 truncate block">
+                                    {p.fileName}
+                                  </span>
+                                  <span className="text-[9px] text-emerald-700 font-semibold uppercase tracking-wider">
+                                    [Back Neck • Cropped ✓]
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleRemovePhoto(idx, 'backNeckPhotos', p.id)}
+                                className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
+                              >
+                                ✕ Remove
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              value={p.comment}
+                              onChange={(e) =>
+                                handleUpdatePhotoComment(idx, 'backNeckPhotos', p.id, e.target.value)
+                              }
+                              placeholder="💬 Note for this photo..."
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-emerald-600 focus:bg-white transition-all"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 3. SLEEVE & HOOK */}
+                  <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 space-y-2.5">
+                    <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-indigo-500"></span> 3. Sleeve Length & Opening Placement:
+                    </span>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-medium block mb-1">
+                          Sleeve Pattern:
+                        </span>
+                        <select
+                          value={outfit.sleeve}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setOutfits((prev) => {
+                              const next = [...prev];
+                              next[idx].sleeve = val;
+                              triggerAutosave(next);
+                              return next;
+                            });
+                          }}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-2 font-medium text-slate-800 outline-none"
+                        >
+                          <option>Elbow Length</option>
+                          <option>Short Sleeve (4-5 inch)</option>
+                          <option>Puff Sleeve</option>
+                          <option>Sleeveless</option>
+                          <option>Full Length</option>
+                        </select>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-medium block mb-1">
+                          Opening / Hook:
+                        </span>
+                        <select
+                          value={outfit.hook}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setOutfits((prev) => {
+                              const next = [...prev];
+                              next[idx].hook = val;
+                              triggerAutosave(next);
+                              return next;
+                            });
+                          }}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-2 font-medium text-slate-800 outline-none"
+                        >
+                          <option>Front Hook</option>
+                          <option>Back Hook</option>
+                          <option>Side Zipper</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <button
+                        onClick={() =>
+                          handleTriggerPhotoUpload(idx, 'sleevePhotos', 'Sleeve Design', '🧵')
+                        }
+                        className="text-[11px] font-bold text-indigo-700 bg-white border border-dashed border-indigo-400 px-2.5 py-1.5 rounded-lg flex items-center gap-1 hover:bg-indigo-50 transition-colors"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>Upload Sleeve Reference (Crop & Rotate)</span>
+                      </button>
+                    </div>
+
+                    {outfit.sleevePhotos.length > 0 && (
+                      <div className="space-y-2 mt-2 pt-2 border-t border-slate-200/60">
+                        {outfit.sleevePhotos.map((p) => (
+                          <div
+                            key={p.id}
+                            className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                <img
+                                  src={p.dataUrl}
+                                  alt={p.fileName}
+                                  className="w-9 h-9 rounded-md object-cover border border-indigo-200"
+                                />
+                                <div className="overflow-hidden">
+                                  <span className="text-[10px] font-bold text-slate-800 truncate block">
+                                    {p.fileName}
+                                  </span>
+                                  <span className="text-[9px] text-indigo-700 font-semibold uppercase tracking-wider">
+                                    [Sleeve Reference]
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleRemovePhoto(idx, 'sleevePhotos', p.id)}
+                                className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
+                              >
+                                ✕ Remove
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              value={p.comment}
+                              onChange={(e) =>
+                                handleUpdatePhotoComment(idx, 'sleevePhotos', p.id, e.target.value)
+                              }
+                              placeholder="💬 Note for this photo..."
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-600 focus:bg-white transition-all"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 4. EXTRA / FABRIC REFERENCE PHOTOS */}
+                  <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 space-y-2.5">
+                    <div>
+                      <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-500"></span> 4. Extra Reference Photos (Fabric / Material / Inspiration):
+                      </span>
+                      <span className="text-[11px] text-slate-400 block mt-0.5">
+                        Add common inspiration or fabric photos specifically for this outfit
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() =>
+                        handleTriggerPhotoUpload(idx, 'extraPhotos', 'Extra Reference', '📸')
+                      }
+                      className="w-full py-2 bg-white border border-dashed border-slate-300 hover:border-[#5B43EE] hover:bg-purple-50 text-slate-700 hover:text-[#5B43EE] rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>+ Upload Extra / Fabric Reference Photo</span>
+                    </button>
+
+                    {outfit.extraPhotos.length > 0 && (
+                      <div className="space-y-2 mt-2 pt-2 border-t border-slate-200/60">
+                        {outfit.extraPhotos.map((p) => (
+                          <div
+                            key={p.id}
+                            className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                <img
+                                  src={p.dataUrl}
+                                  alt={p.fileName}
+                                  className="w-9 h-9 rounded-md object-cover border border-amber-200"
+                                />
+                                <div className="overflow-hidden">
+                                  <span className="text-[10px] font-bold text-slate-800 truncate block">
+                                    {p.fileName}
+                                  </span>
+                                  <span className="text-[9px] text-amber-700 font-semibold uppercase tracking-wider">
+                                    [Extra / Fabric Reference]
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleRemovePhoto(idx, 'extraPhotos', p.id)}
+                                className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
+                              >
+                                ✕ Remove
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              value={p.comment}
+                              onChange={(e) =>
+                                handleUpdatePhotoComment(idx, 'extraPhotos', p.id, e.target.value)
+                              }
+                              placeholder="💬 Note for this photo..."
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 5. PER-OUTFIT VOICE NOTE */}
+                  <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                        <Mic className="w-3.5 h-3.5 text-[#5B43EE]" /> Voice Note for this Outfit:
+                      </span>
+                      <span className="text-[11px] text-slate-400">Audio Instructions</span>
+                    </div>
+
+                    {recordingOutfitIdx === idx ? (
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
+                          <span className="text-xs font-bold text-red-600">
+                            Recording... ({recordingSeconds}s)
+                          </span>
+                        </div>
+                        <button
+                          onClick={stopVoiceRecording}
+                          className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                        >
+                          <Square className="w-3 h-3" /> Stop & Save
+                        </button>
+                      </div>
+                    ) : outfit.voiceNoteUrl ? (
+                      <div className="bg-purple-50/90 border border-[#5B43EE]/30 rounded-xl p-2.5 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <audio src={outfit.voiceNoteUrl} controls className="h-8 max-w-[200px]" />
+                          <span className="text-xs font-bold text-slate-700">
+                            ({outfit.voiceNoteDuration})
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => deleteVoiceRecording(idx)}
+                          className="text-xs font-semibold text-red-500 hover:text-red-700 px-2 py-1"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => startVoiceRecording(idx)}
+                        className="w-full py-2.5 bg-white border border-dashed border-[#5B43EE] text-[#5B43EE] hover:bg-purple-50 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all"
+                      >
+                        <Mic className="w-4 h-4" />
+                        <span>Record Voice Note for Outfit #{outfit.number}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 6. OVERALL REQUIREMENT NOTES */}
+                  <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                        <Edit2 className="w-3.5 h-3.5 text-slate-600" /> Overall Requirement Notes:
+                      </span>
+                      <span className="text-[11px] text-slate-400">Optional</span>
+                    </div>
+                    <textarea
+                      rows={2}
+                      value={outfit.notes}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setOutfits((prev) => {
+                          const next = [...prev];
+                          next[idx].notes = val;
+                          triggerAutosave(next);
+                          return next;
+                        });
+                      }}
+                      placeholder="E.g., Extra margin inside, tight fit on waist, lining cloth already provided..."
+                      className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] transition-all"
+                    />
+                  </div>
+
+                  {/* BOTTOM ACTIONS: CANCEL OR SAVE & GENERATE MASTER COLLAGE */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={() => handleCancelOutfit(idx)}
+                      className="w-1/3 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs sm:text-sm transition-all border border-slate-200 flex items-center justify-center"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleCompleteOutfit(idx)}
+                      className="w-2/3 py-3 bg-[#5B43EE] hover:bg-[#4E36DE] text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-purple-500/20 flex items-center justify-center gap-2"
+                    >
+                      <span>Save & Generate Master Collage</span>
+                      <Check className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            );
+          }
+
+          // Bot Prompt after finishing an outfit
+          if (msg.type === 'add_another_prompt') {
+            return (
+              <div key={msg.id} className="flex gap-3 max-w-xl items-start animate-in fade-in duration-200">
+                <div className="w-8 h-8 rounded-full bg-[#5B43EE] flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm mt-0.5">
+                  🤖
+                </div>
+                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-sm p-4 shadow-sm text-slate-800 text-sm space-y-3">
+                  <p className="text-slate-700 font-medium">
+                    Outfit #{outfits.length} master collage is ready! 🎉 Would you like to add another outfit to this inquiry, or proceed to measurements and delivery date?
+                  </p>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <button
+                      onClick={() => {
+                        setChatMessages((prev) => [
+                          ...prev.filter((m) => m.type !== 'add_another_prompt' && m.type !== 'summary_ticket'),
+                          {
+                            id: `pick_next_${Date.now()}`,
+                            sender: 'bot',
+                            type: 'selection',
+                          },
+                        ]);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-purple-50 border border-[#5B43EE]/40 text-[#5B43EE] font-bold text-xs hover:bg-[#5B43EE] hover:text-white transition-all shadow-2xs"
+                    >
+                      + Add Another Outfit (Outfit #{outfits.length + 1})
+                    </button>
+                    <button
+                      onClick={handleProceedToFinal}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-sm hover:bg-emerald-700 transition-all"
+                    >
+                      ✓ Done, Proceed to Final Step
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // Summary Ticket Component
+          if (msg.type === 'summary_ticket') {
+            return (
+              <div key={msg.id} className="animate-in fade-in duration-200 space-y-4">
+                <div className="border-2 border-emerald-500/40 rounded-2xl bg-gradient-to-br from-white to-slate-50 p-4 sm:p-5 shadow-lg space-y-4">
+                  
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                        Consolidated Inquiry
+                      </span>
+                      <h3 className="font-bold text-slate-900 text-base mt-1">Inquiry Ticket Preview</h3>
+                    </div>
+                    <span className="text-xs font-bold text-[#5B43EE] bg-purple-50 px-2 py-1 rounded border border-[#5B43EE]/20">
+                      {outfits.length} Outfit{outfits.length > 1 ? 's' : ''} Bundled
+                    </span>
+                  </div>
+
+                  {/* Outfits List */}
+                  <div className="space-y-2">
+                    {outfits.map((o, i) => (
+                      <div
+                        key={i}
+                        className="bg-white border border-slate-200 p-3 rounded-xl flex items-center justify-between shadow-2xs"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-6 h-6 rounded-md bg-purple-100 text-[#5B43EE] font-bold flex items-center justify-center text-xs">
+                            {i + 1}
+                          </span>
+                          <div>
+                            <span className="font-bold text-slate-900 block text-xs">{o.name}</span>
+                            <span className="text-slate-500 text-[11px]">
+                              {o.frontNeck} Front • {o.backNeck} Back • Master Collage Assembled ✓
+                            </span>
+                            {o.voiceNoteUrl && (
+                              <span className="text-[10px] text-[#5B43EE] block font-semibold">
+                                🎙️ Voice Note Included
+                              </span>
                             )}
                           </div>
-                        );
-                      }
-                      return (
-                        <div className="mt-3 bg-[#FEF3C7] rounded-lg p-3 border border-[#FDE68A]">
-                          <span className="text-[10px] font-bold text-[#B45309] uppercase block mb-1">Notes</span>
-                          <p className="text-[13px] text-[#92400E] whitespace-pre-wrap">{text}</p>
                         </div>
-                      );
-                    })()}
+                        <span className="text-emerald-600 font-bold text-xs">Ready ✓</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-                {outfits.length === 0 && (
-                  <p className="text-[13px] text-gray-500 text-center py-4 bg-gray-50 rounded-xl">No outfit details found.</p>
-                )}
+
+                  {/* Measurements & Date */}
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-2.5">
+                    <div className="flex justify-between items-center text-slate-700">
+                      <span className="font-medium">Measurements Option:</span>
+                      <select
+                        value={measurementOption}
+                        onChange={(e) => setMeasurementOption(e.target.value)}
+                        className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 font-bold text-[#5B43EE] text-xs outline-none"
+                      >
+                        <option>Use Previous Measurements</option>
+                        <option>Send Sample Dress via Courier</option>
+                        <option>Take Measurements at Store</option>
+                        <option>I will provide later</option>
+                      </select>
+                    </div>
+
+                    <div className="flex justify-between items-center text-slate-700">
+                      <span className="font-medium">Expected Delivery Date:</span>
+                      <input
+                        type="date"
+                        value={deliveryDate}
+                        onChange={(e) => setDeliveryDate(e.target.value)}
+                        className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 font-bold text-slate-900 text-xs outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Terms Agreed Card */}
+                  {termsText && (
+                    <label className={`flex items-center gap-3 cursor-pointer p-3.5 border rounded-xl transition-colors shadow-2xs ${
+                      agreedToTerms ? 'border-[#5B43EE] bg-[#5B43EE]/5' : 'border-slate-200 bg-white'
+                    }`}>
+                      <div className={`w-5 h-5 shrink-0 rounded-md flex items-center justify-center transition-all ${
+                        agreedToTerms
+                          ? 'bg-[#5B43EE] border-[#5B43EE] shadow-[0_2px_8px_rgba(91,67,238,0.3)]'
+                          : 'border-[1.5px] border-[#CBD5E1] bg-white'
+                      }`}>
+                        {agreedToTerms && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={agreedToTerms}
+                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      />
+                      <span className={`text-xs font-semibold select-none ${
+                        agreedToTerms ? 'text-[#5B43EE]' : 'text-slate-700'
+                      }`}>
+                        I agree to {selectedBoutique?.boutique_name || 'Boutique'} Terms and Conditions
+                      </span>
+                    </label>
+                  )}
+
+                  {/* Final Actions */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={handleDiscardEntireInquiry}
+                      className="w-1/3 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs sm:text-sm border border-slate-200 transition-all flex items-center justify-center"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      disabled={submitting}
+                      onClick={handleSubmitInquiry}
+                      className="w-2/3 py-3.5 bg-gradient-to-r from-[#5B43EE] to-[#7158FF] hover:opacity-95 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-purple-500/25 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                    >
+                      {submitting ? (
+                        <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <span>Submit Stitching Inquiry</span>
+                          <Send className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                </div>
               </div>
-              
-              <button
-                onClick={() => {
-                  setFormData({ ...formData, selected_past_order_id: o.id.toString() });
-                  setViewingPastOrderId(null);
-                  setMeasurementDrawerOpen(false);
-                }}
-                className="w-full mt-6 bg-[#5B43EE] hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition-colors"
-              >
-                Use This Order's Measurements
-              </button>
+            );
+          }
+
+          // Fallback text message
+          return (
+            <div key={msg.id} className="flex gap-3 max-w-xl items-start animate-in fade-in duration-200">
+              <div className="w-8 h-8 rounded-full bg-[#5B43EE] flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm mt-0.5">
+                🤖
+              </div>
+              <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-sm p-3.5 shadow-sm text-slate-800 text-xs sm:text-sm">
+                {msg.text}
+              </div>
             </div>
           );
-        })()}
-      </BottomSheet>
+        })}
 
-      {/* COLLAGE MAKER */}
-      <CollageMaker
-        open={collageOpen}
-        onClose={() => setCollageOpen(false)}
-        onSave={(url: string) => {
-          setCollageDataUrl(url);
-          setCollageOpen(false);
+      </main>
+
+      {/* 4. BOTTOM FIXED CHAT INPUT BAR */}
+      <footer className="bg-white border-t border-slate-200 p-3 fixed bottom-0 left-0 right-0 z-40 shadow-lg">
+        <div className="max-w-3xl mx-auto flex items-center gap-2 sm:gap-3">
+          <div className="flex-1 bg-slate-100 rounded-full px-4 py-2.5 flex items-center gap-2 border border-slate-200 focus-within:border-[#5B43EE] focus-within:bg-white transition-all">
+            <input
+              type="text"
+              value={bottomInputText}
+              onChange={(e) => setBottomInputText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendManualMessage()}
+              placeholder="Type instructions or chat notes for the tailor..."
+              className="bg-transparent text-xs sm:text-sm text-slate-800 placeholder-slate-400 w-full outline-none"
+            />
+            <button
+              onClick={handleSendManualMessage}
+              className="text-[#5B43EE] hover:text-[#4B33DE] font-bold text-xs shrink-0"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </footer>
+
+      {/* 5. IMAGE CROP / ROTATE / ZOOM MODAL */}
+      <ImageCropModal
+        open={cropModalOpen}
+        imageSrc={cropImageSrc}
+        sectionTitle={cropTarget?.sectionTitle || 'Design'}
+        onClose={() => {
+          setCropModalOpen(false);
+          setCropImageSrc(null);
+          setCropTarget(null);
         }}
+        onCropComplete={handleCropComplete}
       />
+
+      {/* 6. FULLSCREEN MASTER COLLAGE PREVIEW MODAL */}
+      {previewCollageUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setPreviewCollageUrl(null)}
+        >
+          <div
+            className="max-w-2xl w-full max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden relative border border-slate-700 shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-3 bg-slate-800 flex items-center justify-between text-white border-b border-slate-700">
+              <span className="font-bold text-sm text-purple-300">
+                Master Stitching Design Sheet (Full HD)
+              </span>
+              <button
+                onClick={() => setPreviewCollageUrl(null)}
+                className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-2 flex items-center justify-center bg-black/40">
+              <img
+                src={previewCollageUrl}
+                alt="Master Collage Full HD"
+                className="max-w-full max-h-[80vh] object-contain rounded-lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
