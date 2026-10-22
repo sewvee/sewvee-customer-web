@@ -25,6 +25,7 @@ import {
   Image as ImageIcon,
   Sparkles,
   ExternalLink,
+  BadgeCheck,
 } from 'lucide-react';
 import { URL_ORDERS, URL_CUSTOMER_PORTAL_ORDERS, URL_UPLOAD } from '@/lib/env';
 import { useToast } from '@/hooks/useToast';
@@ -33,6 +34,12 @@ import { ImageCropModal } from '@/components/ImageCropModal';
 import { generateMasterCollage } from '@/utils/masterCollageGenerator';
 
 const API_DOMAIN = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.sewvee.com';
+
+const formatImageUrl = (urlStr?: string | null): string | undefined => {
+  if (!urlStr) return undefined;
+  if (urlStr.startsWith('http://') || urlStr.startsWith('https://') || urlStr.startsWith('data:')) return urlStr;
+  return `${API_DOMAIN}/${urlStr.replace(/^\//, '')}`;
+};
 
 interface AttachedPhoto {
   id: string;
@@ -119,6 +126,7 @@ export default function StitchingPage() {
 
   // Autosave status
   const [autosaveText, setAutosaveText] = useState('Autosaved Draft');
+  const [avatarError, setAvatarError] = useState(false);
 
   // Crop Modal State
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -861,43 +869,45 @@ export default function StitchingPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between text-slate-800 antialiased pb-20">
       
       {/* 1. TOP HEADER */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 px-4 py-3 shadow-xs">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40 px-3 sm:px-4 h-14 shadow-xs">
+        <div className="max-w-3xl mx-auto h-full flex items-center justify-between gap-2">
+          {/* Left: Back button + Avatar + Boutique Info */}
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
             <button
               onClick={() => router.back()}
-              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-slate-100 text-slate-600 transition-colors"
+              className="w-8 h-8 -ml-1 rounded-full flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors shrink-0"
+              aria-label="Go back"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#5B43EE] to-[#8E7CFF] flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden">
-                {selectedBoutique?.profile_icon_url ? (
+            <div className="relative shrink-0">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#5B43EE] to-[#8E7CFF] flex items-center justify-center text-white font-bold text-xs shadow-xs overflow-hidden">
+                {selectedBoutique?.profile_icon_url && !avatarError ? (
                   <img
-                    src={selectedBoutique.profile_icon_url}
-                    alt={selectedBoutique.boutique_name}
+                    src={formatImageUrl(selectedBoutique.profile_icon_url)}
+                    alt={selectedBoutique.boutique_name || 'Boutique'}
+                    onError={() => setAvatarError(true)}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  (selectedBoutique?.boutique_name || 'B').slice(0, 2).toUpperCase()
+                  <span>{(selectedBoutique?.boutique_name || 'B').slice(0, 2).toUpperCase()}</span>
                 )}
               </div>
-              <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-bold text-[15px] sm:text-[16px] text-slate-900 leading-tight">
+            <div className="min-w-0 flex-1 flex flex-col justify-center">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <h1 className="font-semibold text-sm sm:text-[15px] text-slate-900 truncate leading-tight tracking-tight">
                   {selectedBoutique?.boutique_name || 'Boutique'}
                 </h1>
-                <span className="px-2 py-0.5 bg-purple-50 text-[#5B43EE] font-semibold text-[11px] rounded-md border border-[#5B43EE]/20">
-                  Verified
+                <span title="Verified Partner" className="shrink-0 inline-flex items-center text-[#5B43EE]">
+                  <BadgeCheck className="w-4 h-4 fill-[#5B43EE] text-white" />
                 </span>
               </div>
-              <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
-                <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
-                  New Stitching Inquiry
-                </span>
-                <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 truncate leading-tight mt-0.5">
+                <span className="font-medium text-slate-600 truncate">Stitching Inquiry</span>
+                <span className="text-slate-300 shrink-0">•</span>
+                <span className="inline-flex items-center gap-1 text-emerald-600 font-medium shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                   {autosaveText}
                 </span>
@@ -905,19 +915,21 @@ export default function StitchingPage() {
             </div>
           </div>
 
+          {/* Right: Reset Action Button */}
           <button
             onClick={handleDiscardEntireInquiry}
-            className="text-xs font-semibold text-slate-500 hover:text-red-500 bg-slate-50 hover:bg-red-50 border border-slate-200 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+            title="Reset inquiry draft"
+            className="h-8 px-2.5 rounded-full text-xs font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 transition-colors flex items-center gap-1.5 shrink-0"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset</span>
+            <span className="hidden sm:inline">Reset</span>
           </button>
         </div>
       </header>
 
       {/* 2. DYNAMIC STICKY MULTI-OUTFIT TABS TRAY */}
       {outfits.length > 0 && (
-        <div className="bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-2 sticky top-[65px] z-30 shadow-2xs">
+        <div className="bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-2 sticky top-14 z-30 shadow-2xs">
           <div className="max-w-3xl mx-auto flex items-center justify-between gap-3 overflow-x-auto custom-scroll">
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400 shrink-0">
