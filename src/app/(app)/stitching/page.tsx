@@ -7,6 +7,7 @@ import { useBoutiquesStore } from '@/store/boutiquesStore';
 import { useOrdersStore } from '@/store/ordersStore';
 import {
   ArrowLeft,
+  ArrowRight,
   X,
   Calendar as CalendarIcon,
   ChevronDown,
@@ -127,13 +128,14 @@ interface OutfitConfig {
   voiceNoteDuration: string | null;
   masterCollageUrl: string | null;
   isCompleted: boolean;
+  activeStep?: number;
 }
 
 interface ChatMessage {
   id: string;
   sender: 'bot' | 'user';
   text?: string;
-  type?: 'text' | 'selection' | 'questionnaire' | 'add_another_prompt' | 'summary_ticket';
+  type?: 'text' | 'start_cta' | 'selection' | 'questionnaire' | 'add_another_prompt' | 'summary_ticket';
   outfitIndex?: number;
   isAnswered?: boolean;
   selectedCategory?: string;
@@ -175,12 +177,13 @@ export default function StitchingPage() {
   // Main State
   const [outfits, setOutfits] = useState<OutfitConfig[]>([]);
   const [currentOutfitIndex, setCurrentOutfitIndex] = useState<number>(0);
+  const [isBotTyping, setIsBotTyping] = useState<boolean>(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
-      id: 'welcome',
+      id: 'welcome_start_cta',
       sender: 'bot',
-      text: `Vanakkam ${user?.name || 'Customer'}! 👋 Welcome to ${selectedBoutique?.boutique_name || 'Inba Boutique'}. What would you like us to stitch for you today?`,
-      type: 'selection',
+      type: 'start_cta',
+      isAnswered: false,
     },
   ]);
 
@@ -302,6 +305,17 @@ export default function StitchingPage() {
           
           // Reconstruct chat flow
           const restoredMessages: ChatMessage[] = [
+            {
+              id: 'welcome_start_cta',
+              sender: 'bot',
+              type: 'start_cta',
+              isAnswered: true,
+            },
+            {
+              id: 'user_start',
+              sender: 'user',
+              text: "Let's Start Stitching! 🧵",
+            },
             {
               id: 'welcome',
               sender: 'bot',
@@ -465,6 +479,38 @@ export default function StitchingPage() {
     });
   };
 
+  // Micro-Interaction: User clicks Start Stitching
+  const handleStartStitching = () => {
+    setChatMessages((prev) =>
+      prev.map((m) => (m.type === 'start_cta' ? { ...m, isAnswered: true } : m))
+    );
+
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: `user_start_${Date.now()}`,
+        sender: 'user',
+        text: "Let's Start Stitching! 🧵",
+      },
+    ]);
+
+    setIsBotTyping(true);
+
+    setTimeout(() => {
+      setIsBotTyping(false);
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: `selection_${Date.now()}`,
+          sender: 'bot',
+          text: `Awesome! What outfit would you like us to stitch for you today?`,
+          type: 'selection',
+          isAnswered: false,
+        },
+      ]);
+    }, 450);
+  };
+
   // Step 1: User Chooses an Outfit
   const handleSelectOutfit = (categoryName: string) => {
     const nextNum = outfits.length + 1;
@@ -491,6 +537,7 @@ export default function StitchingPage() {
       voiceNoteDuration: null,
       masterCollageUrl: null,
       isCompleted: false,
+      activeStep: 1, // Start on Step 1: Front Neck
     };
 
     const newOutfits = [...outfits, newOutfit];
@@ -499,7 +546,6 @@ export default function StitchingPage() {
     triggerAutosave(newOutfits);
 
     setChatMessages((prev) => {
-      // Mark any pending selection prompts as answered with this choice
       const updated = prev.map((m) =>
         m.type === 'selection' ? { ...m, isAnswered: true, selectedCategory: categoryName } : m
       );
@@ -511,13 +557,60 @@ export default function StitchingPage() {
           sender: 'user',
           text: `I would like to stitch ${newOutfit.name}`,
         },
+      ];
+    });
+
+    setIsBotTyping(true);
+    setTimeout(() => {
+      setIsBotTyping(false);
+      setChatMessages((prev) => [
+        ...prev,
         {
           id: `questionnaire_${newOutfits.length - 1}`,
           sender: 'bot',
           type: 'questionnaire',
           outfitIndex: newOutfits.length - 1,
         },
-      ];
+      ]);
+    }, 350);
+  };
+
+  // Guided Step Progression (One by One)
+  const handleNextStep = (outfitIdx: number) => {
+    setOutfits((prev) => {
+      const next = [...prev];
+      const curStep = next[outfitIdx]?.activeStep || 1;
+      next[outfitIdx] = {
+        ...next[outfitIdx],
+        activeStep: Math.min(curStep + 1, 4),
+      };
+      triggerAutosave(next);
+      return next;
+    });
+  };
+
+  const handlePrevStep = (outfitIdx: number) => {
+    setOutfits((prev) => {
+      const next = [...prev];
+      const curStep = next[outfitIdx]?.activeStep || 1;
+      next[outfitIdx] = {
+        ...next[outfitIdx],
+        activeStep: Math.max(curStep - 1, 1),
+      };
+      triggerAutosave(next);
+      return next;
+    });
+  };
+
+  const handleJumpToStep = (outfitIdx: number, stepNum: number) => {
+    setOutfits((prev) => {
+      const next = [...prev];
+      next[outfitIdx] = {
+        ...next[outfitIdx],
+        activeStep: stepNum,
+      };
+      triggerAutosave(next);
+      return next;
     });
   };
 
@@ -716,7 +809,7 @@ export default function StitchingPage() {
   const handleEditOutfit = (idx: number) => {
     setOutfits((prev) => {
       const next = [...prev];
-      next[idx] = { ...next[idx], isCompleted: false };
+      next[idx] = { ...next[idx], isCompleted: false, activeStep: 1 };
       triggerAutosave(next);
       return next;
     });
@@ -736,10 +829,10 @@ export default function StitchingPage() {
       localStorage.removeItem(draftKey);
       setChatMessages([
         {
-          id: 'welcome',
+          id: 'welcome_start_cta',
           sender: 'bot',
-          text: `Vanakkam ${user?.name || 'Customer'}! 👋 Welcome to ${selectedBoutique?.boutique_name || 'Inba Boutique'}. What would you like us to stitch for you today?`,
-          type: 'selection',
+          type: 'start_cta',
+          isAnswered: false,
         },
       ]);
       return;
@@ -1158,6 +1251,72 @@ export default function StitchingPage() {
             );
           }
 
+          // Start Stitching CTA Welcome Card
+          if (msg.type === 'start_cta') {
+            if (msg.isAnswered) {
+              return (
+                <div key={msg.id} className="flex gap-2.5 max-w-xl items-start animate-in fade-in duration-200">
+                  <div className="w-8 h-8 rounded-full bg-[#5B43EE] flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-xs mt-0.5">
+                    ✨
+                  </div>
+                  <div className="bg-white border border-slate-200/90 rounded-2xl rounded-tl-sm p-3.5 shadow-xs text-slate-800 text-xs sm:text-sm">
+                    <p className="font-semibold text-slate-900">
+                      Welcome to {selectedBoutique?.boutique_name || 'Inba Boutique'}!
+                    </p>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                      Custom stitching session initiated.
+                    </p>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div key={msg.id} className="space-y-3 animate-in fade-in duration-300">
+                <div className="flex gap-2.5 max-w-xl items-start">
+                  <div className="w-8 h-8 rounded-full bg-[#5B43EE] flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-xs mt-0.5">
+                    ✨
+                  </div>
+                  <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-sm p-4 sm:p-5 shadow-sm text-slate-800 text-xs sm:text-sm space-y-3.5">
+                    <div>
+                      <p className="font-bold text-slate-900 text-sm sm:text-base">
+                        Vanakkam {user?.name || 'there'}! 👋
+                      </p>
+                      <p className="text-slate-600 text-xs mt-1 leading-relaxed">
+                        Welcome to <span className="font-semibold text-[#5B43EE]">{selectedBoutique?.boutique_name || 'Inba Boutique'}</span> stitching inquiry. Customize your outfits step-by-step with photos, neck patterns, and tailor notes.
+                      </p>
+                    </div>
+
+                    <div className="bg-purple-50/50 border border-purple-100 rounded-xl p-3 text-xs space-y-2 text-slate-700">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#5B43EE] shrink-0"></span>
+                        <span>Interactive 1-on-1 guided stitching assistant</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                        <span>Auto-collaged pattern references for perfect tailoring</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0"></span>
+                        <span>Offline draft autosave & voice note instructions</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleStartStitching}
+                      className="w-full py-3 px-4 bg-[#5B43EE] hover:bg-[#4d36d8] active:scale-[0.99] text-white font-semibold text-sm rounded-xl shadow-md shadow-[#5B43EE]/25 flex items-center justify-center gap-2 transition-all cursor-pointer group"
+                    >
+                      <Sparkles className="w-4 h-4 text-purple-200 group-hover:rotate-12 transition-transform" />
+                      <span>Start Stitching</span>
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
           // Bot Selection Chips
           if (msg.type === 'selection') {
             if (msg.isAnswered) {
@@ -1363,7 +1522,9 @@ export default function StitchingPage() {
               );
             }
 
-            // ACTIVE STREAMLINED QUESTIONNAIRE CARD
+            // ACTIVE STREAMLINED QUESTIONNAIRE CARD (STEP-BY-STEP GUIDED CUSTOMIZATION)
+            const currentStep = outfit.activeStep || 1;
+
             return (
               <div key={msg.id} id={`outfitCard_${idx}`} className="flex gap-2.5 max-w-2xl items-start animate-in fade-in duration-200">
                 <div className="w-8 h-8 rounded-full bg-[#5B43EE] flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-xs mt-0.5">
@@ -1379,540 +1540,690 @@ export default function StitchingPage() {
                       </span>
                       <h3 className="font-bold text-slate-900 text-sm sm:text-base mt-1">Design Customization</h3>
                     </div>
-                    <span className="text-xs text-slate-400 font-medium">Step-by-step</span>
-                  </div>
-
-                  {/* 1. FRONT NECK */}
-                  <div className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/80 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#5B43EE]"></span> 1. Front Neck
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-[#5B43EE] bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">
+                        Step {currentStep} of 4
                       </span>
                       <button
                         type="button"
-                        onClick={() =>
-                          openDrawer(
-                            'Select Front Neck Style',
-                            template.sections[0]?.options || [],
-                            outfit.frontNeck,
-                            (val) => {
-                              setOutfits((prev) => {
-                                const next = [...prev];
-                                next[idx].frontNeck = val;
-                                triggerAutosave(next);
-                                return next;
-                              });
-                            }
-                          )
-                        }
-                        className="px-2.5 py-1 bg-white border border-slate-200 hover:border-[#5B43EE] text-[#5B43EE] font-bold text-xs rounded-lg shadow-2xs flex items-center gap-1 transition-all"
+                        onClick={() => handleCancelOutfit(idx)}
+                        className="text-xs text-slate-400 hover:text-red-500 font-semibold px-2 py-0.5 rounded-lg hover:bg-red-50 transition-colors"
+                        title="Discard outfit"
                       >
-                        <span>{outfit.frontNeck}</span>
-                        <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                        Cancel
                       </button>
                     </div>
-
-                    <input
-                      type="text"
-                      value={outfit.frontNeckNote}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setOutfits((prev) => {
-                          const next = [...prev];
-                          next[idx].frontNeckNote = val;
-                          triggerAutosave(next);
-                          return next;
-                        });
-                      }}
-                      placeholder="💬 Specific front neck note (e.g. depth 6.5 inch)..."
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] transition-all"
-                    />
-
-                    {outfit.frontNeckPhotos.length === 0 ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleTriggerPhotoUpload(idx, 'frontNeckPhotos', 'Front Neck', '👚')
-                        }
-                        className="w-full py-2 bg-white border border-dashed border-[#5B43EE]/40 hover:border-[#5B43EE] hover:bg-purple-50 text-[#5B43EE] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <Camera className="w-3.5 h-3.5" />
-                        <span>+ Add Front Neck Photo (Crop & Rotate)</span>
-                      </button>
-                    ) : (
-                      <div className="space-y-2 pt-1 border-t border-slate-200/60">
-                        {outfit.frontNeckPhotos.map((p) => (
-                          <div
-                            key={p.id}
-                            className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 overflow-hidden">
-                                <img
-                                  src={p.dataUrl}
-                                  alt={p.fileName}
-                                  className="w-10 h-10 rounded-lg object-cover border border-purple-200 shrink-0"
-                                />
-                                <div className="overflow-hidden">
-                                  <span className="text-[11px] font-bold text-slate-800 truncate block">
-                                    {p.fileName}
-                                  </span>
-                                  <span className="text-[9px] text-[#5B43EE] font-semibold uppercase tracking-wider">
-                                    [Front Neck • Cropped ✓]
-                                  </span>
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleRemovePhoto(idx, 'frontNeckPhotos', p.id)}
-                                className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
-                              >
-                                ✕ Remove
-                              </button>
-                            </div>
-                            <input
-                              type="text"
-                              value={p.comment}
-                              onChange={(e) =>
-                                handleUpdatePhotoComment(idx, 'frontNeckPhotos', p.id, e.target.value)
-                              }
-                              placeholder="💬 Note for this photo..."
-                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all"
-                            />
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleTriggerPhotoUpload(idx, 'frontNeckPhotos', 'Front Neck', '👚')
-                          }
-                          className="text-[11px] font-semibold text-[#5B43EE] hover:underline flex items-center gap-1 pt-0.5"
-                        >
-                          <Camera className="w-3 h-3" /> + Add Another Photo
-                        </button>
-                      </div>
-                    )}
                   </div>
 
-                  {/* 2. BACK NECK */}
-                  <div className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/80 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-600"></span> 2. Back Neck
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openDrawer(
-                            'Select Back Neck Style',
-                            template.sections[1]?.options || [],
-                            outfit.backNeck,
-                            (val) => {
-                              setOutfits((prev) => {
-                                const next = [...prev];
-                                next[idx].backNeck = val;
-                                triggerAutosave(next);
-                                return next;
-                              });
-                            }
-                          )
-                        }
-                        className="px-2.5 py-1 bg-white border border-slate-200 hover:border-emerald-600 text-emerald-700 font-bold text-xs rounded-lg shadow-2xs flex items-center gap-1 transition-all"
-                      >
-                        <span>{outfit.backNeck}</span>
-                        <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                      </button>
-                    </div>
-
-                    <input
-                      type="text"
-                      value={outfit.backNeckNote}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setOutfits((prev) => {
-                          const next = [...prev];
-                          next[idx].backNeckNote = val;
-                          triggerAutosave(next);
-                          return next;
-                        });
-                      }}
-                      placeholder="💬 Specific back neck note (e.g. 8 inch deep, tassels)..."
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-emerald-600 transition-all"
-                    />
-
-                    {outfit.backNeckPhotos.length === 0 ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleTriggerPhotoUpload(idx, 'backNeckPhotos', 'Back Neck', '✨')
-                        }
-                        className="w-full py-2 bg-white border border-dashed border-emerald-600/40 hover:border-emerald-600 hover:bg-emerald-50 text-emerald-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <Camera className="w-3.5 h-3.5" />
-                        <span>+ Add Back Neck Photo (Crop & Rotate)</span>
-                      </button>
-                    ) : (
-                      <div className="space-y-2 pt-1 border-t border-slate-200/60">
-                        {outfit.backNeckPhotos.map((p) => (
-                          <div
-                            key={p.id}
-                            className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 overflow-hidden">
-                                <img
-                                  src={p.dataUrl}
-                                  alt={p.fileName}
-                                  className="w-10 h-10 rounded-lg object-cover border border-emerald-200 shrink-0"
-                                />
-                                <div className="overflow-hidden">
-                                  <span className="text-[11px] font-bold text-slate-800 truncate block">
-                                    {p.fileName}
-                                  </span>
-                                  <span className="text-[9px] text-emerald-700 font-semibold uppercase tracking-wider">
-                                    [Back Neck • Cropped ✓]
-                                  </span>
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleRemovePhoto(idx, 'backNeckPhotos', p.id)}
-                                className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
-                              >
-                                ✕ Remove
-                              </button>
-                            </div>
-                            <input
-                              type="text"
-                              value={p.comment}
-                              onChange={(e) =>
-                                handleUpdatePhotoComment(idx, 'backNeckPhotos', p.id, e.target.value)
-                              }
-                              placeholder="💬 Note for this photo..."
-                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-emerald-600 focus:bg-white transition-all"
-                            />
-                          </div>
-                        ))}
+                  {/* Step Progress Stepper Tabs */}
+                  <div className="grid grid-cols-4 gap-1.5 p-1 bg-slate-100/80 rounded-xl">
+                    {[
+                      { num: 1, label: 'Front Neck' },
+                      { num: 2, label: 'Back Neck' },
+                      { num: 3, label: 'Sleeves' },
+                      { num: 4, label: 'Extras' },
+                    ].map((s) => {
+                      const isActive = currentStep === s.num;
+                      const isDone = currentStep > s.num;
+                      return (
                         <button
+                          key={s.num}
                           type="button"
-                          onClick={() =>
-                            handleTriggerPhotoUpload(idx, 'backNeckPhotos', 'Back Neck', '✨')
-                          }
-                          className="text-[11px] font-semibold text-emerald-700 hover:underline flex items-center gap-1 pt-0.5"
+                          onClick={() => handleJumpToStep(idx, s.num)}
+                          className={`py-1.5 px-1 rounded-lg text-xs font-medium flex items-center justify-center gap-1 transition-all ${
+                            isActive
+                              ? 'bg-white text-[#5B43EE] font-bold shadow-2xs'
+                              : isDone
+                              ? 'bg-emerald-50 text-emerald-700 font-semibold'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
                         >
-                          <Camera className="w-3 h-3" /> + Add Another Photo
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 3. SLEEVE & HOOK PLACEMENT */}
-                  <div className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/80 space-y-2.5">
-                    <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-indigo-500"></span> 3. Sleeve & Opening
-                    </span>
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                          Sleeve Pattern:
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            openDrawer('Select Sleeve Pattern', SLEEVE_OPTIONS, outfit.sleeve, (val) => {
-                              setOutfits((prev) => {
-                                const next = [...prev];
-                                next[idx].sleeve = val;
-                                triggerAutosave(next);
-                                return next;
-                              });
-                            })
-                          }
-                          className="w-full bg-white border border-slate-200 hover:border-indigo-400 text-slate-800 font-bold text-xs p-2.5 rounded-xl shadow-2xs flex items-center justify-between text-left transition-all"
-                        >
-                          <span className="truncate">{outfit.sleeve}</span>
-                          <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                        </button>
-                      </div>
-
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                          Opening / Hook:
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            openDrawer('Select Opening / Hook Placement', HOOK_OPTIONS, outfit.hook, (val) => {
-                              setOutfits((prev) => {
-                                const next = [...prev];
-                                next[idx].hook = val;
-                                triggerAutosave(next);
-                                return next;
-                              });
-                            })
-                          }
-                          className="w-full bg-white border border-slate-200 hover:border-indigo-400 text-slate-800 font-bold text-xs p-2.5 rounded-xl shadow-2xs flex items-center justify-between text-left transition-all"
-                        >
-                          <span className="truncate">{outfit.hook}</span>
-                          <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {outfit.sleevePhotos.length === 0 ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleTriggerPhotoUpload(idx, 'sleevePhotos', 'Sleeve Design', '🧵')
-                        }
-                        className="w-full py-2 bg-white border border-dashed border-indigo-400/50 hover:border-indigo-500 hover:bg-indigo-50 text-indigo-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <Camera className="w-3.5 h-3.5" />
-                        <span>+ Add Sleeve Reference Photo</span>
-                      </button>
-                    ) : (
-                      <div className="space-y-2 pt-1 border-t border-slate-200/60">
-                        {outfit.sleevePhotos.map((p) => (
-                          <div
-                            key={p.id}
-                            className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
+                          <span
+                            className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold ${
+                              isActive
+                                ? 'bg-[#5B43EE] text-white'
+                                : isDone
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-slate-300 text-slate-600'
+                            }`}
                           >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 overflow-hidden">
-                                <img
-                                  src={p.dataUrl}
-                                  alt={p.fileName}
-                                  className="w-10 h-10 rounded-lg object-cover border border-indigo-200 shrink-0"
-                                />
-                                <div className="overflow-hidden">
-                                  <span className="text-[11px] font-bold text-slate-800 truncate block">
-                                    {p.fileName}
-                                  </span>
-                                  <span className="text-[9px] text-indigo-700 font-semibold uppercase tracking-wider">
-                                    [Sleeve Reference]
-                                  </span>
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleRemovePhoto(idx, 'sleevePhotos', p.id)}
-                                className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
-                              >
-                                ✕ Remove
-                              </button>
-                            </div>
-                            <input
-                              type="text"
-                              value={p.comment}
-                              onChange={(e) =>
-                                handleUpdatePhotoComment(idx, 'sleevePhotos', p.id, e.target.value)
-                              }
-                              placeholder="💬 Note for this photo..."
-                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-600 focus:bg-white transition-all"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 4. EXTRA / FABRIC REFERENCE PHOTOS */}
-                  <div className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/80 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-amber-500"></span> 4. Extra Fabric / Material Photos
-                      </span>
-                      <span className="text-[10px] text-slate-400">Optional</span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleTriggerPhotoUpload(idx, 'extraPhotos', 'Extra Reference', '📸')
-                      }
-                      className="w-full py-2 bg-white border border-dashed border-slate-300 hover:border-[#5B43EE] hover:bg-purple-50 text-slate-700 hover:text-[#5B43EE] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
-                    >
-                      <Camera className="w-3.5 h-3.5" />
-                      <span>+ Upload Extra / Fabric Reference Photo</span>
-                    </button>
-
-                    {outfit.extraPhotos.length > 0 && (
-                      <div className="space-y-2 pt-1 border-t border-slate-200/60">
-                        {outfit.extraPhotos.map((p) => (
-                          <div
-                            key={p.id}
-                            className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 overflow-hidden">
-                                <img
-                                  src={p.dataUrl}
-                                  alt={p.fileName}
-                                  className="w-10 h-10 rounded-lg object-cover border border-amber-200 shrink-0"
-                                />
-                                <div className="overflow-hidden">
-                                  <span className="text-[11px] font-bold text-slate-800 truncate block">
-                                    {p.fileName}
-                                  </span>
-                                  <span className="text-[9px] text-amber-700 font-semibold uppercase tracking-wider">
-                                    [Extra / Fabric Reference]
-                                  </span>
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleRemovePhoto(idx, 'extraPhotos', p.id)}
-                                className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
-                              >
-                                ✕ Remove
-                              </button>
-                            </div>
-                            <input
-                              type="text"
-                              value={p.comment}
-                              onChange={(e) =>
-                                handleUpdatePhotoComment(idx, 'extraPhotos', p.id, e.target.value)
-                              }
-                              placeholder="💬 Note for this photo..."
-                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 5. PER-OUTFIT VOICE NOTE (CUSTOM WHATSAPP-STYLE PLAYER - NO OVERLAPPING!) */}
-                  <div className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/80 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
-                        <Mic className="w-3.5 h-3.5 text-[#5B43EE]" /> 5. Voice Note for Outfit #{outfit.number}
-                      </span>
-                      <span className="text-[10px] text-slate-400">Audio Instructions</span>
-                    </div>
-
-                    {recordingOutfitIdx === idx ? (
-                      <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse shrink-0"></span>
-                          <span className="text-xs font-bold text-red-600 truncate">
-                            Recording Audio ({recordingSeconds}s)...
+                            {isDone ? '✓' : s.num}
                           </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            type="button"
-                            onClick={cancelVoiceRecording}
-                            className="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 rounded-lg"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={stopVoiceRecording}
-                            className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs"
-                          >
-                            <Square className="w-3 h-3" /> Stop & Save
-                          </button>
-                        </div>
-                      </div>
-                    ) : outfit.voiceNoteUrl ? (
-                      <div className="bg-purple-50/80 border border-[#5B43EE]/25 rounded-xl p-3 flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePlayVoice(idx, outfit.voiceNoteUrl!)}
-                          className="w-9 h-9 rounded-full bg-[#5B43EE] hover:bg-[#4d36dc] text-white flex items-center justify-center shrink-0 shadow-xs transition-transform active:scale-95"
-                          aria-label={playingVoiceOutfitIdx === idx ? 'Pause voice note' : 'Play voice note'}
-                        >
-                          {playingVoiceOutfitIdx === idx ? (
-                            <Pause className="w-4 h-4 fill-white" />
-                          ) : (
-                            <Play className="w-4 h-4 fill-white ml-0.5" />
-                          )}
+                          <span className="truncate hidden sm:inline">{s.label}</span>
                         </button>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 mb-1">
-                            <span className="flex items-center gap-1 text-[#5B43EE]">
-                              <Mic className="w-3 h-3" /> Voice Note #{outfit.number}
-                            </span>
-                            <span className="text-slate-500 font-medium">
-                              {outfit.voiceNoteDuration || '0:15'}
-                            </span>
-                          </div>
-                          <div className="h-1.5 bg-purple-200/50 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-[#5B43EE] rounded-full transition-all duration-100"
-                              style={{
-                                width: `${playingVoiceOutfitIdx === idx ? voicePlayProgress : 0}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => deleteVoiceRecording(idx)}
-                          title="Delete voice note"
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => startVoiceRecording(idx)}
-                        className="w-full py-2.5 bg-white border border-dashed border-[#5B43EE]/40 text-[#5B43EE] hover:bg-purple-50 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
-                      >
-                        <Mic className="w-4 h-4" />
-                        <span>Record Voice Note for Outfit #{outfit.number}</span>
-                      </button>
-                    )}
+                      );
+                    })}
                   </div>
 
-                  {/* 6. OVERALL REQUIREMENT NOTES */}
-                  <div className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/80 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
-                        <Edit2 className="w-3.5 h-3.5 text-slate-600" /> 6. Tailor Notes / Fit Instructions
-                      </span>
-                      <span className="text-[10px] text-slate-400">Optional</span>
+                  {/* STEP 1: FRONT NECK */}
+                  {currentStep === 1 && (
+                    <div className="space-y-3 animate-in fade-in duration-200">
+                      <div className="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/80 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-[#5B43EE]"></span> 1. Front Neck Style
+                            </span>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              Select preferred neck cut and attach reference photos
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openDrawer(
+                                'Select Front Neck Style',
+                                template.sections[0]?.options || [],
+                                outfit.frontNeck,
+                                (val) => {
+                                  setOutfits((prev) => {
+                                    const next = [...prev];
+                                    next[idx].frontNeck = val;
+                                    triggerAutosave(next);
+                                    return next;
+                                  });
+                                }
+                              )
+                            }
+                            className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-[#5B43EE] text-[#5B43EE] font-bold text-xs rounded-lg shadow-2xs flex items-center gap-1 transition-all"
+                          >
+                            <span>{outfit.frontNeck}</span>
+                            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                          </button>
+                        </div>
+
+                        <input
+                          type="text"
+                          value={outfit.frontNeckNote}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setOutfits((prev) => {
+                              const next = [...prev];
+                              next[idx].frontNeckNote = val;
+                              triggerAutosave(next);
+                              return next;
+                            });
+                          }}
+                          placeholder="💬 Specific front neck note (e.g. depth 6.5 inch, piping)..."
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] transition-all"
+                        />
+
+                        {outfit.frontNeckPhotos.length === 0 ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleTriggerPhotoUpload(idx, 'frontNeckPhotos', 'Front Neck', '👚')
+                            }
+                            className="w-full py-2.5 bg-white border border-dashed border-[#5B43EE]/40 hover:border-[#5B43EE] hover:bg-purple-50 text-[#5B43EE] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            <Camera className="w-3.5 h-3.5" />
+                            <span>+ Add Front Neck Photo (Crop & Rotate)</span>
+                          </button>
+                        ) : (
+                          <div className="space-y-2 pt-1 border-t border-slate-200/60">
+                            {outfit.frontNeckPhotos.map((p) => (
+                              <div
+                                key={p.id}
+                                className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 overflow-hidden">
+                                    <img
+                                      src={p.dataUrl}
+                                      alt={p.fileName}
+                                      className="w-10 h-10 rounded-lg object-cover border border-purple-200 shrink-0"
+                                    />
+                                    <div className="overflow-hidden">
+                                      <span className="text-[11px] font-bold text-slate-800 truncate block">
+                                        {p.fileName}
+                                      </span>
+                                      <span className="text-[9px] text-[#5B43EE] font-semibold uppercase tracking-wider">
+                                        [Front Neck • Cropped ✓]
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemovePhoto(idx, 'frontNeckPhotos', p.id)}
+                                    className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
+                                  >
+                                    ✕ Remove
+                                  </button>
+                                </div>
+                                <input
+                                  type="text"
+                                  value={p.comment}
+                                  onChange={(e) =>
+                                    handleUpdatePhotoComment(idx, 'frontNeckPhotos', p.id, e.target.value)
+                                  }
+                                  placeholder="💬 Note for this photo..."
+                                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all"
+                                />
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleTriggerPhotoUpload(idx, 'frontNeckPhotos', 'Front Neck', '👚')
+                              }
+                              className="text-[11px] font-semibold text-[#5B43EE] hover:underline flex items-center gap-1 pt-0.5"
+                            >
+                              <Camera className="w-3 h-3" /> + Add Another Front Neck Photo
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Step 1 Actions */}
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => handleCancelOutfit(idx)}
+                          className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs sm:text-sm transition-all border border-slate-200"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleNextStep(idx)}
+                          className="px-5 py-2.5 bg-[#5B43EE] hover:bg-[#4E36DE] text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-sm flex items-center gap-1.5 active:scale-98"
+                        >
+                          <span>Next: Back Neck Style</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                    <textarea
-                      rows={2}
-                      value={outfit.notes}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setOutfits((prev) => {
-                          const next = [...prev];
-                          next[idx].notes = val;
-                          triggerAutosave(next);
-                          return next;
-                        });
-                      }}
-                      placeholder="E.g., Extra margin inside, tight fit on waist, lining cloth already provided..."
-                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] transition-all"
-                    />
-                  </div>
+                  )}
 
-                  {/* BOTTOM ACTIONS: CANCEL OR SAVE & GENERATE MASTER COLLAGE */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                    <button
-                      type="button"
-                      onClick={() => handleCancelOutfit(idx)}
-                      className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs sm:text-sm transition-all border border-slate-200 flex items-center justify-center"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleCompleteOutfit(idx)}
-                      className="w-2/3 py-2.5 bg-[#5B43EE] hover:bg-[#4E36DE] text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-purple-500/20 flex items-center justify-center gap-1.5 active:scale-98"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Save & Complete Outfit #{outfit.number}</span>
-                    </button>
-                  </div>
+                  {/* STEP 2: BACK NECK */}
+                  {currentStep === 2 && (
+                    <div className="space-y-3 animate-in fade-in duration-200">
+                      <div className="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/80 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-emerald-600"></span> 2. Back Neck Style
+                            </span>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              Select shape, dori/potli details and back photos
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openDrawer(
+                                'Select Back Neck Style',
+                                template.sections[1]?.options || [],
+                                outfit.backNeck,
+                                (val) => {
+                                  setOutfits((prev) => {
+                                    const next = [...prev];
+                                    next[idx].backNeck = val;
+                                    triggerAutosave(next);
+                                    return next;
+                                  });
+                                }
+                              )
+                            }
+                            className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-emerald-600 text-emerald-700 font-bold text-xs rounded-lg shadow-2xs flex items-center gap-1 transition-all"
+                          >
+                            <span>{outfit.backNeck}</span>
+                            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                          </button>
+                        </div>
+
+                        <input
+                          type="text"
+                          value={outfit.backNeckNote}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setOutfits((prev) => {
+                              const next = [...prev];
+                              next[idx].backNeckNote = val;
+                              triggerAutosave(next);
+                              return next;
+                            });
+                          }}
+                          placeholder="💬 Specific back neck note (e.g. 8 inch deep, tassels, dori)..."
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-emerald-600 transition-all"
+                        />
+
+                        {outfit.backNeckPhotos.length === 0 ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleTriggerPhotoUpload(idx, 'backNeckPhotos', 'Back Neck', '✨')
+                            }
+                            className="w-full py-2.5 bg-white border border-dashed border-emerald-600/40 hover:border-emerald-600 hover:bg-emerald-50 text-emerald-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            <Camera className="w-3.5 h-3.5" />
+                            <span>+ Add Back Neck Photo (Crop & Rotate)</span>
+                          </button>
+                        ) : (
+                          <div className="space-y-2 pt-1 border-t border-slate-200/60">
+                            {outfit.backNeckPhotos.map((p) => (
+                              <div
+                                key={p.id}
+                                className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 overflow-hidden">
+                                    <img
+                                      src={p.dataUrl}
+                                      alt={p.fileName}
+                                      className="w-10 h-10 rounded-lg object-cover border border-emerald-200 shrink-0"
+                                    />
+                                    <div className="overflow-hidden">
+                                      <span className="text-[11px] font-bold text-slate-800 truncate block">
+                                        {p.fileName}
+                                      </span>
+                                      <span className="text-[9px] text-emerald-700 font-semibold uppercase tracking-wider">
+                                        [Back Neck • Cropped ✓]
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemovePhoto(idx, 'backNeckPhotos', p.id)}
+                                    className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
+                                  >
+                                    ✕ Remove
+                                  </button>
+                                </div>
+                                <input
+                                  type="text"
+                                  value={p.comment}
+                                  onChange={(e) =>
+                                    handleUpdatePhotoComment(idx, 'backNeckPhotos', p.id, e.target.value)
+                                  }
+                                  placeholder="💬 Note for this photo..."
+                                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-emerald-600 focus:bg-white transition-all"
+                                />
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleTriggerPhotoUpload(idx, 'backNeckPhotos', 'Back Neck', '✨')
+                              }
+                              className="text-[11px] font-semibold text-emerald-700 hover:underline flex items-center gap-1 pt-0.5"
+                            >
+                              <Camera className="w-3 h-3" /> + Add Another Back Neck Photo
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Step 2 Actions */}
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => handlePrevStep(idx)}
+                          className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs sm:text-sm transition-all border border-slate-200 flex items-center gap-1"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5" />
+                          <span>Back</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleNextStep(idx)}
+                          className="px-5 py-2.5 bg-[#5B43EE] hover:bg-[#4E36DE] text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-sm flex items-center gap-1.5 active:scale-98"
+                        >
+                          <span>Next: Sleeves & Opening</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 3: SLEEVES & OPENING */}
+                  {currentStep === 3 && (
+                    <div className="space-y-3 animate-in fade-in duration-200">
+                      <div className="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/80 space-y-3">
+                        <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-indigo-500"></span> 3. Sleeve Pattern & Opening
+                        </span>
+                        
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                              Sleeve Pattern:
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openDrawer('Select Sleeve Pattern', SLEEVE_OPTIONS, outfit.sleeve, (val) => {
+                                  setOutfits((prev) => {
+                                    const next = [...prev];
+                                    next[idx].sleeve = val;
+                                    triggerAutosave(next);
+                                    return next;
+                                  });
+                                })
+                              }
+                              className="w-full bg-white border border-slate-200 hover:border-indigo-400 text-slate-800 font-bold text-xs p-2.5 rounded-xl shadow-2xs flex items-center justify-between text-left transition-all"
+                            >
+                              <span className="truncate">{outfit.sleeve}</span>
+                              <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
+                            </button>
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                              Opening / Hook:
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openDrawer('Select Opening / Hook Placement', HOOK_OPTIONS, outfit.hook, (val) => {
+                                  setOutfits((prev) => {
+                                    const next = [...prev];
+                                    next[idx].hook = val;
+                                    triggerAutosave(next);
+                                    return next;
+                                  });
+                                })
+                              }
+                              className="w-full bg-white border border-slate-200 hover:border-indigo-400 text-slate-800 font-bold text-xs p-2.5 rounded-xl shadow-2xs flex items-center justify-between text-left transition-all"
+                            >
+                              <span className="truncate">{outfit.hook}</span>
+                              <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {outfit.sleevePhotos.length === 0 ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleTriggerPhotoUpload(idx, 'sleevePhotos', 'Sleeve Design', '🧵')
+                            }
+                            className="w-full py-2.5 bg-white border border-dashed border-indigo-400/50 hover:border-indigo-500 hover:bg-indigo-50 text-indigo-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            <Camera className="w-3.5 h-3.5" />
+                            <span>+ Add Sleeve Reference Photo</span>
+                          </button>
+                        ) : (
+                          <div className="space-y-2 pt-1 border-t border-slate-200/60">
+                            {outfit.sleevePhotos.map((p) => (
+                              <div
+                                key={p.id}
+                                className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 overflow-hidden">
+                                    <img
+                                      src={p.dataUrl}
+                                      alt={p.fileName}
+                                      className="w-10 h-10 rounded-lg object-cover border border-indigo-200 shrink-0"
+                                    />
+                                    <div className="overflow-hidden">
+                                      <span className="text-[11px] font-bold text-slate-800 truncate block">
+                                        {p.fileName}
+                                      </span>
+                                      <span className="text-[9px] text-indigo-700 font-semibold uppercase tracking-wider">
+                                        [Sleeve Reference]
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemovePhoto(idx, 'sleevePhotos', p.id)}
+                                    className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
+                                  >
+                                    ✕ Remove
+                                  </button>
+                                </div>
+                                <input
+                                  type="text"
+                                  value={p.comment}
+                                  onChange={(e) =>
+                                    handleUpdatePhotoComment(idx, 'sleevePhotos', p.id, e.target.value)
+                                  }
+                                  placeholder="💬 Note for this photo..."
+                                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-600 focus:bg-white transition-all"
+                                />
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleTriggerPhotoUpload(idx, 'sleevePhotos', 'Sleeve Design', '🧵')
+                              }
+                              className="text-[11px] font-semibold text-indigo-700 hover:underline flex items-center gap-1 pt-0.5"
+                            >
+                              <Camera className="w-3 h-3" /> + Add Another Sleeve Photo
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Step 3 Actions */}
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => handlePrevStep(idx)}
+                          className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs sm:text-sm transition-all border border-slate-200 flex items-center gap-1"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5" />
+                          <span>Back</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleNextStep(idx)}
+                          className="px-5 py-2.5 bg-[#5B43EE] hover:bg-[#4E36DE] text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-sm flex items-center gap-1.5 active:scale-98"
+                        >
+                          <span>Next: Audio & Extras</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 4: AUDIO, FABRIC PHOTOS & TAILOR NOTES */}
+                  {currentStep === 4 && (
+                    <div className="space-y-3 animate-in fade-in duration-200">
+                      
+                      {/* 4A. EXTRA FABRIC PHOTOS */}
+                      <div className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/80 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-amber-500"></span> 4. Extra Fabric / Material Photos
+                          </span>
+                          <span className="text-[10px] text-slate-400">Optional</span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleTriggerPhotoUpload(idx, 'extraPhotos', 'Extra Reference', '📸')
+                          }
+                          className="w-full py-2 bg-white border border-dashed border-slate-300 hover:border-[#5B43EE] hover:bg-purple-50 text-slate-700 hover:text-[#5B43EE] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>+ Upload Extra / Fabric Reference Photo</span>
+                        </button>
+
+                        {outfit.extraPhotos.length > 0 && (
+                          <div className="space-y-2 pt-1 border-t border-slate-200/60">
+                            {outfit.extraPhotos.map((p) => (
+                              <div
+                                key={p.id}
+                                className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 overflow-hidden">
+                                    <img
+                                      src={p.dataUrl}
+                                      alt={p.fileName}
+                                      className="w-10 h-10 rounded-lg object-cover border border-amber-200 shrink-0"
+                                    />
+                                    <div className="overflow-hidden">
+                                      <span className="text-[11px] font-bold text-slate-800 truncate block">
+                                        {p.fileName}
+                                      </span>
+                                      <span className="text-[9px] text-amber-700 font-semibold uppercase tracking-wider">
+                                        [Extra / Fabric Reference]
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemovePhoto(idx, 'extraPhotos', p.id)}
+                                    className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
+                                  >
+                                    ✕ Remove
+                                  </button>
+                                </div>
+                                <input
+                                  type="text"
+                                  value={p.comment}
+                                  onChange={(e) =>
+                                    handleUpdatePhotoComment(idx, 'extraPhotos', p.id, e.target.value)
+                                  }
+                                  placeholder="💬 Note for this photo..."
+                                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 4B. VOICE NOTE */}
+                      <div className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/80 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
+                            <Mic className="w-3.5 h-3.5 text-[#5B43EE]" /> 5. Voice Note Instructions
+                          </span>
+                          <span className="text-[10px] text-slate-400">Audio Note</span>
+                        </div>
+
+                        {recordingOutfitIdx === idx ? (
+                          <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse shrink-0"></span>
+                              <span className="text-xs font-bold text-red-600 truncate">
+                                Recording Audio ({recordingSeconds}s)...
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={cancelVoiceRecording}
+                                className="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 rounded-lg"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={stopVoiceRecording}
+                                className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs"
+                              >
+                                <Square className="w-3 h-3" /> Stop & Save
+                              </button>
+                            </div>
+                          </div>
+                        ) : outfit.voiceNoteUrl ? (
+                          <div className="bg-purple-50/80 border border-[#5B43EE]/25 rounded-xl p-3 flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePlayVoice(idx, outfit.voiceNoteUrl!)}
+                              className="w-9 h-9 rounded-full bg-[#5B43EE] hover:bg-[#4d36dc] text-white flex items-center justify-center shrink-0 shadow-xs transition-transform active:scale-95"
+                              aria-label={playingVoiceOutfitIdx === idx ? 'Pause voice note' : 'Play voice note'}
+                            >
+                              {playingVoiceOutfitIdx === idx ? (
+                                <Pause className="w-4 h-4 fill-white" />
+                              ) : (
+                                <Play className="w-4 h-4 fill-white ml-0.5" />
+                              )}
+                            </button>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 mb-1">
+                                <span className="flex items-center gap-1 text-[#5B43EE]">
+                                  <Mic className="w-3 h-3" /> Voice Note #{outfit.number}
+                                </span>
+                                <span className="text-slate-500 font-medium">
+                                  {outfit.voiceNoteDuration || '0:15'}
+                                </span>
+                              </div>
+                              <div className="h-1.5 bg-purple-200/50 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-[#5B43EE] rounded-full transition-all duration-100"
+                                  style={{
+                                    width: `${playingVoiceOutfitIdx === idx ? voicePlayProgress : 0}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => deleteVoiceRecording(idx)}
+                              title="Delete voice note"
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => startVoiceRecording(idx)}
+                            className="w-full py-2.5 bg-white border border-dashed border-[#5B43EE]/40 text-[#5B43EE] hover:bg-purple-50 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                          >
+                            <Mic className="w-4 h-4" />
+                            <span>Record Voice Note for Outfit #{outfit.number}</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* 4C. FIT & TAILOR NOTES */}
+                      <div className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/80 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
+                            <Edit2 className="w-3.5 h-3.5 text-slate-600" /> 6. Tailor Notes / Fit Instructions
+                          </span>
+                          <span className="text-[10px] text-slate-400">Optional</span>
+                        </div>
+                        <textarea
+                          rows={2}
+                          value={outfit.notes}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setOutfits((prev) => {
+                              const next = [...prev];
+                              next[idx].notes = val;
+                              triggerAutosave(next);
+                              return next;
+                            });
+                          }}
+                          placeholder="E.g., Extra margin inside, tight fit on waist, lining cloth already provided..."
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] transition-all"
+                        />
+                      </div>
+
+                      {/* Step 4 Actions: Back or Complete & Generate Collage */}
+                      <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => handlePrevStep(idx)}
+                          className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs sm:text-sm transition-all border border-slate-200 flex items-center justify-center gap-1"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5" />
+                          <span>Back</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCompleteOutfit(idx)}
+                          className="w-2/3 py-2.5 bg-[#5B43EE] hover:bg-[#4E36DE] text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-purple-500/20 flex items-center justify-center gap-1.5 active:scale-98 cursor-pointer"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>Save & Complete Outfit #{outfit.number}</span>
+                        </button>
+                      </div>
+
+                    </div>
+                  )}
 
                 </div>
               </div>
@@ -2145,6 +2456,21 @@ export default function StitchingPage() {
             </div>
           );
         })}
+
+        {/* Bot Typing Micro-Interaction */}
+        {isBotTyping && (
+          <div className="flex gap-2.5 max-w-xl items-center animate-in fade-in duration-200">
+            <div className="w-8 h-8 rounded-full bg-[#5B43EE] flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-xs">
+              🤖
+            </div>
+            <div className="bg-white border border-slate-200/90 rounded-2xl rounded-tl-sm px-4 py-3 shadow-xs flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#5B43EE] animate-bounce [animation-delay:-0.3s]"></span>
+              <span className="w-2 h-2 rounded-full bg-[#5B43EE] animate-bounce [animation-delay:-0.15s]"></span>
+              <span className="w-2 h-2 rounded-full bg-[#5B43EE] animate-bounce"></span>
+              <span className="text-xs text-slate-400 font-medium ml-1.5">Assistant is preparing...</span>
+            </div>
+          </div>
+        )}
 
       </main>
 
