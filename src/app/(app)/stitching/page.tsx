@@ -67,11 +67,18 @@ const HOOK_OPTIONS = [
 
 const MEASUREMENT_CONFIGS = [
   {
+    id: 'In-Store Measurement (Visiting Boutique)',
+    title: 'In-Store Measurement',
+    subtitle: 'Visit the boutique in person to have the master tailor take your measurements.',
+    icon: '🏬',
+    tag: 'Recommended',
+  },
+  {
     id: 'Use Previous Measurements (Saved in Profile)',
     title: 'Use Saved Profile Measurements',
     subtitle: 'We will use your body measurements already stored in your Sewvee profile.',
     icon: '📐',
-    tag: 'Recommended',
+    tag: 'Instant',
   },
   {
     id: 'Send Reference Garment with Fabric (Boutique pickup/courier)',
@@ -79,13 +86,6 @@ const MEASUREMENT_CONFIGS = [
     subtitle: 'Send your best-fitting garment along with fabric (Boutique pickup or courier).',
     icon: '📦',
     tag: 'Popular',
-  },
-  {
-    id: 'Store Visit (Tailor will measure me at boutique)',
-    title: 'Store Visit for Measurement',
-    subtitle: 'Visit the boutique in person to have the master tailor take your measurements.',
-    icon: '🏬',
-    tag: 'Accurate',
   },
   {
     id: 'I will provide measurements later via chat',
@@ -110,6 +110,7 @@ interface AttachedPhoto {
 interface OutfitConfig {
   number: number;
   category: string;
+  categoryCut?: string;
   name: string;
   icon: string;
   frontNeck: string;
@@ -135,10 +136,11 @@ interface ChatMessage {
   id: string;
   sender: 'bot' | 'user';
   text?: string;
-  type?: 'text' | 'start_cta' | 'selection' | 'questionnaire' | 'add_another_prompt' | 'summary_ticket';
+  type?: 'text' | 'start_cta' | 'selection' | 'cut_selection' | 'questionnaire' | 'add_another_prompt' | 'summary_ticket';
   outfitIndex?: number;
   isAnswered?: boolean;
   selectedCategory?: string;
+  selectedCut?: string;
 }
 
 interface DrawerState {
@@ -189,7 +191,7 @@ export default function StitchingPage() {
 
   // Final ticket state
   const [deliveryDate, setDeliveryDate] = useState('');
-  const [measurementOption, setMeasurementOption] = useState('Use Previous Measurements (Saved in Profile)');
+  const [measurementOption, setMeasurementOption] = useState('In-Store Measurement (Visiting Boutique)');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [measurementDrawerOpen, setMeasurementDrawerOpen] = useState(false);
@@ -511,15 +513,79 @@ export default function StitchingPage() {
     }, 450);
   };
 
-  // Step 1: User Chooses an Outfit
+  // Step 1: User Chooses an Outfit Type (e.g. Blouse, Co-ord Set)
   const handleSelectOutfit = (categoryName: string) => {
+    const template = getOutfitTemplate(categoryName);
+    const cuts = template.categoryCuts || [];
+
+    setChatMessages((prev) => {
+      const updated = prev.map((m) =>
+        m.type === 'selection' ? { ...m, isAnswered: true, selectedCategory: categoryName } : m
+      );
+
+      return [
+        ...updated,
+        {
+          id: `user_pick_type_${Date.now()}`,
+          sender: 'user',
+          text: `I want to stitch ${categoryName}`,
+        },
+      ];
+    });
+
+    setIsBotTyping(true);
+    setTimeout(() => {
+      setIsBotTyping(false);
+      if (cuts.length > 0) {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: `cut_select_${Date.now()}`,
+            sender: 'bot',
+            type: 'cut_selection',
+            selectedCategory: categoryName,
+            isAnswered: false,
+          },
+        ]);
+      } else {
+        startOutfitQuestionnaire(categoryName, 'Standard Cut');
+      }
+    }, 350);
+  };
+
+  // Step 2: User Chooses Category Cut (e.g. Princesscut with pad)
+  const handleSelectCut = (categoryName: string, cutName: string) => {
+    setChatMessages((prev) =>
+      prev.map((m) =>
+        m.type === 'cut_selection' ? { ...m, isAnswered: true, selectedCut: cutName } : m
+      )
+    );
+
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: `user_pick_cut_${Date.now()}`,
+        sender: 'user',
+        text: `Style / Pattern Cut: ${cutName}`,
+      },
+    ]);
+
+    setIsBotTyping(true);
+    setTimeout(() => {
+      setIsBotTyping(false);
+      startOutfitQuestionnaire(categoryName, cutName);
+    }, 350);
+  };
+
+  const startOutfitQuestionnaire = (categoryName: string, cutName: string) => {
     const nextNum = outfits.length + 1;
     const template = getOutfitTemplate(categoryName);
 
     const newOutfit: OutfitConfig = {
       number: nextNum,
       category: categoryName,
-      name: `Outfit ${nextNum}: ${categoryName}`,
+      categoryCut: cutName,
+      name: `Outfit ${nextNum}: ${categoryName}${cutName ? ` (${cutName})` : ''}`,
       icon: template.icon,
       frontNeck: template.sections[0]?.options[0] || 'Standard Front Neck',
       frontNeckNote: '',
@@ -545,34 +611,15 @@ export default function StitchingPage() {
     setCurrentOutfitIndex(newOutfits.length - 1);
     triggerAutosave(newOutfits);
 
-    setChatMessages((prev) => {
-      const updated = prev.map((m) =>
-        m.type === 'selection' ? { ...m, isAnswered: true, selectedCategory: categoryName } : m
-      );
-
-      return [
-        ...updated,
-        {
-          id: `user_pick_${nextNum}`,
-          sender: 'user',
-          text: `I would like to stitch ${newOutfit.name}`,
-        },
-      ];
-    });
-
-    setIsBotTyping(true);
-    setTimeout(() => {
-      setIsBotTyping(false);
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: `questionnaire_${newOutfits.length - 1}`,
-          sender: 'bot',
-          type: 'questionnaire',
-          outfitIndex: newOutfits.length - 1,
-        },
-      ]);
-    }, 350);
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: `questionnaire_${newOutfits.length - 1}`,
+        sender: 'bot',
+        type: 'questionnaire',
+        outfitIndex: newOutfits.length - 1,
+      },
+    ]);
   };
 
   // Guided Step Progression (One by One)
@@ -1012,6 +1059,7 @@ export default function StitchingPage() {
         const urls = outfitUploadedUrls[idx] || [];
         const lines = [
           `Category: ${outfit.category}`,
+          `Outfit Pattern / Cut: ${outfit.categoryCut || 'Standard'}`,
           `Outfit Name: ${outfit.name}`,
           `Front Neck: ${outfit.frontNeck}${outfit.frontNeckNote ? ` (${outfit.frontNeckNote})` : ''}`,
           `Back Neck: ${outfit.backNeck}${outfit.backNeckNote ? ` (${outfit.backNeckNote})` : ''}`,
@@ -1380,6 +1428,68 @@ export default function StitchingPage() {
             );
           }
 
+          // Bot Cut Selection (Level 2: Cut / Pattern Style)
+          if (msg.type === 'cut_selection' && msg.selectedCategory) {
+            const template = getOutfitTemplate(msg.selectedCategory);
+            const cuts = template.categoryCuts || [];
+
+            if (msg.isAnswered) {
+              return (
+                <div key={msg.id} className="flex gap-2.5 max-w-xl items-start animate-in fade-in duration-200">
+                  <div className="w-8 h-8 rounded-full bg-[#5B43EE] flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-xs mt-0.5">
+                    ✂️
+                  </div>
+                  <div className="bg-white border border-slate-200/90 rounded-2xl rounded-tl-sm p-3.5 shadow-xs text-slate-800 text-xs sm:text-sm">
+                    <p className="font-semibold text-slate-900 mb-1">
+                      Cut Pattern Selected:
+                    </p>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 text-[#5B43EE] border border-[#5B43EE]/20 rounded-lg text-xs font-bold">
+                      <span>✓ Style:</span>
+                      <span>{msg.selectedCut || 'Standard Cut'}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div key={msg.id} className="space-y-2.5 animate-in fade-in duration-200">
+                <div className="flex gap-2.5 max-w-xl items-start">
+                  <div className="w-8 h-8 rounded-full bg-[#5B43EE] flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-xs mt-0.5">
+                    ✂️
+                  </div>
+                  <div className="bg-white border border-slate-200/90 rounded-2xl rounded-tl-sm p-3.5 shadow-xs text-slate-800 text-xs sm:text-sm leading-relaxed">
+                    <p className="font-bold text-slate-900 mb-0.5">
+                      Select {msg.selectedCategory} Cut / Pattern:
+                    </p>
+                    <p className="text-slate-600 text-xs">
+                      Choose which stitching pattern you would like for this {msg.selectedCategory.toLowerCase()}:
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pl-10 space-y-1.5">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Available Cut Options:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {cuts.map((cut) => (
+                      <button
+                        key={cut}
+                        type="button"
+                        onClick={() => handleSelectCut(msg.selectedCategory!, cut)}
+                        className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-[#5B43EE] hover:bg-purple-50/70 text-slate-700 hover:text-[#5B43EE] font-semibold text-xs sm:text-sm shadow-2xs flex items-center gap-1.5 transition-all active:scale-95"
+                      >
+                        <span>✂️</span>
+                        <span>{cut}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
           // Bot Questionnaire Card
           if (msg.type === 'questionnaire' && typeof msg.outfitIndex === 'number') {
             const outfit = outfits[msg.outfitIndex];
@@ -1536,7 +1646,7 @@ export default function StitchingPage() {
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#5B43EE] bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
-                        Outfit #{outfit.number} • {outfit.category}
+                        Outfit #{outfit.number} • {outfit.category}{outfit.categoryCut ? ` (${outfit.categoryCut})` : ''}
                       </span>
                       <h3 className="font-bold text-slate-900 text-sm sm:text-base mt-1">Design Customization</h3>
                     </div>

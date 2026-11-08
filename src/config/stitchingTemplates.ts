@@ -15,17 +15,18 @@ export interface TemplateSectionOption {
 export interface OutfitTemplate {
   category: string;
   icon: string;
+  categoryCuts?: string[];
   sections: TemplateSectionOption[];
 }
 
 export const OUTFIT_CATEGORIES = [
   { name: 'Blouse', icon: '👚' },
+  { name: 'Co-ord Set', icon: '✨' },
   { name: 'Kurti / Kurta', icon: '👗' },
   { name: 'Salwar / Chudithar', icon: '✨' },
   { name: 'Lehenga', icon: '💃' },
   { name: 'Dress / Gown', icon: '👘' },
   { name: 'Pants / Trousers', icon: '👖' },
-  { name: 'Co-ord Set', icon: '✨' },
   { name: 'Other', icon: '✂️' },
 ];
 
@@ -33,6 +34,13 @@ export const STITCHING_TEMPLATES: Record<string, OutfitTemplate> = {
   'Blouse': {
     category: 'Blouse',
     icon: '👚',
+    categoryCuts: [
+      'Cuttori blouse',
+      'Princesscut with pad',
+      'Princess cut with patti',
+      'Princesscut',
+      'Cupshape',
+    ],
     sections: [
       {
         id: 'front_neck',
@@ -91,6 +99,13 @@ export const STITCHING_TEMPLATES: Record<string, OutfitTemplate> = {
   'Kurti / Kurta': {
     category: 'Kurti / Kurta',
     icon: '👗',
+    categoryCuts: [
+      'Straight Kurti with Slits',
+      'A-Line Flared Kurti',
+      'Short Kurti / Top',
+      'Anarkali Kurti',
+      'Angrakha Pattern Kurti',
+    ],
     sections: [
       {
         id: 'front_neck',
@@ -149,6 +164,13 @@ export const STITCHING_TEMPLATES: Record<string, OutfitTemplate> = {
   'Salwar / Suit': {
     category: 'Salwar / Suit',
     icon: '✨',
+    categoryCuts: [
+      'Straight Cut Salwar',
+      'Anarkali Suit Set',
+      'Punjabi / Patiala Suit',
+      'Palazzo Suit Set',
+      'Churidar Set',
+    ],
     sections: [
       {
         id: 'top_neck',
@@ -207,6 +229,12 @@ export const STITCHING_TEMPLATES: Record<string, OutfitTemplate> = {
   'Lehenga': {
     category: 'Lehenga',
     icon: '💃',
+    categoryCuts: [
+      'Circular Flared Lehenga',
+      'Panelled / Kalidar Lehenga',
+      'Pleated Bridal Lehenga',
+      'A-Line Mermaid Lehenga',
+    ],
     sections: [
       {
         id: 'front_neck',
@@ -265,6 +293,12 @@ export const STITCHING_TEMPLATES: Record<string, OutfitTemplate> = {
   'Dress / Gown': {
     category: 'Dress / Gown',
     icon: '👘',
+    categoryCuts: [
+      'Full Flare Evening Gown',
+      'A-Line Maxi Dress',
+      'Fit & Flare Party Gown',
+      'Empire Waist Gown',
+    ],
     sections: [
       {
         id: 'front_neck',
@@ -323,6 +357,12 @@ export const STITCHING_TEMPLATES: Record<string, OutfitTemplate> = {
   'Co-ord Set': {
     category: 'Co-ord Set',
     icon: '✨',
+    categoryCuts: [
+      'Shirt Collar & Straight Trouser',
+      'Crop Top & Wide-Leg Palazzo',
+      'Peplum Top & Ankle Pants',
+      'Notch Lapel Blazer & Trousers',
+    ],
     sections: [
       {
         id: 'top_style',
