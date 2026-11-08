@@ -141,6 +141,7 @@ interface ChatMessage {
   isAnswered?: boolean;
   selectedCategory?: string;
   selectedCut?: string;
+  quickActions?: Array<{ label: string; actionType: 'add_outfit' | 'select_measurement' | 'proceed_final' }>;
 }
 
 interface DrawerState {
@@ -1143,21 +1144,106 @@ export default function StitchingPage() {
 
   const handleSendManualMessage = () => {
     if (!bottomInputText.trim()) return;
-    const msg = bottomInputText.trim();
+    const userText = bottomInputText.trim();
+    setBottomInputText('');
+
+    // Append user message immediately
+    const userMsgId = `manual_user_${Date.now()}`;
     setChatMessages((prev) => [
       ...prev,
       {
-        id: `manual_${Date.now()}`,
+        id: userMsgId,
         sender: 'user',
-        text: msg,
-      },
-      {
-        id: `bot_ack_${Date.now()}`,
-        sender: 'bot',
-        text: `Noted: "${msg}". I've included this in your inquiry notes for the master tailor.`,
+        text: userText,
       },
     ]);
-    setBottomInputText('');
+
+    // Show bot typing micro-interaction
+    setIsBotTyping(true);
+
+    setTimeout(() => {
+      setIsBotTyping(false);
+
+      // Determine active outfit
+      const incompleteIdx = outfits.findIndex((o) => !o.isCompleted);
+      const activeIdx = incompleteIdx !== -1 ? incompleteIdx : (outfits.length > 0 ? outfits.length - 1 : -1);
+      const activeOutfit = activeIdx !== -1 ? outfits[activeIdx] : null;
+
+      const lower = userText.toLowerCase();
+
+      // Check for tailoring instruction
+      const isInstruction = /(neck|front|back|sleeve|kai|lining|pad|cups|latkan|dori|rope|knot|depth|tight|loose|margin|piping|zip|chain|hook|slit|flare|cancan|inch|inches|cm|border|pot neck|boat neck|v neck|round|square|collar|pleat|cut|hip|waist|chest|length|short|long|elbow|sleeveless|cap sleeve)/i.test(userText);
+
+      if (isInstruction && activeOutfit) {
+        const existingNotes = activeOutfit.notes || '';
+        const updatedNotes = existingNotes ? `${existingNotes}; ${userText}` : userText;
+        setOutfits((prev) => {
+          const next = [...prev];
+          next[activeIdx] = { ...activeOutfit, notes: updatedNotes };
+          triggerAutosave(next);
+          return next;
+        });
+      }
+
+      // Check intent and generate contextual response
+      let botResponse = '';
+      let quickActions: Array<{ label: string; actionType: 'add_outfit' | 'select_measurement' | 'proceed_final' }> | undefined = undefined;
+
+      const boutiqueName = selectedBoutique?.boutique_name || 'Inba Boutique';
+
+      if (
+        /(add|more|another|multiple|second|third|2nd|3rd|two|extra).*(outfit|dress|blouse|kurti|suit|lehenga|piece|item)/i.test(lower) ||
+        lower.includes('innoru') ||
+        lower.includes('inoru') ||
+        lower.includes('another dress')
+      ) {
+        botResponse = `✨ **Adding Multiple Outfits:**\nYes, absolutely! You can add multiple outfits to this single inquiry. Currently you have **${outfits.length} outfit${outfits.length > 1 ? 's' : ''}** in your order list.\n\nYou can click **+ Add Another Outfit** below or in the top bar to choose your next design!`;
+        quickActions = [{ label: '+ Add Another Outfit', actionType: 'add_outfit' }];
+      } else if (/(price|cost|charge|charges|rate|rates|fees|how much|evlo|evalo|amount|budget|quote|vilai|expensive|cheap)/i.test(lower)) {
+        const cat = activeOutfit ? activeOutfit.category.toLowerCase() : '';
+        if (cat.includes('blouse')) {
+          botResponse = `👚 **Blouse Stitching Charges:**\n• Standard Plain Blouse: ₹450 – ₹650\n• Princess Cut / Padded Blouse: ₹850 – ₹1,200\n• Heavy Bridal / Aari Work Blouse: Based on embroidery work density (starts ₹1,500+)\n\n*Pure cotton lining, crepe, canvas, and soft bra pads can be provided by the boutique or brought by you.*`;
+        } else if (cat.includes('dress') || cat.includes('gown')) {
+          botResponse = `👘 **Dress / Gown Stitching Charges:**\n• Simple A-Line / Maxi Dress: ₹850 – ₹1,400\n• Full Flare Evening Gown (with lining): ₹1,500 – ₹2,800\n• Multi-layer Party / Bridal Gown with Can-can: ₹2,500 – ₹4,500+\n\n*The boutique master tailor will confirm the exact quote upon checking your fabric.*`;
+        } else if (cat.includes('kurti') || cat.includes('salwar')) {
+          botResponse = `👗 **Kurti & Salwar Suit Charges:**\n• Straight Kurti / Top: ₹450 – ₹650\n• Salwar / Chudithar Set with Lining: ₹750 – ₹1,100\n• Anarkali Flared Suit: ₹1,200 – ₹1,800`;
+        } else {
+          botResponse = `💰 **Stitching Estimates at ${boutiqueName}:**\n• Blouse: ₹450 – ₹1,200\n• Kurti / Salwar: ₹550 – ₹1,100\n• Evening Gown / Dress: ₹1,500 – ₹2,800\n• Lehenga Choli: ₹1,800 – ₹4,500\n\n*Every quote is confirmed transparently before cutting starts.*`;
+        }
+      } else if (/(how long|how many days|when|ready|urgent|express|emergency|date|time|fast|quick|delivery|timelines|eppo|ethana naal)/i.test(lower)) {
+        botResponse = `⏱️ **Delivery Timelines:**\n• **Standard Stitching:** 5 to 7 business days from fabric handover or measurement.\n• **Express / Priority Delivery:** 2 to 3 days available on request!\n\nYou can select your target delivery date in the final step. Our master tailor will prioritize your slot accordingly.`;
+        quickActions = [{ label: 'Proceed to Final Step', actionType: 'proceed_final' }];
+      } else if (/(measurement|measure|size|sample|fit|fitting|old blouse|old dress|tape|home|visit|trial|alavu)/i.test(lower)) {
+        botResponse = `📐 **How Measurements Work:**\n1. **🏬 In-Store Measurement (Recommended):** Visit ${boutiqueName} for an exact 12-point tape measurement by our master tailor.\n2. **📦 Send Sample Dress / Blouse:** Drop off or courier a well-fitting sample outfit, and we will replicate the exact fit.\n3. **📁 Saved Measurements on File:** If you have stitched before, your past measurements are already saved!\n\n*Every order includes our **100% Perfect Fit Trial Guarantee** with free on-the-spot adjustments.*`;
+        quickActions = [{ label: '🏬 Choose Measurement Option', actionType: 'select_measurement' }];
+      } else if (/(cloth|fabric|material|lining|saree|provide fabric|supply cloth|lining included|thuni|canvas)/i.test(lower)) {
+        botResponse = `🧵 **Fabric & Lining Support:**\n• **Your Fabric:** You can bring or courier your own saree, dress material, or fabric to the boutique.\n• **Boutique Provided:** ${boutiqueName} provides premium pure cotton lining, crepe lining, can-can mesh, heavy-duty concealed zippers, and bra pads.\n\n*If you need the boutique to supply lining or matching latkans, just let us know in your tailor notes!*`;
+      } else if (/(aari|embroidery|hand work|zardosi|maggam|bridal|latkan|dori|piping|patch work|bead|thread work|stone work)/i.test(lower)) {
+        botResponse = `✨ **Aari Embroidery & Hand Work:**\nYes! ${boutiqueName} specializes in custom bridal Aari embroidery, zardosi, thread work, and designer sleeve borders.\n\nYou can attach any photo using the **+ Add Photo** button in the Front Neck, Back Neck, or Sleeve sections. Our master artisans will match the design pattern!`;
+      } else if (/(location|address|where|timing|hours|phone|call|open|reach|direction|contact|shop|store)/i.test(lower)) {
+        botResponse = `📍 **${boutiqueName} Details:**\n• **Location:** Inba Boutique, Chennai\n• **Timings:** Monday – Saturday: 10:00 AM – 8:30 PM | Sunday: 11:00 AM – 6:00 PM\n• **Services:** Bespoke stitching, bridal blouses, gown pattern-making, express trial & alterations.\n\nYou can visit the boutique directly for measurements or fabric handover once your inquiry is booked!`;
+      } else if (/(alter|alteration|tight|loose|guarantee|fitting issue|fit guarantee)/i.test(lower)) {
+        botResponse = `🛡️ **100% Perfect Fit Guarantee:**\nEvery order at ${boutiqueName} includes a trial session before final delivery. If anything feels slightly tight or loose at the waist, bust, or armhole, our master tailor does alterations on the spot free of charge until you are 100% delighted!`;
+      } else if (isInstruction && activeOutfit) {
+        botResponse = `✨ **Noted for Outfit #${activeOutfit.number} (${activeOutfit.name})!**\nI've saved this instruction to your order notes:\n*"${userText}"*\n\nOur master tailor and pattern cutter will follow this specification closely.`;
+      } else if (/(hi|hello|vanakkam|hey|sup|good morning|good evening)/i.test(lower)) {
+        botResponse = `Vanakkam! 👋 I am your ${boutiqueName} Stitching Assistant. Ask me anything about tailoring charges, delivery dates, neck patterns, or measurements. I'm here to help you get the perfect fit!`;
+      } else if (activeOutfit) {
+        botResponse = `📝 **Noted for Outfit #${activeOutfit.number} (${activeOutfit.name})!**\nI have saved your instruction: *"${userText}"* to your tailoring notes.\n\nFeel free to ask me anything about stitching charges, delivery timelines, measurements, or adding another outfit!`;
+      } else {
+        botResponse = `Got your note: *"${userText}"*. I've noted this for the master tailor at ${boutiqueName}.\n\nFeel free to ask about pricing, delivery timeline, measurement options, or adding multiple outfits!`;
+      }
+
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: `bot_reply_${Date.now()}`,
+          sender: 'bot',
+          text: botResponse,
+          quickActions,
+        },
+      ]);
+    }, 500);
   };
 
   return (
@@ -2554,14 +2640,43 @@ export default function StitchingPage() {
             );
           }
 
-          // Fallback text message
+          // Fallback text message / Bot conversational response
           return (
             <div key={msg.id} className="flex gap-2.5 max-w-xl items-start animate-in fade-in duration-200">
               <div className="w-8 h-8 rounded-full bg-[#5B43EE] flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-xs mt-0.5">
                 🤖
               </div>
-              <div className="bg-white border border-slate-200/90 rounded-2xl rounded-tl-sm p-3.5 shadow-xs text-slate-800 text-xs sm:text-sm">
-                {msg.text}
+              <div className="bg-white border border-slate-200/90 rounded-2xl rounded-tl-sm p-3.5 shadow-xs text-slate-800 text-xs sm:text-sm whitespace-pre-line space-y-2.5">
+                <div className="leading-relaxed">{msg.text}</div>
+                {msg.quickActions && msg.quickActions.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-100">
+                    {msg.quickActions.map((qa, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          if (qa.actionType === 'add_outfit') {
+                            setChatMessages((prev) => [
+                              ...prev.filter((m) => m.type !== 'add_another_prompt' && m.type !== 'summary_ticket'),
+                              {
+                                id: `prompt_manual_add_${Date.now()}`,
+                                sender: 'bot',
+                                type: 'selection',
+                              },
+                            ]);
+                          } else if (qa.actionType === 'select_measurement') {
+                            setMeasurementDrawerOpen(true);
+                          } else if (qa.actionType === 'proceed_final') {
+                            handleProceedToFinal();
+                          }
+                        }}
+                        className="px-3.5 py-1.5 rounded-lg bg-purple-50 hover:bg-[#5B43EE] text-[#5B43EE] hover:text-white border border-[#5B43EE]/30 text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+                      >
+                        {qa.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           );
