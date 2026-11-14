@@ -60,7 +60,7 @@ export const STITCHING_TEMPLATES: Record<string, OutfitTemplate> = {
         id: 'back_neck',
         title: 'Back Neck Style',
         emoji: '✨',
-        options: ['Deep Pot Neck', 'Drop Cut', 'Square Back', 'High Neck', 'Covered Back', 'V-Back', 'Custom Cut'],
+        options: ['Deep Pot Neck', 'Open Back with Dori', 'Round Back Neck', 'V Back Neck', 'Square Back Neck', 'Others'],
         allowPhoto: true,
         photoLabel: 'Upload Back Neck Photo',
         allowNote: true,

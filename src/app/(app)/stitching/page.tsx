@@ -99,75 +99,151 @@ const MEASUREMENT_CONFIGS = [
 const MEASUREMENT_OPTIONS = MEASUREMENT_CONFIGS.map(m => m.id);
 
 const FRONT_NECK_OPTIONS = [
-  {
-    name: 'Closeneck',
-    svg: (
-      <svg viewBox="0 0 56 46" className="w-10 h-10" fill="none">
-        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
-        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38 L 52 44 L 4 44 Z" fill="#F8FAFC" />
-        <path d="M 22 20 C 22 25 34 25 34 20" stroke="#5B43EE" strokeWidth="2.6" strokeLinecap="round" />
-        <path d="M 23 15 C 23 17 33 17 33 15" stroke="#5B43EE" strokeWidth="1.8" strokeLinecap="round" />
-        <line x1="23" y1="15" x2="22" y2="20" stroke="#5B43EE" strokeWidth="1.8" />
-        <line x1="33" y1="15" x2="34" y2="20" stroke="#5B43EE" strokeWidth="1.8" />
-      </svg>
-    ),
-  },
-  {
-    name: 'Collarneck',
-    svg: (
-      <svg viewBox="0 0 56 46" className="w-10 h-10" fill="none">
-        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
-        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38 L 52 44 L 4 44 Z" fill="#F8FAFC" />
-        <path d="M 21 16 L 28 23 L 35 16" stroke="#5B43EE" strokeWidth="2.4" strokeLinecap="round" />
-        <path d="M 21 16 L 24 28 L 28 24 L 32 28 L 35 16" fill="#EDE9FE" stroke="#5B43EE" strokeWidth="1.8" strokeLinejoin="round" />
-        <line x1="28" y1="24" x2="28" y2="34" stroke="#5B43EE" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    name: 'High neck',
-    svg: (
-      <svg viewBox="0 0 56 46" className="w-10 h-10" fill="none">
-        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
-        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38 L 52 44 L 4 44 Z" fill="#F8FAFC" />
-        <rect x="22" y="12" width="12" height="10" rx="2" fill="#EDE9FE" stroke="#5B43EE" strokeWidth="2.4" />
-        <line x1="22" y1="17" x2="34" y2="17" stroke="#5B43EE" strokeWidth="1.5" strokeDasharray="2 1" />
-      </svg>
-    ),
-  },
-  {
-    name: 'Boat neck',
-    svg: (
-      <svg viewBox="0 0 56 46" className="w-10 h-10" fill="none">
-        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
-        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38 L 52 44 L 4 44 Z" fill="#F8FAFC" />
-        <path d="M 13 22 C 20 29 36 29 43 22" stroke="#5B43EE" strokeWidth="2.8" strokeLinecap="round" />
-        <path d="M 13 22 C 20 29 36 29 43 22 C 38 20 28 20 13 22 Z" fill="#EDE9FE" opacity="0.8" />
-      </svg>
-    ),
-  },
-  {
-    name: 'Normal neck',
-    svg: (
-      <svg viewBox="0 0 56 46" className="w-10 h-10" fill="none">
-        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
-        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38 L 52 44 L 4 44 Z" fill="#F8FAFC" />
-        <path d="M 19 20 C 19 33 37 33 37 20" stroke="#5B43EE" strokeWidth="2.6" strokeLinecap="round" />
-        <path d="M 19 20 C 19 33 37 33 37 20 Z" fill="#EDE9FE" opacity="0.8" />
-      </svg>
-    ),
-  },
-  {
-    name: 'Others',
-    svg: (
-      <svg viewBox="0 0 56 46" className="w-10 h-10" fill="none">
-        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38" stroke="#94A3B8" strokeWidth="2" strokeDasharray="3 2" strokeLinecap="round" />
-        <circle cx="28" cy="24" r="10" fill="#EDE9FE" stroke="#5B43EE" strokeWidth="2" />
-        <text x="28" y="28" fontSize="12" textAnchor="middle" fill="#5B43EE">✨</text>
-      </svg>
-    ),
-  },
+  'Closeneck',
+  'Collarneck',
+  'High neck',
+  'Boat neck',
+  'Normal neck',
+  'Others',
 ];
+
+const BACK_NECK_OPTIONS = [
+  'Deep Pot Neck',
+  'Open Back with Dori',
+  'Round Back Neck',
+  'V Back Neck',
+  'Square Back Neck',
+  'Others',
+];
+
+function FrontNeckSilhouette({ neckType }: { neckType: string }) {
+  const skin = '#FDF0E6';
+  const blouse = '#F7CAD0';
+  const stroke = '#4A3B43';
+  const highlight = '#5B43EE';
+
+  let necklinePath = '';
+  let chestCutoutPath = '';
+
+  if (neckType === 'Boat neck') {
+    necklinePath = 'M 24 35 C 38 43 62 43 76 35';
+    chestCutoutPath = 'M 44 14 L 44 26 C 36 29 28 32 24 35 C 38 43 62 43 76 35 C 72 32 64 29 56 26 L 56 14 Z';
+  } else if (neckType === 'Normal neck') {
+    necklinePath = 'M 38 29 C 38 52 62 52 62 29';
+    chestCutoutPath = 'M 44 14 L 44 26 C 41 27 39 28 38 29 C 38 52 62 52 62 29 C 61 28 59 27 56 26 L 56 14 Z';
+  } else if (neckType === 'Closeneck') {
+    necklinePath = 'M 43 27 C 45 31 55 31 57 27';
+    chestCutoutPath = 'M 44 14 L 44 26 C 43 26 43 27 43 27 C 45 31 55 31 57 27 C 57 27 57 26 56 26 L 56 14 Z';
+  } else if (neckType === 'Collarneck') {
+    necklinePath = 'M 42 27 L 45 42 L 50 36 L 55 42 L 58 27';
+    chestCutoutPath = 'M 44 14 L 44 26 C 43 26 42 27 42 27 L 45 42 L 50 36 L 55 42 L 58 27 C 58 27 57 26 56 26 L 56 14 Z';
+  } else if (neckType === 'High neck') {
+    necklinePath = 'M 43 17 L 57 17';
+    chestCutoutPath = 'M 44 14 L 44 17 L 56 17 L 56 14 Z';
+  } else {
+    necklinePath = 'M 34 32 C 42 46 58 46 66 32';
+    chestCutoutPath = 'M 44 14 L 44 26 C 39 28 36 30 34 32 C 42 46 58 46 66 32 C 64 30 61 28 56 26 L 56 14 Z';
+  }
+
+  return (
+    <svg viewBox="0 0 100 85" className="w-full h-full" fill="none">
+      <path d="M 44 10 L 44 26 C 36 28 22 35 10 50 L 10 65 L 20 68 L 27 52 L 31 74 L 69 74 L 73 52 L 80 68 L 90 65 L 90 50 C 78 35 64 28 56 26 L 56 10 Z" fill={skin} />
+      <path d="M 10 50 C 22 35 36 28 44 26 L 56 26 C 64 28 78 35 90 50 L 82 66 L 73 52 L 69 74 L 31 74 L 27 52 L 18 66 Z" fill={blouse} stroke={stroke} strokeWidth="1.4" strokeLinejoin="round" />
+      <path d={chestCutoutPath} fill={skin} />
+      <path d="M 38 31 C 43 33 46 32 48 34" stroke="#E5BCA9" strokeWidth="1" strokeLinecap="round" />
+      <path d="M 62 31 C 57 33 54 32 52 34" stroke="#E5BCA9" strokeWidth="1" strokeLinecap="round" />
+      <line x1="10" y1="65" x2="20" y2="68" stroke={stroke} strokeWidth="1.2" />
+      <line x1="90" y1="65" x2="80" y2="68" stroke={stroke} strokeWidth="1.2" />
+      <line x1="31" y1="74" x2="69" y2="74" stroke={stroke} strokeWidth="1.4" />
+      <path d={necklinePath} stroke={highlight} strokeWidth="2.2" strokeLinecap="round" strokeDasharray={neckType === 'Others' ? '3 2' : undefined} />
+      {neckType === 'Collarneck' && (
+        <>
+          <polygon points="42,27 46,38 50,33 54,38 58,27" fill="#FFF0F3" stroke="#5B43EE" strokeWidth="1.2" />
+          <circle cx="50" cy="44" r="1.2" fill="#5B43EE" />
+          <circle cx="50" cy="50" r="1.2" fill="#5B43EE" />
+        </>
+      )}
+      {neckType === 'High neck' && (
+        <rect x="43" y="17" width="14" height="10" rx="2" fill="#F7CAD0" stroke="#5B43EE" strokeWidth="1.8" />
+      )}
+      {neckType === 'Others' && (
+        <>
+          <circle cx="50" cy="42" r="7" fill="#EDE9FE" stroke="#5B43EE" strokeWidth="1.4" />
+          <text x="50" y="45" fontSize="8" textAnchor="middle" fill="#5B43EE">✨</text>
+        </>
+      )}
+    </svg>
+  );
+}
+
+function BackNeckSilhouette({ neckType }: { neckType: string }) {
+  const skin = '#FDF0E6';
+  const blouse = '#F7CAD0';
+  const stroke = '#4A3B43';
+  const highlight = '#5B43EE';
+
+  let cutoutPath = '';
+  let extra: React.ReactNode = null;
+
+  if (neckType === 'Deep Pot Neck') {
+    cutoutPath = 'M 45 30 C 35 34 32 50 38 60 C 44 68 56 68 62 60 C 68 50 65 34 55 30 Z';
+    extra = (
+      <>
+        <path d="M 48 29 Q 44 42 41 50" stroke="#D97706" strokeWidth="1.2" fill="none" />
+        <path d="M 52 29 Q 56 42 59 50" stroke="#D97706" strokeWidth="1.2" fill="none" />
+        <polygon points="41,50 39,56 43,56" fill="#F59E0B" stroke="#B45309" strokeWidth="0.8" />
+        <polygon points="59,50 57,56 61,56" fill="#F59E0B" stroke="#B45309" strokeWidth="0.8" />
+      </>
+    );
+  } else if (neckType === 'Open Back with Dori') {
+    cutoutPath = 'M 35 30 C 32 45 32 60 36 72 L 64 72 C 68 60 68 45 65 30 Z';
+    extra = (
+      <>
+        <line x1="34" y1="38" x2="66" y2="52" stroke="#D97706" strokeWidth="1.2" />
+        <line x1="66" y1="38" x2="34" y2="52" stroke="#D97706" strokeWidth="1.2" />
+        <line x1="34" y1="55" x2="66" y2="68" stroke="#D97706" strokeWidth="1.2" />
+        <line x1="66" y1="55" x2="34" y2="68" stroke="#D97706" strokeWidth="1.2" />
+      </>
+    );
+  } else if (neckType === 'Round Back Neck') {
+    cutoutPath = 'M 38 28 C 38 62 62 62 62 28 Z';
+  } else if (neckType === 'V Back Neck') {
+    cutoutPath = 'M 36 28 L 50 70 L 64 28 Z';
+    extra = (
+      <>
+        <path d="M 48 28 Q 45 38 43 45" stroke="#D97706" strokeWidth="1.2" fill="none" />
+        <path d="M 52 28 Q 55 38 57 45" stroke="#D97706" strokeWidth="1.2" fill="none" />
+        <polygon points="43,45 41,51 45,51" fill="#F59E0B" stroke="#B45309" strokeWidth="0.8" />
+        <polygon points="57,45 55,51 59,51" fill="#F59E0B" stroke="#B45309" strokeWidth="0.8" />
+      </>
+    );
+  } else if (neckType === 'Square Back Neck') {
+    cutoutPath = 'M 36 28 L 36 62 L 64 62 L 64 28 Z';
+    extra = <line x1="36" y1="28" x2="64" y2="28" stroke="#D97706" strokeWidth="1.2" strokeDasharray="2 2" />;
+  } else {
+    cutoutPath = 'M 38 30 C 40 55 60 55 62 30 Z';
+    extra = (
+      <>
+        <circle cx="50" cy="44" r="6" fill="#EDE9FE" stroke="#5B43EE" strokeWidth="1.2" />
+        <text x="50" y="47" fontSize="8" textAnchor="middle" fill="#5B43EE">✨</text>
+      </>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 100 85" className="w-full h-full" fill="none">
+      <path d="M 44 10 L 44 26 C 36 28 22 35 10 50 L 10 65 L 20 68 L 27 52 L 31 74 L 69 74 L 73 52 L 80 68 L 90 65 L 90 50 C 78 35 64 28 56 26 L 56 10 Z" fill={skin} />
+      <path d="M 44 10 C 46 16 54 16 56 10" fill="#4A3728" stroke="#2C1810" strokeWidth="1.2" />
+      <path d="M 10 50 C 22 35 36 28 44 26 L 56 26 C 64 28 78 35 90 50 L 82 66 L 73 52 L 69 74 L 31 74 L 27 52 L 18 66 Z" fill={blouse} stroke={stroke} strokeWidth="1.4" strokeLinejoin="round" />
+      <path d={cutoutPath} fill={skin} stroke={highlight} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="50" y1="32" x2="50" y2="64" stroke="#E5BCA9" strokeWidth="1" strokeLinecap="round" opacity="0.7" />
+      <line x1="10" y1="65" x2="20" y2="68" stroke={stroke} strokeWidth="1.2" />
+      <line x1="90" y1="65" x2="80" y2="68" stroke={stroke} strokeWidth="1.2" />
+      <line x1="31" y1="74" x2="69" y2="74" stroke={stroke} strokeWidth="1.4" />
+      {extra}
+    </svg>
+  );
+}
 
 interface AttachedPhoto {
   id: string;
@@ -189,6 +265,7 @@ interface OutfitConfig {
   frontNeckNote: string;
   frontNeckPhotos: AttachedPhoto[];
   backNeck: string;
+  backNeckCustomName?: string;
   backNeckNote: string;
   backNeckPhotos: AttachedPhoto[];
   sleeve: string;
@@ -664,10 +741,12 @@ export default function StitchingPage() {
       categoryCut: cutName,
       name: `Outfit ${nextNum}: ${categoryName}${cutName ? ` (${cutName})` : ''}`,
       icon: template.icon,
-      frontNeck: template.sections[0]?.options[0] || 'Standard Front Neck',
+      frontNeck: template.sections[0]?.options[0] || 'Closeneck',
+      frontNeckCustomName: '',
       frontNeckNote: '',
       frontNeckPhotos: [],
-      backNeck: template.sections[1]?.options[0] || 'Standard Back Neck',
+      backNeck: template.sections[1]?.options[0] || 'Deep Pot Neck',
+      backNeckCustomName: '',
       backNeckNote: '',
       backNeckPhotos: [],
       sleeve: template.sections[2]?.options[0] || 'Elbow Length',
@@ -868,14 +947,20 @@ export default function StitchingPage() {
     const tiles = [
       {
         label: 'FRONT NECK',
-        styleName: outfit.frontNeck,
+        styleName:
+          outfit.frontNeck === 'Others' && outfit.frontNeckCustomName
+            ? `Custom: ${outfit.frontNeckCustomName}`
+            : outfit.frontNeck,
         note: outfit.frontNeckNote,
         imageSrc: outfit.frontNeckPhotos[0]?.dataUrl,
         emoji: '👚',
       },
       {
         label: 'BACK NECK',
-        styleName: outfit.backNeck,
+        styleName:
+          outfit.backNeck === 'Others' && outfit.backNeckCustomName
+            ? `Custom: ${outfit.backNeckCustomName}`
+            : outfit.backNeck,
         note: outfit.backNeckNote,
         imageSrc: outfit.backNeckPhotos[0]?.dataUrl,
         emoji: '✨',
@@ -1138,8 +1223,8 @@ export default function StitchingPage() {
           `Category: ${outfit.category}`,
           `Outfit Pattern / Cut: ${outfit.categoryCut || 'Standard'}`,
           `Outfit Name: ${outfit.name}`,
-          `Front Neck: ${outfit.frontNeck}${outfit.frontNeckNote ? ` (${outfit.frontNeckNote})` : ''}`,
-          `Back Neck: ${outfit.backNeck}${outfit.backNeckNote ? ` (${outfit.backNeckNote})` : ''}`,
+          `Front Neck: ${outfit.frontNeck === 'Others' && outfit.frontNeckCustomName ? `Custom (${outfit.frontNeckCustomName})` : outfit.frontNeck}${outfit.frontNeckNote ? ` (${outfit.frontNeckNote})` : ''}`,
+          `Back Neck: ${outfit.backNeck === 'Others' && outfit.backNeckCustomName ? `Custom (${outfit.backNeckCustomName})` : outfit.backNeck}${outfit.backNeckNote ? ` (${outfit.backNeckNote})` : ''}`,
           `Sleeve: ${outfit.sleeve} | Hook: ${outfit.hook}`,
         ];
         if (outfit.notes) lines.push(`Specific Notes: ${outfit.notes}`);
@@ -1961,17 +2046,17 @@ export default function StitchingPage() {
 
                         {/* Box Type Grid: Image on top, Name below */}
                         <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
-                          {FRONT_NECK_OPTIONS.map((opt) => {
-                            const isSelected = outfit.frontNeck === opt.name;
+                          {FRONT_NECK_OPTIONS.map((name) => {
+                            const isSelected = outfit.frontNeck === name;
                             return (
                               <button
-                                key={opt.name}
+                                key={name}
                                 type="button"
                                 onClick={() => {
                                   setOutfits((prev) => {
                                     const next = [...prev];
-                                    next[idx].frontNeck = opt.name;
-                                    if (opt.name !== 'Others') {
+                                    next[idx].frontNeck = name;
+                                    if (name !== 'Others') {
                                       next[idx].frontNeckCustomName = '';
                                     }
                                     triggerAutosave(next);
@@ -1989,11 +2074,11 @@ export default function StitchingPage() {
                                     ✓
                                   </div>
                                 )}
-                                <div className="w-11 h-10 flex items-center justify-center transition-transform group-hover:scale-105">
-                                  {opt.svg}
+                                <div className="w-12 h-11 flex items-center justify-center transition-transform group-hover:scale-105">
+                                  <FrontNeckSilhouette neckType={name} />
                                 </div>
                                 <span className={`text-[11px] font-bold mt-1.5 leading-tight ${isSelected ? 'text-[#5B43EE]' : 'text-slate-800'}`}>
-                                  {opt.name}
+                                  {name}
                                 </span>
                               </button>
                             );
@@ -2197,40 +2282,222 @@ export default function StitchingPage() {
                   {/* STEP 2: BACK NECK */}
                   {currentStep === 2 && (
                     <div className="space-y-3 animate-in fade-in duration-200">
-                      <div className="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/80 space-y-3">
+                      <div className="bg-slate-50/70 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 space-y-3.5">
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-emerald-600"></span> 2. Back Neck Style
+                              <span className="w-2.5 h-2.5 rounded-full bg-[#5B43EE]"></span> 2. Back Neck Style
                             </span>
                             <p className="text-[11px] text-slate-500 mt-0.5">
-                              Select shape, dori/potli details and back photos
+                              Select preferred back neck pattern or choose Others:
                             </p>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              openDrawer(
-                                'Select Back Neck Style',
-                                template.sections[1]?.options || [],
-                                outfit.backNeck,
-                                (val) => {
+                          <span className="text-[11px] font-bold text-[#5B43EE] bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
+                            {outfit.backNeck === 'Others'
+                              ? outfit.backNeckCustomName
+                                ? `Custom: ${outfit.backNeckCustomName}`
+                                : 'Custom Back'
+                              : outfit.backNeck}
+                          </span>
+                        </div>
+
+                        {/* Box Type Grid: Silhouette Image on top, Name below */}
+                        <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+                          {BACK_NECK_OPTIONS.map((name) => {
+                            const isSelected = outfit.backNeck === name;
+                            return (
+                              <button
+                                key={name}
+                                type="button"
+                                onClick={() => {
                                   setOutfits((prev) => {
                                     const next = [...prev];
-                                    next[idx].backNeck = val;
+                                    next[idx].backNeck = name;
+                                    if (name !== 'Others') {
+                                      next[idx].backNeckCustomName = '';
+                                    }
                                     triggerAutosave(next);
                                     return next;
                                   });
-                                }
-                              )
-                            }
-                            className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-emerald-600 text-emerald-700 font-bold text-xs rounded-lg shadow-2xs flex items-center gap-1 transition-all"
-                          >
-                            <span>{outfit.backNeck}</span>
-                            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                          </button>
+                                }}
+                                className={`p-2.5 rounded-xl flex flex-col items-center justify-between text-center transition-all cursor-pointer relative group active:scale-95 ${
+                                  isSelected
+                                    ? 'bg-purple-50/90 border-2 border-[#5B43EE] text-[#5B43EE] shadow-2xs'
+                                    : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:border-slate-300'
+                                }`}
+                              >
+                                {isSelected && (
+                                  <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#5B43EE] text-white flex items-center justify-center text-[9px] font-bold shadow-2xs">
+                                    ✓
+                                  </div>
+                                )}
+                                <div className="w-12 h-11 flex items-center justify-center transition-transform group-hover:scale-105">
+                                  <BackNeckSilhouette neckType={name} />
+                                </div>
+                                <span className={`text-[11px] font-bold mt-1.5 leading-tight ${isSelected ? 'text-[#5B43EE]' : 'text-slate-800'}`}>
+                                  {name}
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
 
+                        {/* IF THEY CHOOSE OTHER: Name it below & then below upload reference photo */}
+                        {outfit.backNeck === 'Others' ? (
+                          <div className="p-3.5 bg-gradient-to-br from-purple-50/90 to-indigo-50/90 border border-purple-200 rounded-xl space-y-3 animate-in fade-in duration-200">
+                            <div>
+                              <label className="block text-xs font-bold text-slate-900 mb-1">
+                                ✏️ Name your Back Neck Style:
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="e.g. Cutwork Back, Inverted U, Drop Back..."
+                                value={outfit.backNeckCustomName || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setOutfits((prev) => {
+                                    const next = [...prev];
+                                    next[idx].backNeckCustomName = val;
+                                    triggerAutosave(next);
+                                    return next;
+                                  });
+                                }}
+                                className="w-full bg-white border border-purple-300 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 font-semibold outline-none focus:ring-2 focus:ring-[#5B43EE]/40 shadow-inner"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-bold text-slate-900 mb-1">
+                                📷 Upload Reference Photo for Back Neck:
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleTriggerPhotoUpload(idx, 'backNeckPhotos', 'Back Neck', '✨')
+                                }
+                                className="w-full py-2.5 bg-white border border-dashed border-[#5B43EE] hover:bg-purple-100/50 rounded-xl text-xs font-bold text-[#5B43EE] flex items-center justify-center gap-1.5 transition-colors shadow-2xs active:scale-98 cursor-pointer"
+                              >
+                                <Camera className="w-3.5 h-3.5" />
+                                <span>+ Add Reference Photo (Crop & Rotate)</span>
+                              </button>
+
+                              {outfit.backNeckPhotos.length > 0 && (
+                                <div className="space-y-2 pt-2">
+                                  {outfit.backNeckPhotos.map((p) => (
+                                    <div
+                                      key={p.id}
+                                      className="bg-white border border-purple-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 overflow-hidden">
+                                          <img
+                                            src={p.dataUrl}
+                                            alt={p.fileName}
+                                            className="w-10 h-10 rounded-lg object-cover border border-purple-200 shrink-0"
+                                          />
+                                          <div className="overflow-hidden">
+                                            <span className="text-[11px] font-bold text-slate-800 truncate block">
+                                              {p.fileName}
+                                            </span>
+                                            <span className="text-[9px] text-emerald-600 font-semibold flex items-center gap-0.5">
+                                              <span>✓</span> Reference Photo Attached
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemovePhoto(idx, 'backNeckPhotos', p.id)}
+                                          className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
+                                        >
+                                          ✕ Remove
+                                        </button>
+                                      </div>
+                                      <input
+                                        type="text"
+                                        value={p.comment}
+                                        onChange={(e) =>
+                                          handleUpdatePhotoComment(idx, 'backNeckPhotos', p.id, e.target.value)
+                                        }
+                                        placeholder="💬 Note for this photo..."
+                                        className="w-full bg-slate-50 border border-purple-100 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          /* Optional Photo Upload for Standard Neck Styles */
+                          <div>
+                            {outfit.backNeckPhotos.length === 0 ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleTriggerPhotoUpload(idx, 'backNeckPhotos', 'Back Neck', '✨')
+                                }
+                                className="w-full py-2.5 bg-white border border-dashed border-[#5B43EE]/40 hover:border-[#5B43EE] hover:bg-purple-50 text-[#5B43EE] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                              >
+                                <Camera className="w-3.5 h-3.5" />
+                                <span>+ Add Back Neck Photo (Optional)</span>
+                              </button>
+                            ) : (
+                              <div className="space-y-2 pt-1 border-t border-slate-200/60">
+                                {outfit.backNeckPhotos.map((p) => (
+                                  <div
+                                    key={p.id}
+                                    className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2 overflow-hidden">
+                                        <img
+                                          src={p.dataUrl}
+                                          alt={p.fileName}
+                                          className="w-10 h-10 rounded-lg object-cover border border-purple-200 shrink-0"
+                                        />
+                                        <div className="overflow-hidden">
+                                          <span className="text-[11px] font-bold text-slate-800 truncate block">
+                                            {p.fileName}
+                                          </span>
+                                          <span className="text-[9px] text-[#5B43EE] font-semibold uppercase tracking-wider">
+                                            [Back Neck • Cropped ✓]
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemovePhoto(idx, 'backNeckPhotos', p.id)}
+                                        className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
+                                      >
+                                        ✕ Remove
+                                      </button>
+                                    </div>
+                                    <input
+                                      type="text"
+                                      value={p.comment}
+                                      onChange={(e) =>
+                                        handleUpdatePhotoComment(idx, 'backNeckPhotos', p.id, e.target.value)
+                                      }
+                                      placeholder="💬 Note for this photo..."
+                                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all"
+                                    />
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleTriggerPhotoUpload(idx, 'backNeckPhotos', 'Back Neck', '✨')
+                                  }
+                                  className="text-[11px] font-semibold text-[#5B43EE] hover:underline flex items-center gap-1 pt-0.5"
+                                >
+                                  <Camera className="w-3 h-3" /> + Add Another Back Neck Photo
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Back Neck Note / Depth input */}
                         <input
                           type="text"
                           value={outfit.backNeckNote}
@@ -2244,73 +2511,8 @@ export default function StitchingPage() {
                             });
                           }}
                           placeholder="💬 Specific back neck note (e.g. 8 inch deep, tassels, dori)..."
-                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-emerald-600 transition-all"
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] transition-all"
                         />
-
-                        {outfit.backNeckPhotos.length === 0 ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleTriggerPhotoUpload(idx, 'backNeckPhotos', 'Back Neck', '✨')
-                            }
-                            className="w-full py-2.5 bg-white border border-dashed border-emerald-600/40 hover:border-emerald-600 hover:bg-emerald-50 text-emerald-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                          >
-                            <Camera className="w-3.5 h-3.5" />
-                            <span>+ Add Back Neck Photo (Crop & Rotate)</span>
-                          </button>
-                        ) : (
-                          <div className="space-y-2 pt-1 border-t border-slate-200/60">
-                            {outfit.backNeckPhotos.map((p) => (
-                              <div
-                                key={p.id}
-                                className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2 overflow-hidden">
-                                    <img
-                                      src={p.dataUrl}
-                                      alt={p.fileName}
-                                      className="w-10 h-10 rounded-lg object-cover border border-emerald-200 shrink-0"
-                                    />
-                                    <div className="overflow-hidden">
-                                      <span className="text-[11px] font-bold text-slate-800 truncate block">
-                                        {p.fileName}
-                                      </span>
-                                      <span className="text-[9px] text-emerald-700 font-semibold uppercase tracking-wider">
-                                        [Back Neck • Cropped ✓]
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemovePhoto(idx, 'backNeckPhotos', p.id)}
-                                    className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
-                                  >
-                                    ✕ Remove
-                                  </button>
-                                </div>
-                                <input
-                                  type="text"
-                                  value={p.comment}
-                                  onChange={(e) =>
-                                    handleUpdatePhotoComment(idx, 'backNeckPhotos', p.id, e.target.value)
-                                  }
-                                  placeholder="💬 Note for this photo..."
-                                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-emerald-600 focus:bg-white transition-all"
-                                />
-                              </div>
-                            ))}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleTriggerPhotoUpload(idx, 'backNeckPhotos', 'Back Neck', '✨')
-                              }
-                              className="text-[11px] font-semibold text-emerald-700 hover:underline flex items-center gap-1 pt-0.5"
-                            >
-                              <Camera className="w-3 h-3" /> + Add Another Back Neck Photo
-                            </button>
-                          </div>
-                        )}
                       </div>
 
                       {/* Step 2 Actions */}
