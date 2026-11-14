@@ -2479,186 +2479,194 @@ export default function StitchingPage() {
                     </div>
                   )}
 
-                  {/* STEP 4: AUDIO, FABRIC PHOTOS & TAILOR NOTES */}
+                  {/* STEP 4: UNIFIED FABRIC, VOICE & TAILOR NOTES (No confusing 4, 5, 6 numbering) */}
                   {currentStep === 4 && (
-                    <div className="space-y-3 animate-in fade-in duration-200">
+                    <div className="space-y-3.5 animate-in fade-in duration-200">
                       
-                      {/* 4A. EXTRA FABRIC PHOTOS */}
-                      <div className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/80 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-amber-500"></span> 4. Extra Fabric / Material Photos
+                      <div className="bg-slate-50/70 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 space-y-3.5">
+                        {/* Step 4 Header */}
+                        <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
+                          <div>
+                            <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 4. Fabric, Voice & Tailor Notes
+                            </span>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              All details below are optional — provide any reference fabric, voice note, or fit details:
+                            </p>
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-500 bg-white border border-slate-200 px-2.5 py-0.5 rounded-full">
+                            Optional Details
                           </span>
-                          <span className="text-[10px] text-slate-400">Optional</span>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleTriggerPhotoUpload(idx, 'extraPhotos', 'Extra Reference', '📸')
-                          }
-                          className="w-full py-2 bg-white border border-dashed border-slate-300 hover:border-[#5B43EE] hover:bg-purple-50 text-slate-700 hover:text-[#5B43EE] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          <Camera className="w-3.5 h-3.5" />
-                          <span>+ Upload Extra / Fabric Reference Photo</span>
-                        </button>
-
-                        {outfit.extraPhotos.length > 0 && (
-                          <div className="space-y-2 pt-1 border-t border-slate-200/60">
-                            {outfit.extraPhotos.map((p) => (
-                              <div
-                                key={p.id}
-                                className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2 overflow-hidden">
-                                    <img
-                                      src={p.dataUrl}
-                                      alt={p.fileName}
-                                      className="w-10 h-10 rounded-lg object-cover border border-amber-200 shrink-0"
-                                    />
-                                    <div className="overflow-hidden">
-                                      <span className="text-[11px] font-bold text-slate-800 truncate block">
-                                        {p.fileName}
-                                      </span>
-                                      <span className="text-[9px] text-amber-700 font-semibold uppercase tracking-wider">
-                                        [Extra / Fabric Reference]
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemovePhoto(idx, 'extraPhotos', p.id)}
-                                    className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
-                                  >
-                                    ✕ Remove
-                                  </button>
-                                </div>
-                                <input
-                                  type="text"
-                                  value={p.comment}
-                                  onChange={(e) =>
-                                    handleUpdatePhotoComment(idx, 'extraPhotos', p.id, e.target.value)
-                                  }
-                                  placeholder="💬 Note for this photo..."
-                                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 4B. VOICE NOTE */}
-                      <div className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/80 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
-                            <Mic className="w-3.5 h-3.5 text-[#5B43EE]" /> 5. Voice Note Instructions
+                        {/* 1. EXTRA FABRIC / MATERIAL PHOTOS */}
+                        <div className="space-y-1.5">
+                          <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+                            <Camera className="w-3.5 h-3.5 text-amber-500" /> Extra Fabric or Reference Photos:
                           </span>
-                          <span className="text-[10px] text-slate-400">Audio Note</span>
-                        </div>
 
-                        {recordingOutfitIdx === idx ? (
-                          <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse shrink-0"></span>
-                              <span className="text-xs font-bold text-red-600 truncate">
-                                Recording Audio ({recordingSeconds}s)...
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <button
-                                type="button"
-                                onClick={cancelVoiceRecording}
-                                className="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 rounded-lg"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="button"
-                                onClick={stopVoiceRecording}
-                                className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs"
-                              >
-                                <Square className="w-3 h-3" /> Stop & Save
-                              </button>
-                            </div>
-                          </div>
-                        ) : outfit.voiceNoteUrl ? (
-                          <div className="bg-purple-50/80 border border-[#5B43EE]/25 rounded-xl p-3 flex items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={() => handleTogglePlayVoice(idx, outfit.voiceNoteUrl!)}
-                              className="w-9 h-9 rounded-full bg-[#5B43EE] hover:bg-[#4d36dc] text-white flex items-center justify-center shrink-0 shadow-xs transition-transform active:scale-95"
-                              aria-label={playingVoiceOutfitIdx === idx ? 'Pause voice note' : 'Play voice note'}
-                            >
-                              {playingVoiceOutfitIdx === idx ? (
-                                <Pause className="w-4 h-4 fill-white" />
-                              ) : (
-                                <Play className="w-4 h-4 fill-white ml-0.5" />
-                              )}
-                            </button>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 mb-1">
-                                <span className="flex items-center gap-1 text-[#5B43EE]">
-                                  <Mic className="w-3 h-3" /> Voice Note #{outfit.number}
-                                </span>
-                                <span className="text-slate-500 font-medium">
-                                  {outfit.voiceNoteDuration || '0:15'}
-                                </span>
-                              </div>
-                              <div className="h-1.5 bg-purple-200/50 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-[#5B43EE] rounded-full transition-all duration-100"
-                                  style={{
-                                    width: `${playingVoiceOutfitIdx === idx ? voicePlayProgress : 0}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => deleteVoiceRecording(idx)}
-                              title="Delete voice note"
-                              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
                           <button
                             type="button"
-                            onClick={() => startVoiceRecording(idx)}
-                            className="w-full py-2.5 bg-white border border-dashed border-[#5B43EE]/40 text-[#5B43EE] hover:bg-purple-50 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                            onClick={() =>
+                              handleTriggerPhotoUpload(idx, 'extraPhotos', 'Extra Reference', '📸')
+                            }
+                            className="w-full py-2 bg-white border border-dashed border-slate-300 hover:border-[#5B43EE] hover:bg-purple-50 text-slate-700 hover:text-[#5B43EE] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                           >
-                            <Mic className="w-4 h-4" />
-                            <span>Record Voice Note for Outfit #{outfit.number}</span>
+                            <Camera className="w-3.5 h-3.5" />
+                            <span>+ Upload Extra / Fabric Reference Photo</span>
                           </button>
-                        )}
-                      </div>
 
-                      {/* 4C. FIT & TAILOR NOTES */}
-                      <div className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200/80 space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
-                            <Edit2 className="w-3.5 h-3.5 text-slate-600" /> 6. Tailor Notes / Fit Instructions
-                          </span>
-                          <span className="text-[10px] text-slate-400">Optional</span>
+                          {outfit.extraPhotos.length > 0 && (
+                            <div className="space-y-2 pt-1 border-t border-slate-200/60">
+                              {outfit.extraPhotos.map((p) => (
+                                <div
+                                  key={p.id}
+                                  className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                      <img
+                                        src={p.dataUrl}
+                                        alt={p.fileName}
+                                        className="w-10 h-10 rounded-lg object-cover border border-amber-200 shrink-0"
+                                      />
+                                      <div className="overflow-hidden">
+                                        <span className="text-[11px] font-bold text-slate-800 truncate block">
+                                          {p.fileName}
+                                        </span>
+                                        <span className="text-[9px] text-amber-700 font-semibold uppercase tracking-wider">
+                                          [Extra / Fabric Reference]
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemovePhoto(idx, 'extraPhotos', p.id)}
+                                      className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
+                                    >
+                                      ✕ Remove
+                                    </button>
+                                  </div>
+                                  <input
+                                    type="text"
+                                    value={p.comment}
+                                    onChange={(e) =>
+                                      handleUpdatePhotoComment(idx, 'extraPhotos', p.id, e.target.value)
+                                    }
+                                    placeholder="💬 Note for this photo..."
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        <textarea
-                          rows={2}
-                          value={outfit.notes}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setOutfits((prev) => {
-                              const next = [...prev];
-                              next[idx].notes = val;
-                              triggerAutosave(next);
-                              return next;
-                            });
-                          }}
-                          placeholder="E.g., Extra margin inside, tight fit on waist, lining cloth already provided..."
-                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] transition-all"
-                        />
+
+                        {/* 2. VOICE NOTE */}
+                        <div className="space-y-1.5">
+                          <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+                            <Mic className="w-3.5 h-3.5 text-[#5B43EE]" /> Voice Instructions for Tailor:
+                          </span>
+
+                          {recordingOutfitIdx === idx ? (
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse shrink-0"></span>
+                                <span className="text-xs font-bold text-red-600 truncate">
+                                  Recording Audio ({recordingSeconds}s)...
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={cancelVoiceRecording}
+                                  className="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 rounded-lg"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={stopVoiceRecording}
+                                  className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs"
+                                >
+                                  <Square className="w-3 h-3" /> Stop & Save
+                                </button>
+                              </div>
+                            </div>
+                          ) : outfit.voiceNoteUrl ? (
+                            <div className="bg-purple-50/80 border border-[#5B43EE]/25 rounded-xl p-3 flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => handleTogglePlayVoice(idx, outfit.voiceNoteUrl!)}
+                                className="w-9 h-9 rounded-full bg-[#5B43EE] hover:bg-[#4d36dc] text-white flex items-center justify-center shrink-0 shadow-xs transition-transform active:scale-95"
+                                aria-label={playingVoiceOutfitIdx === idx ? 'Pause voice note' : 'Play voice note'}
+                              >
+                                {playingVoiceOutfitIdx === idx ? (
+                                  <Pause className="w-4 h-4 fill-white" />
+                                ) : (
+                                  <Play className="w-4 h-4 fill-white ml-0.5" />
+                                )}
+                              </button>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 mb-1">
+                                  <span className="flex items-center gap-1 text-[#5B43EE]">
+                                    <Mic className="w-3 h-3" /> Voice Note #{outfit.number}
+                                  </span>
+                                  <span className="text-slate-500 font-medium">
+                                    {outfit.voiceNoteDuration || '0:15'}
+                                  </span>
+                                </div>
+                                <div className="h-1.5 bg-purple-200/50 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-[#5B43EE] rounded-full transition-all duration-100"
+                                    style={{
+                                      width: `${playingVoiceOutfitIdx === idx ? voicePlayProgress : 0}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => deleteVoiceRecording(idx)}
+                                title="Delete voice note"
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => startVoiceRecording(idx)}
+                              className="w-full py-2.5 bg-white border border-dashed border-[#5B43EE]/40 text-[#5B43EE] hover:bg-purple-50 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                            >
+                              <Mic className="w-4 h-4" />
+                              <span>Record Voice Note for Outfit #{outfit.number}</span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* 3. FIT & TAILOR NOTES */}
+                        <div className="space-y-1.5">
+                          <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+                            <Edit2 className="w-3.5 h-3.5 text-slate-600" /> Fit & Stitching Instructions:
+                          </span>
+                          <textarea
+                            rows={2}
+                            value={outfit.notes}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setOutfits((prev) => {
+                                const next = [...prev];
+                                next[idx].notes = val;
+                                triggerAutosave(next);
+                                return next;
+                              });
+                            }}
+                            placeholder="E.g., Extra margin inside, tight fit on waist, lining cloth already provided..."
+                            className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] transition-all"
+                          />
+                        </div>
                       </div>
 
                       {/* Step 4 Actions: Back or Complete & Generate Collage */}
