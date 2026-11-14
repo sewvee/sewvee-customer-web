@@ -40,13 +40,14 @@ export const STITCHING_TEMPLATES: Record<string, OutfitTemplate> = {
       'Princess cut with patti',
       'Princesscut',
       'Cupshape',
+      'Others',
     ],
     sections: [
       {
         id: 'front_neck',
         title: 'Front Neck Style',
         emoji: '👚',
-        options: ['Boat Neck', 'Round Neck', 'Sweetheart', 'V-Neck', 'Square Neck', 'U-Neck', 'Custom Cut'],
+        options: ['Closeneck', 'Collarneck', 'High neck', 'Boat neck', 'Normal neck', 'Others'],
         allowPhoto: true,
         photoLabel: 'Upload Front Neck Photo',
         allowNote: true,

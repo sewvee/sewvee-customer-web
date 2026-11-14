@@ -98,6 +98,77 @@ const MEASUREMENT_CONFIGS = [
 
 const MEASUREMENT_OPTIONS = MEASUREMENT_CONFIGS.map(m => m.id);
 
+const FRONT_NECK_OPTIONS = [
+  {
+    name: 'Closeneck',
+    svg: (
+      <svg viewBox="0 0 56 46" className="w-10 h-10" fill="none">
+        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38 L 52 44 L 4 44 Z" fill="#F8FAFC" />
+        <path d="M 22 20 C 22 25 34 25 34 20" stroke="#5B43EE" strokeWidth="2.6" strokeLinecap="round" />
+        <path d="M 23 15 C 23 17 33 17 33 15" stroke="#5B43EE" strokeWidth="1.8" strokeLinecap="round" />
+        <line x1="23" y1="15" x2="22" y2="20" stroke="#5B43EE" strokeWidth="1.8" />
+        <line x1="33" y1="15" x2="34" y2="20" stroke="#5B43EE" strokeWidth="1.8" />
+      </svg>
+    ),
+  },
+  {
+    name: 'Collarneck',
+    svg: (
+      <svg viewBox="0 0 56 46" className="w-10 h-10" fill="none">
+        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38 L 52 44 L 4 44 Z" fill="#F8FAFC" />
+        <path d="M 21 16 L 28 23 L 35 16" stroke="#5B43EE" strokeWidth="2.4" strokeLinecap="round" />
+        <path d="M 21 16 L 24 28 L 28 24 L 32 28 L 35 16" fill="#EDE9FE" stroke="#5B43EE" strokeWidth="1.8" strokeLinejoin="round" />
+        <line x1="28" y1="24" x2="28" y2="34" stroke="#5B43EE" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    name: 'High neck',
+    svg: (
+      <svg viewBox="0 0 56 46" className="w-10 h-10" fill="none">
+        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38 L 52 44 L 4 44 Z" fill="#F8FAFC" />
+        <rect x="22" y="12" width="12" height="10" rx="2" fill="#EDE9FE" stroke="#5B43EE" strokeWidth="2.4" />
+        <line x1="22" y1="17" x2="34" y2="17" stroke="#5B43EE" strokeWidth="1.5" strokeDasharray="2 1" />
+      </svg>
+    ),
+  },
+  {
+    name: 'Boat neck',
+    svg: (
+      <svg viewBox="0 0 56 46" className="w-10 h-10" fill="none">
+        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38 L 52 44 L 4 44 Z" fill="#F8FAFC" />
+        <path d="M 13 22 C 20 29 36 29 43 22" stroke="#5B43EE" strokeWidth="2.8" strokeLinecap="round" />
+        <path d="M 13 22 C 20 29 36 29 43 22 C 38 20 28 20 13 22 Z" fill="#EDE9FE" opacity="0.8" />
+      </svg>
+    ),
+  },
+  {
+    name: 'Normal neck',
+    svg: (
+      <svg viewBox="0 0 56 46" className="w-10 h-10" fill="none">
+        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38 L 52 44 L 4 44 Z" fill="#F8FAFC" />
+        <path d="M 19 20 C 19 33 37 33 37 20" stroke="#5B43EE" strokeWidth="2.6" strokeLinecap="round" />
+        <path d="M 19 20 C 19 33 37 33 37 20 Z" fill="#EDE9FE" opacity="0.8" />
+      </svg>
+    ),
+  },
+  {
+    name: 'Others',
+    svg: (
+      <svg viewBox="0 0 56 46" className="w-10 h-10" fill="none">
+        <path d="M 4 38 C 10 26 18 20 28 20 C 38 20 46 26 52 38" stroke="#94A3B8" strokeWidth="2" strokeDasharray="3 2" strokeLinecap="round" />
+        <circle cx="28" cy="24" r="10" fill="#EDE9FE" stroke="#5B43EE" strokeWidth="2" />
+        <text x="28" y="28" fontSize="12" textAnchor="middle" fill="#5B43EE">✨</text>
+      </svg>
+    ),
+  },
+];
+
 interface AttachedPhoto {
   id: string;
   section: string;
@@ -114,6 +185,7 @@ interface OutfitConfig {
   name: string;
   icon: string;
   frontNeck: string;
+  frontNeckCustomName?: string;
   frontNeckNote: string;
   frontNeckPhotos: AttachedPhoto[];
   backNeck: string;
@@ -224,6 +296,10 @@ export default function StitchingPage() {
 
   // Bottom manual message text input
   const [bottomInputText, setBottomInputText] = useState('');
+
+  // Custom Cut Pattern state
+  const [customCutMsgId, setCustomCutMsgId] = useState<string | null>(null);
+  const [customCutInputText, setCustomCutInputText] = useState('');
 
   // Bottom Drawer Picker State
   const [pickerDrawer, setPickerDrawer] = useState<DrawerState | null>(null);
@@ -1554,7 +1630,7 @@ export default function StitchingPage() {
                   </div>
                 </div>
 
-                <div className="pl-10 space-y-1.5">
+                <div className="pl-10 space-y-2">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                     Available Cut Options:
                   </p>
@@ -1563,14 +1639,84 @@ export default function StitchingPage() {
                       <button
                         key={cut}
                         type="button"
-                        onClick={() => handleSelectCut(msg.selectedCategory!, cut)}
-                        className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-[#5B43EE] hover:bg-purple-50/70 text-slate-700 hover:text-[#5B43EE] font-semibold text-xs sm:text-sm shadow-2xs flex items-center gap-1.5 transition-all active:scale-95"
+                        onClick={() => {
+                          if (cut === 'Others' || cut === 'Other') {
+                            setCustomCutMsgId(msg.id);
+                          } else {
+                            handleSelectCut(msg.selectedCategory!, cut);
+                          }
+                        }}
+                        className={`px-3.5 py-2 rounded-xl border font-semibold text-xs sm:text-sm shadow-2xs flex items-center gap-1.5 transition-all active:scale-95 ${
+                          cut === 'Others' || cut === 'Other'
+                            ? 'bg-purple-50/80 border-purple-300 text-[#5B43EE] hover:bg-purple-100/80'
+                            : 'bg-white border-slate-200 hover:border-[#5B43EE] hover:bg-purple-50/70 text-slate-700 hover:text-[#5B43EE]'
+                        }`}
                       >
-                        <span>✂️</span>
+                        <span>{cut === 'Others' || cut === 'Other' ? '✨' : '✂️'}</span>
                         <span>{cut}</span>
                       </button>
                     ))}
                   </div>
+
+                  {/* Inline Custom Cut Pattern Input */}
+                  {customCutMsgId === msg.id && (
+                    <div className="p-3.5 bg-gradient-to-br from-purple-50/90 to-indigo-50/90 border border-purple-200 rounded-2xl space-y-2.5 animate-in fade-in duration-200 shadow-2xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-[#5B43EE] text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                          ✏️
+                        </span>
+                        <div>
+                          <p className="text-xs font-bold text-slate-900">
+                            Enter Custom Cut / Pattern Name:
+                          </p>
+                          <p className="text-[10px] text-slate-500">
+                            Type your custom style or pick a suggestion below
+                          </p>
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="e.g. Sabyasachi Cut, Corset Blouse, Collar Blouse..."
+                        value={customCutInputText}
+                        onChange={(e) => setCustomCutInputText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const name = customCutInputText.trim() || 'Custom Designer Cut';
+                            handleSelectCut(msg.selectedCategory!, name);
+                            setCustomCutMsgId(null);
+                            setCustomCutInputText('');
+                          }
+                        }}
+                        className="w-full bg-white border border-purple-300 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 font-semibold outline-none focus:ring-2 focus:ring-[#5B43EE]/40 shadow-inner"
+                        autoFocus
+                      />
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[10px] text-slate-500 font-semibold">Suggestions:</span>
+                        {['Sabyasachi Cut', 'Corset Blouse', 'Double Katori'].map((sug) => (
+                          <button
+                            key={sug}
+                            type="button"
+                            onClick={() => setCustomCutInputText(sug)}
+                            className="text-[10px] bg-white hover:bg-purple-100 border border-purple-200 text-[#5B43EE] px-2 py-0.5 rounded-md font-semibold transition-colors"
+                          >
+                            {sug}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const name = customCutInputText.trim() || 'Custom Designer Cut';
+                          handleSelectCut(msg.selectedCategory!, name);
+                          setCustomCutMsgId(null);
+                          setCustomCutInputText('');
+                        }}
+                        className="w-full py-2 bg-[#5B43EE] hover:bg-[#4a35c9] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 active:scale-98"
+                      >
+                        <span>Next: Choose Front Neck, Back & Sleeves →</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -1794,40 +1940,222 @@ export default function StitchingPage() {
                   {/* STEP 1: FRONT NECK */}
                   {currentStep === 1 && (
                     <div className="space-y-3 animate-in fade-in duration-200">
-                      <div className="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/80 space-y-3">
+                      <div className="bg-slate-50/70 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 space-y-3.5">
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-[#5B43EE]"></span> 1. Front Neck Style
+                              <span className="w-2.5 h-2.5 rounded-full bg-[#5B43EE]"></span> 1. Front Neck Style
                             </span>
                             <p className="text-[11px] text-slate-500 mt-0.5">
-                              Select preferred neck cut and attach reference photos
+                              Select preferred neck cut or choose Others below:
                             </p>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              openDrawer(
-                                'Select Front Neck Style',
-                                template.sections[0]?.options || [],
-                                outfit.frontNeck,
-                                (val) => {
+                          <span className="text-[11px] font-bold text-[#5B43EE] bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
+                            {outfit.frontNeck === 'Others'
+                              ? outfit.frontNeckCustomName
+                                ? `Custom: ${outfit.frontNeckCustomName}`
+                                : 'Custom Neck'
+                              : outfit.frontNeck}
+                          </span>
+                        </div>
+
+                        {/* Box Type Grid: Image on top, Name below */}
+                        <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+                          {FRONT_NECK_OPTIONS.map((opt) => {
+                            const isSelected = outfit.frontNeck === opt.name;
+                            return (
+                              <button
+                                key={opt.name}
+                                type="button"
+                                onClick={() => {
                                   setOutfits((prev) => {
                                     const next = [...prev];
-                                    next[idx].frontNeck = val;
+                                    next[idx].frontNeck = opt.name;
+                                    if (opt.name !== 'Others') {
+                                      next[idx].frontNeckCustomName = '';
+                                    }
                                     triggerAutosave(next);
                                     return next;
                                   });
-                                }
-                              )
-                            }
-                            className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-[#5B43EE] text-[#5B43EE] font-bold text-xs rounded-lg shadow-2xs flex items-center gap-1 transition-all"
-                          >
-                            <span>{outfit.frontNeck}</span>
-                            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                          </button>
+                                }}
+                                className={`p-2.5 rounded-xl flex flex-col items-center justify-between text-center transition-all cursor-pointer relative group active:scale-95 ${
+                                  isSelected
+                                    ? 'bg-purple-50/90 border-2 border-[#5B43EE] text-[#5B43EE] shadow-2xs'
+                                    : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:border-slate-300'
+                                }`}
+                              >
+                                {isSelected && (
+                                  <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#5B43EE] text-white flex items-center justify-center text-[9px] font-bold shadow-2xs">
+                                    ✓
+                                  </div>
+                                )}
+                                <div className="w-11 h-10 flex items-center justify-center transition-transform group-hover:scale-105">
+                                  {opt.svg}
+                                </div>
+                                <span className={`text-[11px] font-bold mt-1.5 leading-tight ${isSelected ? 'text-[#5B43EE]' : 'text-slate-800'}`}>
+                                  {opt.name}
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
 
+                        {/* IF THEY CHOOSE OTHER: Name it below & then below upload reference photo */}
+                        {outfit.frontNeck === 'Others' ? (
+                          <div className="p-3.5 bg-gradient-to-br from-purple-50/90 to-indigo-50/90 border border-purple-200 rounded-xl space-y-3 animate-in fade-in duration-200">
+                            <div>
+                              <label className="block text-xs font-bold text-slate-900 mb-1">
+                                ✏️ Name your Front Neck Style:
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="e.g. Sweetheart Neck, Deep V-Neck, Square Cut..."
+                                value={outfit.frontNeckCustomName || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setOutfits((prev) => {
+                                    const next = [...prev];
+                                    next[idx].frontNeckCustomName = val;
+                                    triggerAutosave(next);
+                                    return next;
+                                  });
+                                }}
+                                className="w-full bg-white border border-purple-300 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 font-semibold outline-none focus:ring-2 focus:ring-[#5B43EE]/40 shadow-inner"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-bold text-slate-900 mb-1">
+                                📷 Upload Reference Photo for Neck:
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleTriggerPhotoUpload(idx, 'frontNeckPhotos', 'Front Neck', '👚')
+                                }
+                                className="w-full py-2.5 bg-white border border-dashed border-[#5B43EE] hover:bg-purple-100/50 rounded-xl text-xs font-bold text-[#5B43EE] flex items-center justify-center gap-1.5 transition-colors shadow-2xs active:scale-98 cursor-pointer"
+                              >
+                                <Camera className="w-3.5 h-3.5" />
+                                <span>+ Add Reference Photo (Crop & Rotate)</span>
+                              </button>
+
+                              {outfit.frontNeckPhotos.length > 0 && (
+                                <div className="space-y-2 pt-2">
+                                  {outfit.frontNeckPhotos.map((p) => (
+                                    <div
+                                      key={p.id}
+                                      className="bg-white border border-purple-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 overflow-hidden">
+                                          <img
+                                            src={p.dataUrl}
+                                            alt={p.fileName}
+                                            className="w-10 h-10 rounded-lg object-cover border border-purple-200 shrink-0"
+                                          />
+                                          <div className="overflow-hidden">
+                                            <span className="text-[11px] font-bold text-slate-800 truncate block">
+                                              {p.fileName}
+                                            </span>
+                                            <span className="text-[9px] text-emerald-600 font-semibold flex items-center gap-0.5">
+                                              <span>✓</span> Reference Photo Attached
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemovePhoto(idx, 'frontNeckPhotos', p.id)}
+                                          className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
+                                        >
+                                          ✕ Remove
+                                        </button>
+                                      </div>
+                                      <input
+                                        type="text"
+                                        value={p.comment}
+                                        onChange={(e) =>
+                                          handleUpdatePhotoComment(idx, 'frontNeckPhotos', p.id, e.target.value)
+                                        }
+                                        placeholder="💬 Note for this photo..."
+                                        className="w-full bg-slate-50 border border-purple-100 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          /* Optional Photo Upload for Standard Neck Styles */
+                          <div>
+                            {outfit.frontNeckPhotos.length === 0 ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleTriggerPhotoUpload(idx, 'frontNeckPhotos', 'Front Neck', '👚')
+                                }
+                                className="w-full py-2.5 bg-white border border-dashed border-[#5B43EE]/40 hover:border-[#5B43EE] hover:bg-purple-50 text-[#5B43EE] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                              >
+                                <Camera className="w-3.5 h-3.5" />
+                                <span>+ Add Front Neck Photo (Optional)</span>
+                              </button>
+                            ) : (
+                              <div className="space-y-2 pt-1 border-t border-slate-200/60">
+                                {outfit.frontNeckPhotos.map((p) => (
+                                  <div
+                                    key={p.id}
+                                    className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2 overflow-hidden">
+                                        <img
+                                          src={p.dataUrl}
+                                          alt={p.fileName}
+                                          className="w-10 h-10 rounded-lg object-cover border border-purple-200 shrink-0"
+                                        />
+                                        <div className="overflow-hidden">
+                                          <span className="text-[11px] font-bold text-slate-800 truncate block">
+                                            {p.fileName}
+                                          </span>
+                                          <span className="text-[9px] text-[#5B43EE] font-semibold uppercase tracking-wider">
+                                            [Front Neck • Cropped ✓]
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemovePhoto(idx, 'frontNeckPhotos', p.id)}
+                                        className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
+                                      >
+                                        ✕ Remove
+                                      </button>
+                                    </div>
+                                    <input
+                                      type="text"
+                                      value={p.comment}
+                                      onChange={(e) =>
+                                        handleUpdatePhotoComment(idx, 'frontNeckPhotos', p.id, e.target.value)
+                                      }
+                                      placeholder="💬 Note for this photo..."
+                                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all"
+                                    />
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleTriggerPhotoUpload(idx, 'frontNeckPhotos', 'Front Neck', '👚')
+                                  }
+                                  className="text-[11px] font-semibold text-[#5B43EE] hover:underline flex items-center gap-1 pt-0.5"
+                                >
+                                  <Camera className="w-3 h-3" /> + Add Another Front Neck Photo
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Front Neck Note / Depth input */}
                         <input
                           type="text"
                           value={outfit.frontNeckNote}
@@ -1843,71 +2171,6 @@ export default function StitchingPage() {
                           placeholder="💬 Specific front neck note (e.g. depth 6.5 inch, piping)..."
                           className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] transition-all"
                         />
-
-                        {outfit.frontNeckPhotos.length === 0 ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleTriggerPhotoUpload(idx, 'frontNeckPhotos', 'Front Neck', '👚')
-                            }
-                            className="w-full py-2.5 bg-white border border-dashed border-[#5B43EE]/40 hover:border-[#5B43EE] hover:bg-purple-50 text-[#5B43EE] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                          >
-                            <Camera className="w-3.5 h-3.5" />
-                            <span>+ Add Front Neck Photo (Crop & Rotate)</span>
-                          </button>
-                        ) : (
-                          <div className="space-y-2 pt-1 border-t border-slate-200/60">
-                            {outfit.frontNeckPhotos.map((p) => (
-                              <div
-                                key={p.id}
-                                className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-2xs space-y-1.5"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2 overflow-hidden">
-                                    <img
-                                      src={p.dataUrl}
-                                      alt={p.fileName}
-                                      className="w-10 h-10 rounded-lg object-cover border border-purple-200 shrink-0"
-                                    />
-                                    <div className="overflow-hidden">
-                                      <span className="text-[11px] font-bold text-slate-800 truncate block">
-                                        {p.fileName}
-                                      </span>
-                                      <span className="text-[9px] text-[#5B43EE] font-semibold uppercase tracking-wider">
-                                        [Front Neck • Cropped ✓]
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemovePhoto(idx, 'frontNeckPhotos', p.id)}
-                                    className="text-slate-400 hover:text-red-500 text-xs px-2 py-0.5"
-                                  >
-                                    ✕ Remove
-                                  </button>
-                                </div>
-                                <input
-                                  type="text"
-                                  value={p.comment}
-                                  onChange={(e) =>
-                                    handleUpdatePhotoComment(idx, 'frontNeckPhotos', p.id, e.target.value)
-                                  }
-                                  placeholder="💬 Note for this photo..."
-                                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all"
-                                />
-                              </div>
-                            ))}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleTriggerPhotoUpload(idx, 'frontNeckPhotos', 'Front Neck', '👚')
-                              }
-                              className="text-[11px] font-semibold text-[#5B43EE] hover:underline flex items-center gap-1 pt-0.5"
-                            >
-                              <Camera className="w-3 h-3" /> + Add Another Front Neck Photo
-                            </button>
-                          </div>
-                        )}
                       </div>
 
                       {/* Step 1 Actions */}
