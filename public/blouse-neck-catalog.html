@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Different Types of Blouse Necklines • Front & Back Guide</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #EDE8E1;
+    }
+    .serif-title {
+      font-family: 'Cormorant Garamond', serif;
+    }
+    .cinzel {
+      font-family: 'Cinzel', serif;
+    }
+    .poster-paper {
+      background: #FAF8F5;
+      background-image: 
+        radial-gradient(#E8E0D5 0.75px, transparent 0.75px),
+        radial-gradient(#E8E0D5 0.75px, #FAF8F5 0.75px);
+      background-size: 30px 30px;
+      background-position: 0 0, 15px 15px;
+    }
+    .poster-border {
+      border: 1px solid #D6C8B7;
+      outline: 4px solid #FAF8F5;
+      box-shadow: 0 0 0 5px #D6C8B7;
+    }
+    .blouse-card {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .blouse-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+    }
+  </style>
+</head>
+<body class="p-3 sm:p-8 flex justify-center text-slate-800">
+
+  <!-- MAIN POSTER CONTAINER (Matching Image 2 Poster Layout & Framing) -->
+  <div class="w-full max-w-5xl poster-paper rounded-3xl p-5 sm:p-12 shadow-2xl relative border border-stone-200">
+    
+    <!-- Outer Delicate Inner Frame (Matches Image 2) -->
+    <div class="poster-border rounded-2xl p-4 sm:p-8 relative">
+      
+      <!-- Top Flourish & Heading (Matches Image 2 Title) -->
+      <header class="text-center pb-6 sm:pb-8 border-b border-stone-200/80">
+        <div class="flex items-center justify-center gap-2 text-stone-400 text-xs mb-1">
+          <span>✦</span>
+          <span class="tracking-widest uppercase text-[10px] font-bold text-stone-500">Sewvee Master Tailoring Guide</span>
+          <span>✦</span>
+        </div>
+        <h1 class="serif-title text-3xl sm:text-5xl font-bold tracking-tight text-stone-900 leading-tight">
+          Different Types of Blouse Necklines
+        </h1>
+        <p class="text-xs sm:text-sm text-stone-600 mt-1 font-medium">
+          Comprehensive Front View & Matching Back View Style Reference
+        </p>
+
+        <!-- View Controls Bar -->
+        <div class="mt-5 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          <div class="inline-flex bg-stone-200/70 p-1 rounded-full text-xs font-bold text-stone-700 shadow-inner">
+            <button onclick="setViewMode('both')" id="btnBoth" class="px-3.5 py-1.5 rounded-full transition-all bg-white text-stone-900 shadow-xs">
+              👥 Front & Back (Paired)
+            </button>
+            <button onclick="setViewMode('front')" id="btnFront" class="px-3.5 py-1.5 rounded-full transition-all hover:text-stone-950 text-stone-600">
+              👚 Front View Only
+            </button>
+            <button onclick="setViewMode('back')" id="btnBack" class="px-3.5 py-1.5 rounded-full transition-all hover:text-stone-950 text-stone-600">
+              🔄 Back View Only
+            </button>
+          </div>
+
+          <div class="relative">
+            <input
+              type="text"
+              id="searchNeck"
+              placeholder="🔍 Search neck (e.g. Boat, Sweetheart)..."
+              oninput="filterNecks(this.value)"
+              class="text-xs px-3.5 py-1.5 bg-white border border-stone-300 rounded-full outline-none focus:border-stone-600 transition-colors w-56 font-medium shadow-2xs"
+            />
+          </div>
+        </div>
+      </header>
+
+      <!-- 30 BLOUSE NECKLINE CARDS GRID (Matches Image 1 Real Photo Content & Image 2 Poster Layout) -->
+      <div id="gridContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 sm:gap-5 pt-8">
+        <!-- Rendered Dynamically -->
+      </div>
+
+      <!-- Poster Footer (Matches Image 2 'justclick' / Image 1 'Different Styles, Endless Possibilities') -->
+      <footer class="mt-10 pt-6 border-t border-stone-200/80 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-500 gap-2 font-medium">
+        <span class="cinzel tracking-widest text-[11px] text-stone-700 font-bold">SEWVEE BESPOKE ATELIER</span>
+        <span class="serif-title italic text-base text-stone-800">Different Styles, Endless Possibilities</span>
+        <span class="text-[10px] tracking-wider uppercase text-stone-400">30 Front & Back Catalog</span>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- SCRIPT: 30 Real Blouse Necklines Data & Rendering -->
+  <script>
+    const BLOUSE_NAMES = [
+      { name: 'ROUND NECK', backStyle: 'Deep U-Back with Dori & Golden Latkans', desc: 'Classic curved round neck resting comfortably on collarbone' },
+      { name: 'SCOOP NECK', backStyle: 'Wide Oval Open Back with Dual Strings', desc: 'Curved deep scoop opening providing an elongated neckline' },
+      { name: 'V NECK', backStyle: 'Inverted Deep V-Back with Tassel Tie-up', desc: 'Sharp V-cut line narrowing towards mid-chest' },
+      { name: 'U NECK', backStyle: 'Deep Matka Pot Back with Piped Edges', desc: 'Balanced parallel U-curve neck cut, highly versatile' },
+      { name: 'SWEETHEART NECK', backStyle: 'Deep Pot Neck with Handcrafted Latkans', desc: 'Sculpted heart-shaped bust contour neckline' },
+      { name: 'BOAT NECK', backStyle: 'Deep Teardrop Cutout with Back Hook', desc: 'Wide horizontal bateau neckline stretching to shoulder tips' },
+      { name: 'SQUARE NECK', backStyle: 'Geometric Open Square Back with Double Dori', desc: 'Clean 90-degree square angle neckline' },
+      { name: 'COLLAR NECK', backStyle: 'Full Closed High Back with Loop Button', desc: 'Shirt-style folded collar lapels with central slit' },
+      { name: 'MANDARIN NECK', backStyle: 'Diamond Window Cutout with Button Placket', desc: '1-inch standup Chinese band collar with button placket' },
+      { name: 'HIGH NECK', backStyle: 'Oval Sheer Illusion Back with Antique Buttons', desc: 'Full closed neck covering throat base smoothly' },
+      { name: 'HALTER NECK', backStyle: 'Backless Cut with Cross Strings & Tassels', desc: 'Neck-strap collar leaving shoulders bare and sculpted' },
+      { name: 'KEYHOLE NECK', backStyle: 'Matching Teardrop Slit Back Neck', desc: 'High neck featuring a central vertical teardrop cutout' },
+      { name: 'CUT OUT NECK', backStyle: 'Triple Leaf Cutouts with Gold Bead Borders', desc: 'Artistic laser-cut geometric drop openings' },
+      { name: 'STRAP NECK', backStyle: 'Criss-Cross Lattice Back Straps', desc: 'Overlapping diagonal straps across open chest' },
+      { name: 'OFF SHOULDER NECK', backStyle: 'Horizontal Off-Shoulder Straight Back Band', desc: 'Wide folded neckline sitting beneath shoulder line' },
+      { name: 'ONE SHOULDER NECK', backStyle: 'Diagonal Slanted Asymmetric Back Drape', desc: 'Contemporary single-shoulder pleated wrap drape' },
+      { name: 'ASYMMETRIC NECK', backStyle: 'Slanted Cutout with Invisible Shoulder Hook', desc: 'Modern diagonal neckline with uneven shoulder straps' },
+      { name: 'ANGULAR NECK', backStyle: 'Geometric Hexagon Open Back Neck', desc: 'Five-point sculpted architectural neckline' },
+      { name: 'PLUNGE NECK', backStyle: 'Deep V-Back with Hanging Pearl Latkans', desc: 'Deep vertical neckline plunge with metallic cord border' },
+      { name: 'ILLUSION NECK', backStyle: 'Sheer Net Back with Embroidered Floral Motifs', desc: 'Translucent sheer net adorned with delicate threadwork' },
+      { name: 'JEWEL NECK', backStyle: 'Embroidered Teardrop Back Neck with Latkan', desc: 'High circular collar accented like an Indian necklace' },
+      { name: 'EMBELLISHED NECK', backStyle: 'Heavy Aari / Zardozi Work Border Back', desc: 'Richly hand-embroidered border framing the neckline' },
+      { name: 'COWL NECK', backStyle: 'Low Deep Cowl Drape Back Neckline', desc: 'Soft draped cascading folds of fluid fabric across bust' },
+      { name: "D'SHAPED NECK", backStyle: 'Curved Asymmetric Back with Gold Zari Border', desc: 'Curved wrap-over D-silhouette neckline' },
+      { name: 'HEART NECK', backStyle: 'Deep Heart Shaped Cutout Back Neck', desc: 'Romantic sweetheart dip with pronounced heart curves' },
+      { name: 'NOTCH NECK', backStyle: 'High Round Back with Button Keyhole', desc: 'Round neckline featuring a small central V-notch' },
+      { name: 'PETER PAN COLLAR', backStyle: 'High Back with Matching Rounded Collar Flaps', desc: 'Vintage rounded flat collar resting flat on collarbone' },
+      { name: 'TUNIC NECK', backStyle: 'High Band Back Neck with Invisible Hook', desc: 'Split round neckline with embroidered front placket' },
+      { name: 'QUILTED NECK', backStyle: 'Deep Quilted Diamond Grid Back with Latkans', desc: 'Padded textured neckline with geometric quilt stitching' },
+      { name: 'ZIG ZAG NECK', backStyle: 'Matching Chevron Zig-Zag Border Back Neck', desc: 'Serrated zigzag chevron edge along neckline' }
+    ];
+
+    const BLOUSE_CATALOG = BLOUSE_NAMES.map((item, index) => {
+      const num = index + 1;
+      return {
+        num: num,
+        name: item.name,
+        category: 'Indian Designer',
+        frontImg: `/blouse_necks/neck_${num}.jpg`,
+        backImg: `/blouse_necks/neck_${num}.jpg`,
+        color: 'Real Stitched Saree Blouse',
+        backStyle: item.backStyle,
+        frontDesc: item.desc
+      };
+    });
+
+    let currentViewMode = 'both'; // 'both' | 'front' | 'back'
+    let searchQuery = '';
+
+    function renderCatalog() {
+      const container = document.getElementById('gridContainer');
+      const filtered = BLOUSE_CATALOG.filter(item => 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.backStyle.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-12 text-center text-stone-400">
+            <p class="text-sm font-semibold">No blouse neckline matches your search.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        return `
+          <div class="blouse-card flex flex-col items-center bg-white rounded-2xl p-2.5 sm:p-3 border border-stone-200/90 shadow-2xs group relative">
+            
+            <!-- Number Badge (Matches Image 1) -->
+            <div class="absolute top-2 left-2 z-10 w-5 h-5 rounded-full bg-[#8A3047] text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
+              ${item.num}
+            </div>
+
+            <!-- Visual Container (Single / Dual View) -->
+            <div class="w-full aspect-[4/3] rounded-xl overflow-hidden bg-stone-100 relative mb-2.5 border border-stone-200/80 shadow-inner">
+              ${currentViewMode === 'both' ? `
+                <!-- Side-by-Side Dual View: Front & Back together -->
+                <div class="grid grid-cols-2 h-full w-full divide-x divide-stone-200">
+                  <div class="relative h-full overflow-hidden group-hover:scale-105 transition-transform duration-300">
+                    <img src="${item.frontImg}" alt="${item.name} Front" class="w-full h-full object-cover"/>
+                    <span class="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/60 backdrop-blur-xs text-[8px] font-bold text-white rounded">
+                      Front
+                    </span>
+                  </div>
+                  <div class="relative h-full overflow-hidden group-hover:scale-105 transition-transform duration-300">
+                    <img src="${item.backImg}" alt="${item.name} Back" class="w-full h-full object-cover"/>
+                    <span class="absolute bottom-1 right-1 px-1.5 py-0.5 bg-[#8A3047]/85 backdrop-blur-xs text-[8px] font-bold text-white rounded">
+                      Back
+                    </span>
+                  </div>
+                </div>
+              ` : currentViewMode === 'front' ? `
+                <div class="h-full w-full relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
+                  <img src="${item.frontImg}" alt="${item.name} Front" class="w-full h-full object-cover"/>
+                  <span class="absolute bottom-1.5 left-1.5 px-2 py-0.5 bg-black/60 backdrop-blur-xs text-[9px] font-bold text-white rounded-md">
+                    Front View
+                  </span>
+                </div>
+              ` : `
+                <div class="h-full w-full relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
+                  <img src="${item.backImg}" alt="${item.name} Back" class="w-full h-full object-cover"/>
+                  <span class="absolute bottom-1.5 right-1.5 px-2 py-0.5 bg-[#8A3047]/85 backdrop-blur-xs text-[9px] font-bold text-white rounded-md">
+                    Back View
+                  </span>
+                </div>
+              `}
+            </div>
+
+            <!-- Neck Name (Matches Image 1 and Image 2 typography) -->
+            <div class="text-center w-full px-0.5">
+              <h4 class="font-bold text-[11px] sm:text-xs text-stone-900 tracking-tight uppercase leading-snug">
+                ${item.name}
+              </h4>
+              <p class="text-[9.5px] text-stone-500 truncate mt-0.5 font-medium">
+                ${currentViewMode === 'both' ? item.backStyle : item.color}
+              </p>
+            </div>
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      ['Both', 'Front', 'Back'].forEach(m => {
+        const btn = document.getElementById('btn' + m);
+        if (m.toLowerCase() === mode) {
+          btn.className = 'px-3.5 py-1.5 rounded-full transition-all bg-white text-stone-900 shadow-xs';
+        } else {
+          btn.className = 'px-3.5 py-1.5 rounded-full transition-all hover:text-stone-950 text-stone-600';
+        }
+      });
+      renderCatalog();
+    }
+
+    function filterNecks(val) {
+      searchQuery = val;
+      renderCatalog();
+    }
+
+    // Initial render
+    renderCatalog();
+  </script>
+</body>
+</html>

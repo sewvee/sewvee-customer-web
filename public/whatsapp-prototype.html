@@ -1,0 +1,2874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sewvee WhatsApp Stitching Flow - Inba Boutique Brand</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* WhatsApp scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
+    
+    .whatsapp-bg {
+      background-color: #EFEAE2;
+      background-image: radial-gradient(#d1c7b7 0.75px, transparent 0.75px), radial-gradient(#d1c7b7 0.75px, #EFEAE2 0.75px);
+      background-size: 26px 26px;
+      background-position: 0 0, 13px 13px;
+    }
+
+    @keyframes pulse-wave {
+      0%, 100% { height: 6px; }
+      50% { height: 20px; }
+    }
+    .wave-bar {
+      animation: pulse-wave 1.2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 antialiased p-3 sm:p-6 min-h-screen">
+
+  <!-- TOP HEADER -->
+  <header class="max-w-7xl mx-auto mb-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+          <span>🧵 Sewvee WhatsApp AI Agent</span>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#5B43EE]/20 text-purple-200 border border-[#5B43EE]/50">100% Customer App Parity</span>
+        </h1>
+      </div>
+      <p class="text-slate-400 text-xs sm:text-sm mt-1">
+        All 4 customization steps, voice notes, fabric uploads, master collage preview, delivery date modal presets & in-store measurements.
+      </p>
+    </div>
+
+    <!-- Quick Scenario Buttons -->
+    <div class="flex flex-wrap items-center gap-2">
+      <a href="/business-app-prototype.html" target="_blank" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95">
+        <span>🏬 View in Business App</span>
+        <span>→</span>
+      </a>
+      <button onclick="resetToStart()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-colors">
+        🔄 Reset
+      </button>
+      <button onclick="runCustomOtherCutDemo()" class="px-3.5 py-1.5 rounded-lg bg-[#5B43EE] hover:bg-[#4a35d4] text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5">
+        <span>✨ Test "Other" Custom Cut Flow</span>
+      </button>
+      <button onclick="openDeliveryDateModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[#5B43EE] text-xs font-semibold border border-rose-500/30 transition-colors">
+        📅 Delivery Date Modal
+      </button>
+      <button onclick="runAutoWalkthrough()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 text-xs font-bold border border-emerald-500/30 transition-all flex items-center gap-1">
+        <span>⚡ 1-Click Fast Forward</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN SPLIT VIEW: PHONE UI + AGENT BRAIN / API INSPECTOR -->
+  <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+    <!-- LEFT: PHONE INTERFACE (7 Cols) -->
+    <section id="phoneContainerSection" class="lg:col-span-7 flex justify-center">
+      <div id="phoneSimulatorFrame" class="w-full max-w-[460px] bg-white rounded-[38px] shadow-2xl border-[8px] border-slate-800 overflow-hidden flex flex-col h-[820px] relative text-slate-900">
+        
+        <!-- Phone Top Notch / Speaker -->
+        <div id="phoneTopNotch" class="w-full bg-[#075E54] pt-2 pb-1 px-6 flex justify-between items-center text-[11px] text-emerald-100 font-medium select-none">
+          <span>9:41 AM</span>
+          <div class="w-20 h-4 bg-slate-900 rounded-full mx-auto -mt-1"></div>
+          <div class="flex items-center gap-1.5">
+            <span>5G</span>
+            <span>100%</span>
+          </div>
+        </div>
+
+        <!-- WhatsApp Chat Header (Matches Screenshot 1) -->
+        <div class="bg-[#075E54] px-4 py-2.5 text-white flex items-center justify-between shadow-md select-none shrink-0">
+          <div class="flex items-center gap-3 min-w-0">
+            <button onclick="handleHeaderBack()" class="text-white hover:opacity-80 cursor-pointer">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <div class="w-9 h-9 rounded-full bg-emerald-700 flex items-center justify-center font-bold text-sm text-white border border-emerald-400 shrink-0">
+              IN
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <h3 class="font-bold text-xs sm:text-sm truncate leading-tight">Inba Designer & Boutique</h3>
+                <svg class="w-3.5 h-3.5 text-emerald-300 fill-current shrink-0" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+              </div>
+              <p class="text-[10px] text-emerald-200 truncate">Stitching Inquiry • Autosaved Draft 🤖</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2.5 text-emerald-100">
+            <a href="/business-app-prototype.html" target="_blank" title="View in Business App" class="text-xs bg-white/20 hover:bg-white/30 text-white font-semibold px-2 py-0.5 rounded-full transition-colors flex items-center gap-1">
+              <span>🏬 Store</span>
+            </a>
+            <svg class="w-4 h-4 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+            <svg class="w-4 h-4 cursor-pointer" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
+          </div>
+        </div>
+
+        <!-- Chat Scroll Area -->
+        <div id="chatMessages" class="flex-1 overflow-y-auto p-3.5 pb-6 space-y-3.5 whatsapp-bg text-[12px] text-slate-800">
+          <!-- Chat messages rendered dynamically -->
+        </div>
+
+        <!-- Typing Indicator -->
+        <div id="typingIndicator" class="hidden px-4 py-2 bg-[#EFEAE2] flex items-center gap-2 text-xs text-slate-500 font-medium">
+          <span class="inline-flex gap-1.5 items-center bg-white px-3 py-1 rounded-full shadow-2xs border border-slate-200">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#5B43EE] animate-bounce [animation-delay:-0.3s]"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-[#5B43EE] animate-bounce [animation-delay:-0.15s]"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-[#5B43EE] animate-bounce"></span>
+            <span class="text-[11px] text-slate-700 font-medium ml-1">Inba Assistant is typing...</span>
+          </span>
+        </div>
+
+        <!-- WhatsApp Bottom Container (Grey Area: Tabs Row + Chat Input Row) -->
+        <div class="bg-[#F0F2F5] border-t border-slate-200/90 z-20 shrink-0">
+          
+          <!-- Top Row inside Grey Area: Quick Outfits / Add Outfit Tab -->
+          <div id="floatingQuickActions" class="px-3 pt-2 pb-1 flex justify-center">
+            <div id="floatingTabBar" class="bg-white border border-slate-200/90 rounded-full p-1 shadow-2xs flex items-center gap-1">
+              <!-- Tab 1: Current Outfits in this Order -->
+              <button
+                type="button"
+                id="tabCurrentOutfitsBtn"
+                onclick="scrollToCurrentOutfits()"
+                class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer text-slate-700 hover:text-slate-900 hover:bg-slate-50 active:scale-95"
+              >
+                <span>👗</span>
+                <span id="tabOutfitsLabel">Current Outfits (1)</span>
+              </button>
+
+              <span class="w-px h-3.5 bg-slate-200"></span>
+
+              <!-- Tab 2: Add Another Outfit in Same Order -->
+              <button
+                type="button"
+                id="tabAddOutfitBtn"
+                onclick="handlePromptAddAnother()"
+                class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer bg-purple-50 hover:bg-purple-100 text-[#5B43EE] border border-purple-200/80 shadow-2xs active:scale-95"
+              >
+                <span class="text-xs font-bold leading-none">＋</span>
+                <span>Add Outfit</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bottom Row inside Grey Area: WhatsApp Chat Input Row -->
+          <div class="px-3 pb-2 pt-1 flex items-center gap-2">
+            <div class="w-7 h-7 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-xs shrink-0">
+              B
+            </div>
+            <input
+              type="text"
+              id="chatInput"
+              placeholder="Type instructions or chat notes for the tailor..."
+              class="flex-1 bg-white border border-slate-300 rounded-full px-4 py-2 text-xs outline-none focus:border-[#5B43EE] transition-all text-slate-800 shadow-2xs"
+              onkeydown="if(event.key === 'Enter') handleInputSubmit()"
+            />
+            <button onclick="handleInputSubmit()" class="px-3.5 py-1.5 bg-[#5B43EE] hover:bg-[#4a35d4] text-white rounded-full font-bold text-xs transition-colors shrink-0 shadow-2xs cursor-pointer active:scale-95">
+              Send
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- RIGHT: AI SPEC EXTRACTOR & SEWVEE BACKEND LIVE INSPECTOR (5 Cols) -->
+    <section class="lg:col-span-5 space-y-4">
+
+      <!-- CARD 1: AGENT SPEC EXTRACTION -->
+      <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 shadow-lg backdrop-blur-sm">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-2.5 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse"></span>
+            <h2 class="font-bold text-sm text-slate-200">AI Stitching Spec Extractor</h2>
+          </div>
+          <span id="extractorStatus" class="text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
+            Active Session
+          </span>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <!-- Structured Extraction Table -->
+          <div class="bg-slate-900/90 rounded-xl p-3 border border-slate-700/60 space-y-2">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-[#5B43EE]">
+              Live Order Configuration:
+            </span>
+            <div class="grid grid-cols-2 gap-2 text-[11px]">
+              <div class="bg-slate-800/90 p-2 rounded-lg border border-slate-700/50">
+                <span class="text-slate-400 block text-[10px]">Active Outfit:</span>
+                <span id="specCategory" class="font-bold text-white">—</span>
+              </div>
+              <div class="bg-slate-800/90 p-2 rounded-lg border border-slate-700/50">
+                <span class="text-slate-400 block text-[10px]">Pattern Cut:</span>
+                <span id="specCut" class="font-bold text-[#5B43EE]">—</span>
+              </div>
+              <div class="bg-slate-800/90 p-2 rounded-lg border border-slate-700/50">
+                <span class="text-slate-400 block text-[10px]">1. Front Neck:</span>
+                <span id="specFront" class="font-bold text-white">—</span>
+              </div>
+              <div class="bg-slate-800/90 p-2 rounded-lg border border-slate-700/50">
+                <span class="text-slate-400 block text-[10px]">2. Back Neck:</span>
+                <span id="specBack" class="font-bold text-white">—</span>
+              </div>
+              <div class="bg-slate-800/90 p-2 rounded-lg border border-slate-700/50">
+                <span class="text-slate-400 block text-[10px]">3. Sleeves & Hook:</span>
+                <span id="specSleeve" class="font-bold text-white">—</span>
+              </div>
+              <div class="bg-slate-800/90 p-2 rounded-lg border border-slate-700/50">
+                <span class="text-slate-400 block text-[10px]">Measurement:</span>
+                <span id="specMeasurement" class="font-bold text-emerald-300">—</span>
+              </div>
+            </div>
+            <div class="bg-slate-800/90 p-2 rounded-lg border border-slate-700/50 text-[11px]">
+              <span class="text-slate-400 block text-[10px]">Tailor Notes Attached:</span>
+              <span id="specNotes" class="font-semibold text-slate-200">—</span>
+            </div>
+            <div class="bg-slate-800/90 p-2 rounded-lg border border-slate-700/50 text-[11px] flex justify-between items-center">
+              <span class="text-slate-400 text-[10px]">Target Delivery:</span>
+              <span id="specDeliveryDate" class="font-bold text-[#5B43EE]">22 Nov (Standard 14 Days)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2: MASTER COLLAGE AUTO-GENERATOR PREVIEW -->
+      <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 shadow-lg">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-2.5 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🖼️</span>
+            <h2 class="font-bold text-sm text-slate-200">Auto Master Collage (For Boutique Cutting)</h2>
+          </div>
+          <span id="collageStatus" class="text-[11px] font-semibold text-slate-400">
+            Awaiting Completion
+          </span>
+        </div>
+
+        <div class="bg-slate-900 rounded-xl p-3 border border-slate-700/60 flex flex-col items-center justify-center min-h-[160px]">
+          <canvas id="collageCanvas" width="400" height="200" class="w-full h-auto rounded-lg shadow-md border border-slate-800"></canvas>
+        </div>
+      </div>
+
+      <!-- CARD 3: SEWVEE BACKEND POST PAYLOAD INSPECTOR -->
+      <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 shadow-lg">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-2.5 mb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <h3 class="font-bold text-xs uppercase tracking-wider text-slate-300">
+              POST /customer-portal/orders (Backend Sync)
+            </h3>
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono">1:1 Orders Table Parity</span>
+        </div>
+        <pre id="apiPayloadJson" class="bg-slate-950 p-3 rounded-xl text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-[170px] leading-relaxed border border-slate-800"></pre>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- MODAL 1: INTERACTIVE CROP & ROTATE MODAL -->
+  <!-- CROP & ROTATE MODAL (Simplified, Clean & Non-Clumsy Boutique UX) -->
+  <div id="cropModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-4 text-slate-900 shadow-2xl space-y-3">
+      
+      <!-- Clean Header -->
+      <div class="flex justify-between items-center border-b border-purple-100 pb-2">
+        <div>
+          <h3 id="cropModalTitle" class="font-bold text-slate-900 text-sm">Crop Design Reference</h3>
+          <p class="text-[11px] text-slate-500">Drag frame or corners to focus on your pattern cut</p>
+        </div>
+        <button type="button" onclick="closeCropModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs cursor-pointer transition-colors">
+          ✕
+        </button>
+      </div>
+
+      <!-- Clean Crop Viewport Frame with 4-Corner Knobs -->
+      <div id="cropFrameContainer" class="w-full h-56 bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center relative border border-slate-200 select-none">
+        <img
+          id="cropPreviewImg"
+          src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80"
+          alt="Preview"
+          class="max-w-none transition-transform duration-75 select-none pointer-events-none"
+          style="width: 100%; height: 100%; object-fit: cover;"
+        />
+        
+        <!-- Interactive Crop Box with Clean Vignette & 4 Corner Handles -->
+        <div
+          id="cropOverlayBox"
+          class="absolute border-2 border-white/90 select-none transition-none cursor-move z-10"
+          style="width: 220px; height: 150px; left: 60px; top: 35px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65);"
+        >
+          <!-- 4 Corner Resizing Brackets -->
+          <div data-handle="nw" class="absolute -top-3.5 -left-3.5 w-7 h-7 flex items-center justify-center cursor-nwse-resize z-20 group">
+            <div class="w-3.5 h-3.5 bg-white border-2 border-[#5B43EE] rounded-xs shadow-md group-hover:scale-125 transition-transform"></div>
+          </div>
+          <div data-handle="ne" class="absolute -top-3.5 -right-3.5 w-7 h-7 flex items-center justify-center cursor-nesw-resize z-20 group">
+            <div class="w-3.5 h-3.5 bg-white border-2 border-[#5B43EE] rounded-xs shadow-md group-hover:scale-125 transition-transform"></div>
+          </div>
+          <div data-handle="sw" class="absolute -bottom-3.5 -left-3.5 w-7 h-7 flex items-center justify-center cursor-nesw-resize z-20 group">
+            <div class="w-3.5 h-3.5 bg-white border-2 border-[#5B43EE] rounded-xs shadow-md group-hover:scale-125 transition-transform"></div>
+          </div>
+          <div data-handle="se" class="absolute -bottom-3.5 -right-3.5 w-7 h-7 flex items-center justify-center cursor-nwse-resize z-20 group">
+            <div class="w-3.5 h-3.5 bg-white border-2 border-[#5B43EE] rounded-xs shadow-md group-hover:scale-125 transition-transform"></div>
+          </div>
+
+          <!-- Subtle Thirds Grid -->
+          <div class="w-full h-full grid grid-cols-3 grid-rows-3 pointer-events-none opacity-25">
+            <div class="border-r border-b border-white"></div>
+            <div class="border-r border-b border-white"></div>
+            <div class="border-b border-white"></div>
+            <div class="border-r border-b border-white"></div>
+            <div class="border-r border-b border-white"></div>
+            <div class="border-b border-white"></div>
+            <div class="border-r border-b border-white"></div>
+            <div class="border-r border-b border-white"></div>
+            <div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Minimal Controls: Zoom, Rotate & File -->
+      <div class="space-y-2 pt-1 border-t border-slate-100">
+        <!-- Zoom Slider -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-500 font-semibold">🔍 Zoom:</span>
+          <input
+            type="range"
+            id="cropZoomRange"
+            min="1"
+            max="3"
+            step="0.05"
+            value="1"
+            class="flex-1 accent-[#5B43EE] h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+            oninput="handleZoom(this.value)"
+          />
+          <button type="button" onclick="resetCropTransform()" class="text-[11px] text-slate-500 hover:text-slate-800 underline cursor-pointer">
+            Reset
+          </button>
+        </div>
+
+        <!-- Rotate & Upload Different Photo -->
+        <div class="flex items-center justify-between text-xs pt-0.5">
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="rotateImage(-90)" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 text-xs flex items-center gap-1 border border-slate-200 cursor-pointer transition-colors">
+              ↺ -90°
+            </button>
+            <button type="button" onclick="rotateImage(90)" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 text-xs flex items-center gap-1 border border-slate-200 cursor-pointer transition-colors">
+              ↻ +90°
+            </button>
+          </div>
+
+          <input type="file" id="cropFileInput" accept="image/*" class="hidden" onchange="handleCropFileSelect(event)" />
+          <button type="button" onclick="document.getElementById('cropFileInput').click()" class="text-[11px] font-bold text-[#5B43EE] hover:underline flex items-center gap-1 cursor-pointer">
+            <span>📁</span> <span>Choose Another Image</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+        <button type="button" onclick="closeCropModal()" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors cursor-pointer">
+          Cancel
+        </button>
+        <button type="button" onclick="saveCropPhoto()" class="w-full py-2.5 bg-[#5B43EE] hover:bg-[#4a35d4] text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-98">
+          <span>✓ Done & Attach Photo</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: CHOOSE TARGET DELIVERY DATE MODAL (100% MATCHING SCREENSHOT 4 NEW) -->
+  <!-- TARGET DELIVERY DATE MODAL (Matching Boutique Brand Aesthetic) -->
+  <div id="deliveryDateModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-sm w-full p-4 sm:p-5 text-slate-900 shadow-2xl space-y-3.5">
+      
+      <!-- Top Handle Bar for mobile drawer feel -->
+      <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto sm:hidden mb-1"></div>
+
+      <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+        <div>
+          <h3 class="font-bold text-slate-900 text-sm sm:text-base">Choose Target Delivery Date</h3>
+          <p class="text-slate-500 text-[11px]">Select your preferred garment completion timeline.</p>
+        </div>
+        <button onclick="closeDeliveryDateModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs">
+          ✕
+        </button>
+      </div>
+
+      <p class="text-slate-600 text-xs leading-relaxed">
+        Select a fast-track delivery preset or pick your customized trial date:
+      </p>
+
+      <!-- 4 Quick Presets (2x2 Grid with Boutique Styling) -->
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <div onclick="selectPresetDays(7, 'Express Stitching', '15 Nov')" id="preset_7" class="cursor-pointer border border-slate-200 hover:border-[#5B43EE] p-2.5 rounded-xl transition-all space-y-0.5 bg-slate-50 hover:bg-purple-50/50">
+          <span class="text-[9px] font-bold uppercase tracking-wider text-[#5B43EE] bg-[#EDE9FE] px-1.5 py-0.5 rounded">7 DAYS</span>
+          <h4 class="font-bold text-slate-900 text-xs mt-1">Express Stitching</h4>
+          <span class="text-slate-500 text-[11px] block">15 Nov</span>
+        </div>
+
+        <div onclick="selectPresetDays(14, 'Standard Timeline', '22 Nov')" id="preset_14" class="cursor-pointer border-2 border-[#5B43EE] p-2.5 rounded-xl transition-all space-y-0.5 bg-[#EDE9FE]/50">
+          <span class="text-[9px] font-bold uppercase tracking-wider text-[#5B43EE] bg-[#EDE9FE] px-1.5 py-0.5 rounded">14 DAYS</span>
+          <h4 class="font-bold text-slate-900 text-xs mt-1">Standard Timeline</h4>
+          <span class="text-[#5B43EE] text-[11px] font-bold block">22 Nov</span>
+        </div>
+
+        <div onclick="selectPresetDays(21, 'Relaxed Timeline', '29 Nov')" id="preset_21" class="cursor-pointer border border-slate-200 hover:border-[#5B43EE] p-2.5 rounded-xl transition-all space-y-0.5 bg-slate-50 hover:bg-purple-50/50">
+          <span class="text-[9px] font-bold uppercase tracking-wider text-slate-700 bg-slate-200/80 px-1.5 py-0.5 rounded">21 DAYS</span>
+          <h4 class="font-bold text-slate-900 text-xs mt-1">Relaxed Timeline</h4>
+          <span class="text-slate-500 text-[11px] block">29 Nov</span>
+        </div>
+
+        <div onclick="selectPresetDays(30, '1 Month Timeline', '8 Dec')" id="preset_30" class="cursor-pointer border border-slate-200 hover:border-[#5B43EE] p-2.5 rounded-xl transition-all space-y-0.5 bg-slate-50 hover:bg-purple-50/50">
+          <span class="text-[9px] font-bold uppercase tracking-wider text-slate-700 bg-slate-200/80 px-1.5 py-0.5 rounded">30 DAYS</span>
+          <h4 class="font-bold text-slate-900 text-xs mt-1">1 Month Timeline</h4>
+          <span class="text-slate-500 text-[11px] block">8 Dec</span>
+        </div>
+      </div>
+
+      <!-- Pick Exact Date Input -->
+      <div class="border border-slate-200 rounded-xl p-2.5 space-y-1.5 bg-slate-50/50">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+          <span>📅</span> <span>OR PICK EXACT DATE:</span>
+        </span>
+        <input
+          type="date"
+          id="exactDatePicker"
+          value="2026-11-22"
+          class="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 outline-none focus:border-[#5B43EE]"
+          onchange="handleCustomDateChange(this.value)"
+        />
+      </div>
+
+      <!-- Confirm Button -->
+      <button onclick="confirmSelectedDeliveryDate()" class="w-full py-2.5 bg-[#5B43EE] hover:bg-[#4a35d4] text-white rounded-xl font-bold text-xs shadow-md transition-all active:scale-98">
+        Confirm Delivery Date
+      </button>
+
+    </div>
+  </div>
+
+  <!-- MEASUREMENT METHOD MODAL (Interactive & Clean UX) -->
+  <div id="measurementModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-sm w-full p-4 sm:p-5 text-slate-900 shadow-2xl space-y-3.5">
+      
+      <!-- Top Handle Bar for mobile drawer feel -->
+      <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto sm:hidden mb-1"></div>
+
+      <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+        <div>
+          <h3 class="font-bold text-slate-900 text-sm sm:text-base">Measurement Method</h3>
+          <p class="text-slate-500 text-[11px]">Choose how you want your measurements taken:</p>
+        </div>
+        <button onclick="closeMeasurementModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs">
+          ✕
+        </button>
+      </div>
+
+      <div class="space-y-2 pt-1" id="measurementModalOptions">
+        <!-- Option 1: Saved Profile Measurements -->
+        <div onclick="selectMeasurementOption('Use Saved Profile Measurements')" class="cursor-pointer border-2 border-[#5B43EE] bg-[#EDE9FE]/40 p-3 rounded-xl transition-all space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+              <span>📏</span> <span>Use Saved Profile Measurements</span>
+            </span>
+            <span class="text-[9px] font-bold text-[#5B43EE] bg-purple-100/90 px-2 py-0.5 rounded-full border border-purple-200">Recommended</span>
+          </div>
+          <p class="text-[11px] text-slate-600 pl-5">Tailor according to your verified sizing & measurements on file at Inba Boutique.</p>
+        </div>
+
+        <!-- Option 2: Send Sample Blouse -->
+        <div onclick="selectMeasurementOption('Send Sample Blouse for Measurement')" class="cursor-pointer border border-slate-200 hover:border-[#5B43EE] p-3 rounded-xl transition-all space-y-1 bg-slate-50 hover:bg-[#EDE9FE]/30">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+              <span>👚</span> <span>Send Sample Blouse</span>
+            </span>
+            <span class="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Doorstep Pickup</span>
+          </div>
+          <p class="text-[11px] text-slate-600 pl-5">We will pick up a well-fitting sample blouse from your home to copy exact measurements.</p>
+        </div>
+
+        <!-- Option 3: In-Store Measurement Visit -->
+        <div onclick="selectMeasurementOption('In-Store Measurement (Visiting Boutique)')" class="cursor-pointer border border-slate-200 hover:border-[#5B43EE] p-3 rounded-xl transition-all space-y-1 bg-slate-50 hover:bg-[#EDE9FE]/30">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+              <span>🏬</span> <span>In-Store Measurement Visit</span>
+            </span>
+            <span class="text-[9px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">Anna Nagar</span>
+          </div>
+          <p class="text-[11px] text-slate-600 pl-5">Visit Inba Designer Boutique for personal measurements taken by our master tailor.</p>
+        </div>
+
+        <!-- Option 4: Custom Notes / Chat -->
+        <div onclick="selectMeasurementOption('Custom Measurements via WhatsApp Chat')" class="cursor-pointer border border-slate-200 hover:border-[#5B43EE] p-3 rounded-xl transition-all space-y-1 bg-slate-50 hover:bg-[#EDE9FE]/30">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+              <span>✍️</span> <span>Provide Custom Measurements in Chat</span>
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-600 pl-5">Type your bust, shoulder, armhole, and waist numbers directly in WhatsApp chat.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT ENGINE: FULL 4-STEP CUSTOMIZATION + ATTACHMENTS + MODALS -->
+  <script>
+    // State
+    let conversationHistory = [];
+    let currentOutfit = null;
+    let completedOutfits = [];
+    let isInquirySubmitted = false;
+    let submittedTicketId = 'INQ-8821';
+    let measurementOption = 'Use Saved Profile Measurements';
+    let chosenDeliveryTimeline = '22 Nov (Standard 14 Days)';
+    let chosenDeliveryDate = '2026-11-22';
+    let activeCropTarget = 'front';
+    let currentRotation = 0;
+    let currentZoom = 1;
+
+    // Start fresh on Load
+    window.addEventListener('DOMContentLoaded', () => {
+      resetToStart();
+    });
+
+    function resetToStart() {
+      conversationHistory = [];
+      currentOutfit = null;
+      completedOutfits = [];
+      isInquirySubmitted = false;
+      measurementOption = 'Use Saved Profile Measurements';
+      chosenDeliveryTimeline = '22 Nov (Standard 14 Days)';
+
+      // Initial Welcome (Screenshot 1)
+      conversationHistory.push({
+        id: 'msg_welcome',
+        sender: 'bot',
+        type: 'category_picker',
+        html: `
+          <div class="space-y-2">
+            <p class="font-bold text-slate-900 text-xs">Hello Bhuvan! 👋</p>
+            <p class="text-slate-600 text-[11px] leading-relaxed">
+              Welcome to Inba Designer & Boutique. What outfit would you like to stitch today?
+            </p>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 pt-1">Choose Outfit Type:</p>
+            <div class="flex flex-wrap gap-1.5 pt-0.5">
+              ${[
+                { name: 'Blouse', icon: '👚' },
+                { name: 'Co-ord Set', icon: '✨' },
+                { name: 'Kurti / Kurta', icon: '👗' },
+                { name: 'Salwar / Chudithar', icon: '✨' },
+                { name: 'Lehenga', icon: '💃' },
+                { name: 'Dress / Gown', icon: '👘' },
+                { name: 'Pants / Trousers', icon: '👖' },
+                { name: 'Other', icon: '✂️' }
+              ].map(c => `
+                <button onclick="handleUserSelectCategory('${c.name}')" class="px-2.5 py-1.5 bg-white hover:bg-[#EDE9FE]/50 text-slate-700 hover:text-[#5B43EE] border border-slate-200 hover:border-[#5B43EE] rounded-xl text-xs font-semibold shadow-2xs transition-all active:scale-95 flex items-center gap-1">
+                  <span>${c.icon}</span> <span>${c.name}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `
+      });
+
+      renderChat();
+      updateSpecUI();
+      drawCollageEmpty();
+    }
+
+    // Audio Recording & Playback State
+    let audioRecordingState = {
+      target: null,
+      seconds: 0,
+      timer: null
+    };
+
+    function simulateRecordAudio(target) {
+      if (audioRecordingState.timer) {
+        clearInterval(audioRecordingState.timer);
+      }
+      audioRecordingState.target = target;
+      audioRecordingState.seconds = 1;
+
+      audioRecordingState.timer = setInterval(() => {
+        audioRecordingState.seconds++;
+        const recEl = document.getElementById(`recTimer_${target}`);
+        if (recEl) {
+          const s = audioRecordingState.seconds;
+          recEl.innerText = `0:${s < 10 ? '0' + s : s}`;
+        }
+      }, 1000);
+
+      renderChat();
+    }
+
+    function stopRecordAudio(target) {
+      if (audioRecordingState.timer) {
+        clearInterval(audioRecordingState.timer);
+        audioRecordingState.timer = null;
+      }
+      const s = Math.max(audioRecordingState.seconds, 4);
+      const durStr = `0:${s < 10 ? '0' + s : s}`;
+      audioRecordingState.target = null;
+
+      const audioObj = {
+        duration: durStr,
+        name: `voice_${target}_instruction.m4a`,
+        isPlaying: false,
+        timestamp: Date.now()
+      };
+
+      if (!currentOutfit) return;
+      if (target === 'front') currentOutfit.frontNeckAudio = audioObj;
+      else if (target === 'back') currentOutfit.backNeckAudio = audioObj;
+      else if (target === 'cut') currentOutfit.cutAudio = audioObj;
+      else if (target === 'sleeve') currentOutfit.sleeveAudio = audioObj;
+      else currentOutfit.tailorAudio = audioObj;
+
+      currentOutfit.hasVoiceNote = true;
+      updateSpecUI();
+      renderChat();
+    }
+
+    function deleteAudio(target) {
+      if (!currentOutfit) return;
+      if (target === 'front') currentOutfit.frontNeckAudio = null;
+      else if (target === 'back') currentOutfit.backNeckAudio = null;
+      else if (target === 'cut') currentOutfit.cutAudio = null;
+      else if (target === 'sleeve') currentOutfit.sleeveAudio = null;
+      else currentOutfit.tailorAudio = null;
+
+      updateSpecUI();
+      renderChat();
+    }
+
+    function togglePlayAudio(target) {
+      if (!currentOutfit) return;
+      let audioObj = null;
+      if (target === 'front') audioObj = currentOutfit.frontNeckAudio;
+      else if (target === 'back') audioObj = currentOutfit.backNeckAudio;
+      else if (target === 'cut') audioObj = currentOutfit.cutAudio;
+      else if (target === 'sleeve') audioObj = currentOutfit.sleeveAudio;
+      else audioObj = currentOutfit.tailorAudio;
+
+      if (!audioObj) return;
+
+      if (audioObj.isPlaying) {
+        audioObj.isPlaying = false;
+        renderChat();
+        return;
+      }
+
+      // Play soft web audio chime / tone for genuine audio feedback
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(587.33, ctx.currentTime + 0.25);
+          gain.gain.setValueAtTime(0.15, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 1.2);
+        }
+      } catch (e) {
+        console.log('Audio feedback info:', e);
+      }
+
+      audioObj.isPlaying = true;
+      renderChat();
+
+      setTimeout(() => {
+        if (audioObj) {
+          audioObj.isPlaying = false;
+          renderChat();
+        }
+      }, 2500);
+    }
+
+    function removePhoto(target) {
+      if (!currentOutfit) return;
+      if (target === 'front') currentOutfit.frontNeckPhotos = [];
+      else if (target === 'back') currentOutfit.backNeckPhotos = [];
+      else if (target === 'cut') currentOutfit.cutPhotos = [];
+      else if (target === 'sleeve') currentOutfit.sleevePhotos = [];
+      else currentOutfit.extraPhotos = [];
+      updateSpecUI();
+      renderChat();
+    }
+
+    function handleDesignNoteChange(target, val) {
+      if (!currentOutfit) return;
+      if (target === 'front') currentOutfit.frontNeckNote = val;
+      else if (target === 'back') currentOutfit.backNeckNote = val;
+      else if (target === 'cut') currentOutfit.cutNote = val;
+      else if (target === 'sleeve') currentOutfit.sleeveNote = val;
+      updateSpecUI();
+    }
+
+    // Step 1: User Picks Outfit Category (e.g. Blouse)
+    function handleUserSelectCategory(catName) {
+      currentOutfit = {
+        number: completedOutfits.length + 1,
+        category: catName,
+        categoryCut: '',
+        categoryCutCustomName: '',
+        activeStep: 1, // Steps 1 to 4!
+        frontNeck: 'Normal Neck',
+        frontNeckCustomName: '',
+        frontNeckNote: '',
+        frontNeckPhotos: [],
+        frontNeckAudio: null,
+        backNeck: 'Normal Neck',
+        backNeckCustomName: '',
+        backNeckNote: '',
+        backNeckPhotos: [],
+        backNeckAudio: null,
+        sleeve: 'Elbow Length',
+        sleeveCustomName: '',
+        sleeveNote: '',
+        sleevePhotos: [],
+        sleeveAudio: null,
+        hook: 'Front Hook',
+        cutPhotos: [],
+        cutAudio: null,
+        cutNote: '',
+        fabricPhotos: [],
+        fabricNote: '',
+        sampleDressPhotos: [],
+        sampleDressNote: '',
+        extraPhotos: [],
+        hasVoiceNote: false,
+        voiceNoteDuration: '0:15',
+        tailorNotes: 'Extra margin inside, tight fit on waist, lining cloth already provided...',
+        isCompleted: false,
+      };
+
+      // User Message
+      conversationHistory.push({
+        id: `user_pick_cat_${Date.now()}`,
+        sender: 'user',
+        text: `I want to stitch ${catName}`
+      });
+
+      // Streamlined Welcome Card (Direct & Simplified: No redundant welcome messages or separate 'Chosen: Blouse' bubble!)
+      const cuts = catName === 'Blouse' 
+        ? ['Cuttori blouse', 'Princesscut with pad', 'Princess cut with patti', 'Princesscut', 'Cupshape', 'Others']
+        : ['Straight Cut', 'A-Line Flared', 'Anarkali Pattern', 'Palazzo Style', 'Others'];
+
+      conversationHistory.push({
+        id: `bot_cut_picker_${Date.now()}`,
+        sender: 'bot',
+        html: `
+          <div class="space-y-2.5">
+            <div class="border-b border-purple-100/80 pb-2 space-y-1">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="w-7 h-7 rounded-lg bg-purple-100 text-[#5B43EE] flex items-center justify-center text-xs font-bold shrink-0">
+                    ${catName === 'Blouse' ? '👚' : '👗'}
+                  </span>
+                  <h4 class="font-bold text-slate-900 text-xs sm:text-sm whitespace-nowrap truncate">
+                    Choose ${catName} Cut
+                  </h4>
+                </div>
+                <span class="text-[10.5px] bg-purple-50 text-[#5B43EE] font-bold px-2.5 py-0.5 rounded-full border border-purple-200 whitespace-nowrap shrink-0">
+                  Outfit #${currentOutfit.number}
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-500 whitespace-nowrap truncate">
+                Select your preferred tailored pattern cut:
+              </p>
+            </div>
+
+            <div class="flex flex-wrap gap-1.5 pt-0.5">
+              ${cuts.map(cut => `
+                <button onclick="handleUserSelectCut('${cut}')" class="px-2.5 py-1.5 bg-white hover:bg-purple-50 text-slate-700 hover:text-[#5B43EE] border border-slate-200 hover:border-purple-300 rounded-xl text-xs font-semibold shadow-2xs transition-all flex items-center gap-1 active:scale-95 ${cut === 'Others' ? 'border-purple-300 text-[#5B43EE] bg-purple-50/60' : ''}">
+                  <span>${cut === 'Others' ? '✨' : '✂️'}</span> <span>${cut}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `
+      });
+
+      updateSpecUI();
+      renderChat();
+    }
+
+    // Step 2: User Selects Cut (e.g. Cuttori blouse or Others)
+    function handleUserSelectCut(cutName) {
+      if (cutName === 'Others' || cutName === 'Other') {
+        conversationHistory.push({
+          id: `user_pick_cut_${Date.now()}`,
+          sender: 'user',
+          text: `Style / Pattern Cut: Others (Custom Pattern)`
+        });
+
+        conversationHistory.push({
+          id: `bot_custom_cut_prompt_${Date.now()}`,
+          sender: 'bot',
+          html: `
+            <div class="space-y-3 bg-gradient-to-br from-pink-50/90 to-rose-50/90 p-3.5 rounded-2xl border border-purple-200 shadow-xs">
+              <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-full bg-[#5B43EE] text-white flex items-center justify-center text-xs font-bold shadow-xs">✏️</span>
+                <div>
+                  <p class="font-bold text-slate-900 text-xs">Enter Custom Pattern / Cut Name:</p>
+                  <p class="text-[10px] text-slate-600 font-medium">Type custom cut, add photo or audio, then customize necklines</p>
+                </div>
+              </div>
+
+              <div class="space-y-1.5">
+                <input 
+                  id="customCutInput" 
+                  type="text" 
+                  placeholder="e.g. Sabyasachi Cut, Corset Blouse, Double Katori..." 
+                  class="w-full text-xs px-3 py-2 bg-white border border-purple-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B43EE]/30 text-slate-800 placeholder-slate-400 font-semibold shadow-inner"
+                  onkeydown="if(event.key === 'Enter') handleConfirmCustomCut()"
+                  autofocus
+                />
+                <div class="flex flex-wrap items-center gap-1">
+                  <span class="text-[10px] text-slate-500 font-semibold">Suggestions:</span>
+                  <button type="button" onclick="setCustomCutSuggestion('Sabyasachi Cut')" class="text-[10px] bg-white hover:bg-purple-100 border border-purple-200 text-[#5B43EE] px-2 py-0.5 rounded-md font-semibold transition-colors">Sabyasachi Cut</button>
+                  <button type="button" onclick="setCustomCutSuggestion('Corset Blouse')" class="text-[10px] bg-white hover:bg-purple-100 border border-purple-200 text-[#5B43EE] px-2 py-0.5 rounded-md font-semibold transition-colors">Corset Blouse</button>
+                  <button type="button" onclick="setCustomCutSuggestion('Double Katori')" class="text-[10px] bg-white hover:bg-purple-100 border border-purple-200 text-[#5B43EE] px-2 py-0.5 rounded-md font-semibold transition-colors">Double Katori</button>
+                </div>
+              </div>
+
+              <!-- Attachments for Cut Pattern -->
+              <div class="grid grid-cols-2 gap-2 pt-1 border-t border-purple-200/60">
+                <button type="button" onclick="openCropModal('cut')" class="py-1.5 px-2 bg-white hover:bg-purple-100/50 border border-dashed border-purple-300 rounded-xl text-[11px] font-bold text-[#5B43EE] flex items-center justify-center gap-1 shadow-2xs">
+                  <span>📷</span> <span>+ Add Cut Photo</span>
+                </button>
+                <button type="button" onclick="simulateRecordAudio('cut')" class="py-1.5 px-2 bg-white hover:bg-purple-100/50 border border-purple-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1 shadow-2xs">
+                  <span>🎙️</span> <span>Record Voice</span>
+                </button>
+              </div>
+
+              <button 
+                onclick="handleConfirmCustomCut()" 
+                class="w-full py-2 bg-[#5B43EE] hover:bg-[#4a35d4] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 active:scale-98">
+                <span>Next: Choose Front Neck, Back & Sleeves →</span>
+              </button>
+            </div>
+          `
+        });
+
+        renderChat();
+        setTimeout(() => {
+          const inp = document.getElementById('customCutInput');
+          if (inp) inp.focus();
+        }, 100);
+        return;
+      }
+
+      confirmCutSelection(cutName);
+    }
+
+    function setCustomCutSuggestion(name) {
+      const inp = document.getElementById('customCutInput');
+      if (inp) {
+        inp.value = name;
+        inp.focus();
+      }
+    }
+
+    function handleConfirmCustomCut() {
+      const inp = document.getElementById('customCutInput');
+      const customName = (inp && inp.value.trim()) ? inp.value.trim() : 'Custom Designer Cut';
+      confirmCutSelection(customName);
+    }
+
+    function confirmCutSelection(cutName) {
+      currentOutfit.categoryCut = cutName;
+
+      // Remove the custom cut prompt if it exists so chat remains clean
+      conversationHistory = conversationHistory.filter(m => !m.id.startsWith('bot_custom_cut_prompt_'));
+
+      conversationHistory.push({
+        id: `user_pick_cut_confirmed_${Date.now()}`,
+        sender: 'user',
+        text: `Style / Pattern Cut: ${cutName}`
+      });
+
+      conversationHistory.push({
+        id: `bot_ack_cut_${Date.now()}`,
+        sender: 'bot',
+        html: `
+          <div class="space-y-1">
+            <p class="font-bold text-slate-900 text-xs">Cut Pattern Confirmed:</p>
+            <div class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-purple-50 text-[#5B43EE] border border-purple-200 rounded-md text-[11px] font-bold whitespace-nowrap">
+              ✓ Style: ${cutName}
+            </div>
+            <p class="text-[11px] text-slate-500 font-medium">Now customizing your Front Neck, Back Neck, and Sleeves below:</p>
+          </div>
+        `
+      });
+
+      // Remove any existing stepper card before adding new one
+      conversationHistory = conversationHistory.filter(m => m.type !== 'stepper_card');
+
+      // Append Live Stepper Card starting at Step 1 (Front Neck)
+      currentOutfit.activeStep = 1;
+      conversationHistory.push({
+        id: 'stepper_card',
+        sender: 'bot',
+        type: 'stepper_card'
+      });
+
+      updateSpecUI();
+      renderChat();
+    }
+
+    function setStep(newStep) {
+      if (!currentOutfit) return;
+      currentOutfit.activeStep = newStep;
+      updateSpecUI();
+      renderChat(false);
+      setTimeout(() => {
+        const card = document.getElementById("activeStepperCard");
+        if (card) {
+          card.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 40);
+    }
+
+    function selectSleeve(slvName) {
+      if (!currentOutfit) return;
+      currentOutfit.sleeve = slvName;
+      updateSpecUI();
+      renderChat(false);
+    }
+
+    function selectHook(hookName) {
+      if (!currentOutfit) return;
+      currentOutfit.hook = hookName;
+      updateSpecUI();
+      renderChat(false);
+    }
+
+    function cancelActiveOutfit() {
+      if (completedOutfits.length > 0) {
+        currentOutfit = null;
+        conversationHistory = conversationHistory.filter(m => m.type !== 'stepper_card');
+        handlePromptAddAnother();
+      } else {
+        currentOutfit = null;
+        resetToStart();
+      }
+    }
+
+    function handleCancelInquiry() {
+      if (confirm('Cancel this stitching inquiry? All configured outfits will be cleared.')) {
+        resetToStart();
+      }
+    }
+
+    // BACK NECK SILHOUETTE GENERATOR (100% Matching Pink Blouse Aesthetic of Image 2)
+    function getBackNeckSilhouette(neckType) {
+      const skin = '#FDF0E6';
+      const blouse = '#FFAEC0'; // Exact pink blouse body matching Image 2
+      const stroke = '#7A1D36'; // Burgundy wine stroke matching Image 2
+      const highlight = '#D97706'; // Gold dori
+
+      let cutoutPath = '';
+      let extraElements = '';
+
+      if (neckType === 'Deep Pot Neck with Dori' || neckType === 'Deep Pot Neck' || neckType === 'Pot Neck') {
+        cutoutPath = 'M 44 28 C 34 32 32 50 38 60 C 44 68 56 68 62 60 C 68 50 66 32 56 28 Z';
+        extraElements = `
+          <path d="M 40 28 Q 50 35 60 28" stroke="${highlight}" stroke-width="1.5" fill="none" />
+          <path d="M 48 31 Q 44 43 42 51" stroke="${highlight}" stroke-width="1.2" fill="none" />
+          <path d="M 52 31 Q 56 43 58 51" stroke="${highlight}" stroke-width="1.2" fill="none" />
+          <polygon points="42,51 39,57 45,57" fill="#F59E0B" stroke="#B45309" stroke-width="0.8" />
+          <polygon points="58,51 55,57 61,57" fill="#F59E0B" stroke="#B45309" stroke-width="0.8" />
+        `;
+      } else if (neckType === 'Deep Round Neck' || neckType === 'Round Back Neck') {
+        cutoutPath = 'M 36 26 C 36 64 64 64 64 26 Z';
+      } else if (neckType === 'Boat Back Neck') {
+        cutoutPath = 'M 28 26 C 38 34 62 34 72 26 Z';
+      } else if (neckType === 'High Back Neck') {
+        cutoutPath = 'M 44 14 C 44 26 56 26 56 14 Z';
+        extraElements = `
+          <rect x="42" y="14" width="16" height="12" rx="2" fill="${blouse}" stroke="${stroke}" stroke-width="1.2" />
+          <circle cx="50" cy="18" r="1.2" fill="#7A1D36" />
+          <circle cx="50" cy="22" r="1.2" fill="#7A1D36" />
+        `;
+      } else if (neckType === 'Square Back Neck') {
+        cutoutPath = 'M 35 26 L 35 62 L 65 62 L 65 26 Z';
+        extraElements = '<line x1="35" y1="26" x2="65" y2="26" stroke="#D97706" stroke-width="1.2" stroke-dasharray="2 2" />';
+      } else {
+        // Others (Keyhole Back Neck matching Image 2's Others card!)
+        cutoutPath = 'M 36 26 C 42 32 58 32 64 26 Z';
+        extraElements = `
+          <path d="M 50 34 C 46 34 44 42 50 48 C 56 42 54 34 50 34 Z" fill="${skin}" stroke="${stroke}" stroke-width="1.2" />
+          <circle cx="50" cy="32" r="1.5" fill="#7A1D36" />
+        `;
+      }
+
+      return `
+      <div class="flex flex-col items-center justify-between w-full h-full p-1">
+        <svg viewBox="0 0 100 80" class="w-full h-16" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 44 10 L 44 24 C 34 26 22 34 10 48 L 10 62 L 20 65 L 26 50 L 30 72 L 70 72 L 74 50 L 80 65 L 90 62 L 90 48 C 78 34 66 26 56 24 L 56 10 Z" fill="${skin}" />
+          <path d="M 10 48 C 22 34 34 26 44 24 L 56 24 C 66 26 78 34 90 48 L 80 64 L 72 50 L 68 72 L 32 72 L 28 50 L 20 64 Z" fill="${blouse}" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round" />
+          <path d="M 32 72 Q 35 52 44 38" stroke="${stroke}" stroke-width="0.8" fill="none" opacity="0.6" />
+          <path d="M 68 72 Q 65 52 56 38" stroke="${stroke}" stroke-width="0.8" fill="none" opacity="0.6" />
+          <path d="${cutoutPath}" fill="${skin}" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          <line x1="50" y1="30" x2="50" y2="62" stroke="#E5BCA9" stroke-width="1" stroke-linecap="round" opacity="0.6" />
+          <line x1="10" y1="62" x2="20" y2="65" stroke="${stroke}" stroke-width="1.2" />
+          <line x1="90" y1="62" x2="80" y2="65" stroke="${stroke}" stroke-width="1.2" />
+          ${extraElements}
+        </svg>
+        <span class="bg-[#EDE9FE] text-[#7A1D36] text-[9.5px] font-bold px-2 py-0.5 rounded-full block mt-1 truncate max-w-full">
+          ${neckType}
+        </span>
+      </div>
+      `;
+    }
+
+    // FRONT NECK OPTIONS (Using clean cropped blouse cards without double frame lines)
+    const frontNeckOptions = [
+      { name: 'Close Neck', img: '/blouse_necks/clean_close_neck.png' },
+      { name: 'Collar Neck', img: '/blouse_necks/clean_collar_neck.png' },
+      { name: 'High Neck', img: '/blouse_necks/clean_high_neck.png' },
+      { name: 'Boat Neck', img: '/blouse_necks/clean_boat_neck.png' },
+      { name: 'Normal Neck', img: '/blouse_necks/clean_normal_neck.png' },
+      { name: 'Others', img: '/blouse_necks/clean_others_neck.png' }
+    ];
+
+    // BACK NECK OPTIONS (Matching Image 2 exact aesthetic - only back neck cut changes)
+    const backNeckOptions = [
+      { name: 'Normal Neck', img: '/blouse_necks/back_normal_neck.png' },
+      { name: 'Boat Neck', img: '/blouse_necks/back_boat_neck.png' },
+      { name: 'High Neck', img: '/blouse_necks/back_high_neck.png' },
+      { name: 'Pot Neck', img: '/blouse_necks/back_pot_neck.png' },
+      { name: 'Square Neck', img: '/blouse_necks/back_square_neck.png' },
+      { name: 'Others', img: '/blouse_necks/back_others_neck.png' }
+    ];
+
+    function getFrontNeckImg(neckName) {
+      const found = frontNeckOptions.find(o => o.name === neckName);
+      return found ? found.img : '/blouse_necks/clean_normal_neck.png';
+    }
+
+    function getBackNeckImg(neckName) {
+      const found = backNeckOptions.find(o => o.name === neckName);
+      return found ? found.img : '/blouse_necks/back_normal_neck.png';
+    }
+
+    function selectFrontNeck(neckName) {
+      if (!currentOutfit) return;
+      currentOutfit.frontNeck = neckName;
+      if (neckName !== 'Others') {
+        currentOutfit.frontNeckCustomName = '';
+      }
+      updateSpecUI();
+      renderChat();
+    }
+
+    function handleFrontNeckCustomName(name) {
+      if (!currentOutfit) return;
+      currentOutfit.frontNeckCustomName = name;
+      updateSpecUI();
+    }
+
+    function selectBackNeck(neckName) {
+      if (!currentOutfit) return;
+      currentOutfit.backNeck = neckName;
+      if (neckName !== 'Others') {
+        currentOutfit.backNeckCustomName = '';
+      }
+      updateSpecUI();
+      renderChat();
+    }
+
+    function handleBackNeckCustomName(name) {
+      if (!currentOutfit) return;
+      currentOutfit.backNeckCustomName = name;
+      updateSpecUI();
+    }
+
+    // REUSABLE DESIGN ATTACHMENTS & DESCRIPTION BLOCK (Photo + Voice + Notes for EVERY selection)
+    function renderDesignAttachmentsAndNotesBlock(target) {
+      if (!currentOutfit) return '';
+      let photos = [];
+      let audioObj = null;
+      let noteVal = '';
+      let placeholderText = '';
+
+      if (target === 'front') {
+        photos = currentOutfit.frontNeckPhotos || [];
+        audioObj = currentOutfit.frontNeckAudio || null;
+        noteVal = currentOutfit.frontNeckNote || '';
+        placeholderText = 'Front neck depth & notes (e.g. 6.5" depth, golden piping)';
+      } else if (target === 'back') {
+        photos = currentOutfit.backNeckPhotos || [];
+        audioObj = currentOutfit.backNeckAudio || null;
+        noteVal = currentOutfit.backNeckNote || '';
+        placeholderText = 'Back neck depth & notes (e.g. 8" deep, latkan tassels)';
+      } else if (target === 'cut') {
+        photos = currentOutfit.cutPhotos || [];
+        audioObj = currentOutfit.cutAudio || null;
+        noteVal = currentOutfit.cutNote || '';
+        placeholderText = 'Pattern fitting notes (e.g. padding firmness, dart placement)';
+      } else if (target === 'sleeve') {
+        photos = currentOutfit.sleevePhotos || [];
+        audioObj = currentOutfit.sleeveAudio || null;
+        noteVal = currentOutfit.sleeveNote || '';
+        placeholderText = 'Sleeve length & notes (e.g. 10" elbow length, zari border)';
+      }
+
+      const isRecording = audioRecordingState.target === target;
+
+      return `
+        <div class="space-y-2 pt-2.5 border-t border-slate-100">
+          <!-- Attachments Row: Photo + Audio (Clean & Minimal - No cluttering headers) -->
+          <div class="grid grid-cols-2 gap-2">
+            
+            <!-- Photo Upload Box -->
+            <div>
+              ${photos.length === 0 ? `
+                <button
+                  type="button"
+                  onclick="openCropModal('${target}')"
+                  class="w-full py-2 px-3 bg-white hover:bg-purple-50/50 border border-slate-200 hover:border-[#5B43EE] rounded-xl text-xs font-semibold text-slate-700 hover:text-[#5B43EE] flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-98"
+                >
+                  <span class="text-sm">📷</span> <span>Add Photo</span>
+                </button>
+              ` : `
+                <div class="flex items-center justify-between bg-purple-50/70 border border-purple-200 rounded-xl p-1.5 shadow-2xs">
+                  <div class="flex items-center gap-1.5 overflow-hidden">
+                    <img src="${photos[0]}" class="w-8 h-8 rounded-lg object-cover border border-purple-200 shrink-0" />
+                    <div class="truncate text-left">
+                      <span class="text-[10px] font-bold text-slate-800 block truncate">Photo attached</span>
+                      <button type="button" onclick="openCropModal('${target}')" class="text-[9px] text-[#5B43EE] font-semibold hover:underline cursor-pointer">Edit Crop</button>
+                    </div>
+                  </div>
+                  <button type="button" onclick="removePhoto('${target}')" class="w-5 h-5 rounded-full hover:bg-rose-100 text-rose-500 font-bold text-xs flex items-center justify-center cursor-pointer">✕</button>
+                </div>
+              `}
+            </div>
+
+            <!-- Voice / Audio Note Box -->
+            <div>
+              ${isRecording ? `
+                <div class="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl p-1.5 shadow-2xs">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                    <span id="recTimer_${target}" class="text-[10.5px] font-bold text-red-600">0:01</span>
+                  </div>
+                  <button type="button" onclick="stopRecordAudio('${target}')" class="px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white rounded-md text-[9.5px] font-bold shadow-2xs cursor-pointer">
+                    Stop ✓
+                  </button>
+                </div>
+              ` : audioObj ? `
+                <div class="flex items-center justify-between bg-[#EDE9FE]/60 border border-purple-200 rounded-xl p-1.5 shadow-2xs">
+                  <div class="flex items-center gap-1.5 overflow-hidden">
+                    <button type="button" onclick="togglePlayAudio('${target}')" class="w-6 h-6 rounded-full bg-[#5B43EE] text-white flex items-center justify-center text-[10px] shadow-2xs hover:scale-105 active:scale-95 transition-all shrink-0 cursor-pointer">
+                      ${audioObj.isPlaying ? '❚❚' : '▶'}
+                    </button>
+                    <div class="truncate text-left">
+                      <span class="text-[10px] font-bold text-[#5B43EE] block truncate">${audioObj.duration} Voice Note</span>
+                      <div class="flex items-center gap-0.5 h-1.5">
+                        <span class="w-0.5 ${audioObj.isPlaying ? 'h-3 animate-pulse' : 'h-1.5'} bg-[#5B43EE] rounded-full"></span>
+                        <span class="w-0.5 ${audioObj.isPlaying ? 'h-2 animate-pulse' : 'h-2'} bg-[#5B43EE] rounded-full"></span>
+                        <span class="w-0.5 ${audioObj.isPlaying ? 'h-3.5 animate-pulse' : 'h-1'} bg-[#5B43EE] rounded-full"></span>
+                        <span class="w-0.5 ${audioObj.isPlaying ? 'h-2.5 animate-pulse' : 'h-2'} bg-[#5B43EE] rounded-full"></span>
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" onclick="deleteAudio('${target}')" class="w-5 h-5 rounded-full hover:bg-rose-100 text-rose-500 font-bold text-xs flex items-center justify-center cursor-pointer">✕</button>
+                </div>
+              ` : `
+                <button
+                  type="button"
+                  onclick="simulateRecordAudio('${target}')"
+                  class="w-full py-2 px-3 bg-white hover:bg-purple-50/50 border border-slate-200 hover:border-[#5B43EE] rounded-xl text-xs font-semibold text-slate-700 hover:text-[#5B43EE] flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-98"
+                >
+                  <span class="text-sm">🎙️</span> <span>Record Voice</span>
+                </button>
+              `}
+            </div>
+
+          </div>
+
+          <!-- Description / Instructions Input -->
+          <div>
+            <input
+              type="text"
+              value="${noteVal}"
+              placeholder="${placeholderText}"
+              oninput="handleDesignNoteChange('${target}', this.value)"
+              class="w-full bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-[#5B43EE] rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 outline-none transition-all shadow-2xs"
+            />
+          </div>
+        </div>
+      `;
+    }
+
+    function removeBackNeckPhoto(index = 0) {
+      if (!currentOutfit || !currentOutfit.backNeckPhotos) return;
+      currentOutfit.backNeckPhotos.splice(index, 1);
+      updateSpecUI();
+      renderChat();
+    }
+
+    function removeFabricPhoto(index = 0) {
+      if (!currentOutfit || !currentOutfit.fabricPhotos) return;
+      currentOutfit.fabricPhotos.splice(index, 1);
+      updateSpecUI();
+      renderChat();
+    }
+
+    function removeSampleDressPhoto(index = 0) {
+      if (!currentOutfit || !currentOutfit.sampleDressPhotos) return;
+      currentOutfit.sampleDressPhotos.splice(index, 1);
+      updateSpecUI();
+      renderChat();
+    }
+
+    // STEP 4 SAVE & COMPLETE OUTFIT -> DIRECTLY COMBINED WITH CONSOLIDATED INQUIRY TICKET
+    function handleSaveAndCompleteOutfit() {
+      currentOutfit.isCompleted = true;
+      const existingIdx = completedOutfits.findIndex(o => o.number === currentOutfit.number);
+      if (existingIdx >= 0) {
+        completedOutfits[existingIdx] = { ...currentOutfit };
+      } else {
+        completedOutfits.push({ ...currentOutfit });
+      }
+
+      // Remove active stepper card
+      conversationHistory = conversationHistory.filter(m => m.type !== 'stepper_card');
+
+      // Combined directly: Proceed to Consolidated Inquiry Booking Card
+      handleProceedToFinalTicket();
+      updateSpecUI();
+      drawCollageMaster();
+    }
+
+    function handleEditOutfit(idx) {
+      if (!completedOutfits || !completedOutfits[idx]) return;
+      currentOutfit = { ...completedOutfits[idx], isCompleted: false, activeStep: 1 };
+      completedOutfits.splice(idx, 1);
+      conversationHistory = conversationHistory.filter(m => m.type !== 'stepper_card');
+      conversationHistory.push({
+        id: 'stepper_card',
+        sender: 'bot',
+        type: 'stepper_card'
+      });
+      renderChat();
+    }
+
+    function handleDeleteOutfit(idx) {
+      if (!confirm('Delete this outfit?')) return;
+      completedOutfits.splice(idx, 1);
+      resetToStart();
+    }
+
+    function handlePromptAddAnother() {
+      conversationHistory.push({
+        id: `add_another_picker_${Date.now()}`,
+        sender: 'bot',
+        html: `
+          <div class="space-y-2">
+            <p class="font-bold text-slate-900 text-xs">Add Another Outfit:</p>
+            <p class="text-slate-600 text-[11px]">Select which outfit you would like to design next:</p>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Choose Outfit Type:</p>
+            <div class="flex flex-wrap gap-1.5 pt-0.5">
+              ${[
+                { name: 'Blouse', icon: '👚' },
+                { name: 'Co-ord Set', icon: '✨' },
+                { name: 'Kurti / Kurta', icon: '👗' },
+                { name: 'Salwar / Chudithar', icon: '✨' },
+                { name: 'Lehenga', icon: '💃' },
+                { name: 'Dress / Gown', icon: '👘' },
+                { name: 'Pants / Trousers', icon: '👖' },
+                { name: 'Other', icon: '✂️' }
+              ].map(c => `
+                <button onclick="handleUserSelectCategory('${c.name}')" class="px-2.5 py-1.5 bg-white hover:bg-[#EDE9FE]/50 text-slate-700 hover:text-[#5B43EE] border border-slate-200 hover:border-[#5B43EE] rounded-xl text-xs font-semibold shadow-2xs transition-all active:scale-95 flex items-center gap-1 cursor-pointer">
+                  <span>${c.icon}</span> <span>${c.name}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `
+      });
+      renderChat();
+    }
+
+    // CONSOLIDATED INQUIRY TICKET (Clean, One-by-One with Divider, Customer-Centric, Double-Submit Guard)
+    function handleProceedToFinalTicket() {
+      const existingTicketIndex = conversationHistory.findIndex(m => m.id && m.id.startsWith('final_ticket'));
+      const ticketId = existingTicketIndex >= 0 ? conversationHistory[existingTicketIndex].id : `final_ticket_${Date.now()}`;
+
+      const ticketMsg = {
+        id: ticketId,
+        sender: 'bot',
+        html: `
+          <div class="space-y-3.5">
+            <!-- Clean Header -->
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full ${isInquirySubmitted ? 'bg-emerald-500' : 'bg-[#5B43EE]'}"></span>
+                <h3 class="font-bold text-slate-900 text-sm tracking-tight">Consolidated Inquiry</h3>
+              </div>
+              <div class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+                isInquirySubmitted
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-2xs'
+                  : 'bg-purple-50 text-[#5B43EE] border-purple-200 shadow-2xs'
+              }">
+                <span class="w-2 h-2 rounded-full ${isInquirySubmitted ? 'bg-emerald-500 animate-pulse' : 'bg-[#5B43EE]'}"></span>
+                <span>${isInquirySubmitted ? 'Inquiry Submitted ✓' : `${completedOutfits.length} Outfit${completedOutfits.length > 1 ? 's' : ''} Ready`}</span>
+              </div>
+            </div>
+
+            <!-- Outfits List: One-by-One with Dividers (Clean & Customer-Configured) -->
+            <div class="space-y-3">
+              ${completedOutfits.map((o, idx) => {
+                const frontImg = getFrontNeckImg(o.frontNeck);
+                const backImg = getBackNeckImg(o.backNeck);
+                return `
+                  <div class="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5">
+                    <!-- Title & Edit/Delete Row (Spacious, Un-truncated) -->
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2 gap-2">
+                      <div class="flex items-center gap-2 min-w-0 flex-1">
+                        <span class="w-5 h-5 rounded-md bg-[#5B43EE] text-white flex items-center justify-center font-bold text-[11px] shrink-0">
+                          ${idx + 1}
+                        </span>
+                        <span class="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                          Outfit #${idx + 1}: ${o.category || 'Blouse'} (${o.categoryCut || 'Standard Cut'})
+                        </span>
+                      </div>
+                      <div class="flex items-center gap-2 shrink-0">
+                        <button type="button" onclick="handleEditOutfit(${idx})" class="text-xs font-bold text-[#5B43EE] hover:underline cursor-pointer">
+                          ✏️ Edit
+                        </button>
+                        <button type="button" onclick="handleDeleteOutfit(${idx})" class="text-xs font-bold text-rose-500 hover:underline cursor-pointer" title="Delete Outfit">
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Configured Specifications: One-by-One with Subtle Dividers -->
+                    <div class="divide-y divide-slate-100 text-xs space-y-0">
+                      <!-- Row 1: Front Neck -->
+                      <div class="flex items-center justify-between py-2 first:pt-0">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                          <div class="w-8 h-8 rounded-lg bg-purple-50/60 p-0.5 shrink-0 border border-purple-100 flex items-center justify-center overflow-hidden">
+                            <img src="${frontImg}" class="w-full h-full object-contain" />
+                          </div>
+                          <div class="min-w-0">
+                            <span class="text-[10px] text-slate-400 font-medium block">Front Neck</span>
+                            <span class="font-semibold text-slate-800 truncate block">${o.frontNeck}</span>
+                          </div>
+                        </div>
+                        ${o.frontNeckNote ? `<span class="text-[10px] text-slate-500 italic truncate max-w-[130px] text-right">"${o.frontNeckNote}"</span>` : ''}
+                      </div>
+
+                      <!-- Row 2: Back Neck -->
+                      <div class="flex items-center justify-between py-2">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                          <div class="w-8 h-8 rounded-lg bg-purple-50/60 p-0.5 shrink-0 border border-purple-100 flex items-center justify-center overflow-hidden">
+                            <img src="${backImg}" class="w-full h-full object-contain" />
+                          </div>
+                          <div class="min-w-0">
+                            <span class="text-[10px] text-slate-400 font-medium block">Back Neck</span>
+                            <span class="font-semibold text-slate-800 truncate block">${o.backNeck}</span>
+                          </div>
+                        </div>
+                        ${o.backNeckNote ? `<span class="text-[10px] text-slate-500 italic truncate max-w-[130px] text-right">"${o.backNeckNote}"</span>` : ''}
+                      </div>
+
+                      <!-- Row 3: Sleeve & Opening -->
+                      <div class="flex items-center justify-between py-2">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                          <div class="w-8 h-8 rounded-lg bg-purple-50 text-[#5B43EE] shrink-0 border border-purple-100 flex items-center justify-center text-xs">
+                            🪡
+                          </div>
+                          <div class="min-w-0">
+                            <span class="text-[10px] text-slate-400 font-medium block">Sleeve & Fastening</span>
+                            <span class="font-semibold text-slate-800 truncate block">${o.sleeve} • ${o.hook}</span>
+                          </div>
+                        </div>
+                        ${o.sleeveNote ? `<span class="text-[10px] text-slate-500 italic truncate max-w-[130px] text-right">"${o.sleeveNote}"</span>` : ''}
+                      </div>
+
+                      <!-- Row 4: Pattern Cut -->
+                      <div class="flex items-center justify-between py-2">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                          <div class="w-8 h-8 rounded-lg bg-purple-50 text-[#5B43EE] shrink-0 border border-purple-100 flex items-center justify-center text-xs">
+                            ✂️
+                          </div>
+                          <div class="min-w-0">
+                            <span class="text-[10px] text-slate-400 font-medium block">Pattern Style / Cut</span>
+                            <span class="font-semibold text-slate-800 truncate block">${o.categoryCut || 'Standard'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Row 5: Attached Material & Garment (If Provided) -->
+                      ${(o.fabricPhotos?.length > 0 || o.sampleDressPhotos?.length > 0 || o.fabricNote || o.sampleDressNote) ? `
+                        <div class="py-2 space-y-1.5">
+                          <span class="text-[10px] font-bold text-[#5B43EE] uppercase tracking-wider block">Attached Material & Garment:</span>
+                          <div class="flex flex-wrap gap-1.5">
+                            ${o.fabricPhotos?.length > 0 ? `
+                              <div class="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
+                                <img src="${o.fabricPhotos[0]}" class="w-5 h-5 rounded object-cover border border-purple-100" />
+                                <span class="text-[10px] font-semibold text-slate-700">🧵 Fabric ${o.fabricNote ? `(${o.fabricNote})` : ''}</span>
+                              </div>
+                            ` : o.fabricNote ? `
+                              <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 text-[10px] font-semibold text-slate-700">
+                                <span>🧵</span> <span>Fabric: ${o.fabricNote}</span>
+                              </div>
+                            ` : ''}
+
+                            ${o.sampleDressPhotos?.length > 0 ? `
+                              <div class="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
+                                <img src="${o.sampleDressPhotos[0]}" class="w-5 h-5 rounded object-cover border border-purple-100" />
+                                <span class="text-[10px] font-semibold text-slate-700">👗 Sample Dress ${o.sampleDressNote ? `(${o.sampleDressNote})` : ''}</span>
+                              </div>
+                            ` : o.sampleDressNote ? `
+                              <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 text-[10px] font-semibold text-slate-700">
+                                <span>👗</span> <span>Sample: ${o.sampleDressNote}</span>
+                              </div>
+                            ` : ''}
+                          </div>
+                        </div>
+                      ` : ''}
+
+                      <!-- Row 6: Special Tailor Notes (If Provided) -->
+                      ${o.tailorNotes ? `
+                        <div class="pt-2">
+                          <div class="bg-slate-50 border border-slate-200/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 flex items-start gap-1.5">
+                            <span class="text-xs shrink-0 mt-0.5">📝</span>
+                            <span class="italic text-[10.5px] leading-relaxed text-slate-600">"${o.tailorNotes}"</span>
+                          </div>
+                        </div>
+                      ` : ''}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Measurement Card: Clean & Description-Free -->
+            <div ${!isInquirySubmitted ? 'onclick="openMeasurementModal()"' : ''} class="${!isInquirySubmitted ? 'cursor-pointer hover:bg-purple-50/40 hover:border-[#5B43EE]' : ''} bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between transition-all group shadow-2xs">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <span class="text-base shrink-0">📏</span>
+                <div class="min-w-0">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Measurement</span>
+                  <span class="text-xs font-bold text-slate-900 block truncate">${measurementOption}</span>
+                </div>
+              </div>
+              ${!isInquirySubmitted ? `
+                <span class="text-xs font-bold text-[#5B43EE] bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200 group-hover:bg-purple-100 transition-colors shrink-0">
+                  Change ▾
+                </span>
+              ` : `
+                <span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 shrink-0">
+                  Confirmed
+                </span>
+              `}
+            </div>
+
+            <!-- Target Delivery Card: Clean & Description-Free -->
+            <div ${!isInquirySubmitted ? 'onclick="openDeliveryDateModal()"' : ''} class="${!isInquirySubmitted ? 'cursor-pointer hover:bg-purple-50/40 hover:border-[#5B43EE]' : ''} bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between transition-all group shadow-2xs">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <span class="text-base shrink-0">📅</span>
+                <div class="min-w-0">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Target Delivery</span>
+                  <span id="ticketDeliveryLabel" class="text-xs font-bold text-slate-900 block truncate">${chosenDeliveryTimeline}</span>
+                </div>
+              </div>
+              ${!isInquirySubmitted ? `
+                <span class="text-xs font-bold text-[#5B43EE] bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200 group-hover:bg-purple-100 transition-colors shrink-0">
+                  Modify ▾
+                </span>
+              ` : `
+                <span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 shrink-0">
+                  Confirmed
+                </span>
+              `}
+            </div>
+
+            <!-- Bottom Actions -->
+            <div class="pt-3 border-t border-slate-100 space-y-2">
+              ${isInquirySubmitted ? `
+                <div class="bg-emerald-50/70 border border-emerald-200/90 rounded-xl p-3 flex items-center justify-between shadow-2xs">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-xs font-bold shrink-0">✓</div>
+                    <div class="min-w-0">
+                      <span class="text-xs font-bold text-slate-800 block">Inquiry Submitted & Confirmed</span>
+                      <span class="text-[10px] text-slate-500 block truncate">Reference #${submittedTicketId} • Sent to boutique</span>
+                    </div>
+                  </div>
+                  <span class="text-[10px] font-semibold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200 shrink-0">
+                    Active
+                  </span>
+                </div>
+              ` : `
+                <div class="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onclick="handlePromptAddAnother()"
+                    class="h-10 px-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl font-semibold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-98"
+                  >
+                    <span>+ Add Outfit</span>
+                  </button>
+                  <button
+                    type="button"
+                    onclick="handleSubmitInquiry()"
+                    class="h-10 px-4 bg-[#5B43EE] hover:bg-[#4a35d4] text-white rounded-xl font-bold text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-98"
+                  >
+                    <span>Submit Inquiry</span>
+                    <span>→</span>
+                  </button>
+                </div>
+
+                <!-- Cancel / Start Over Option -->
+                <div class="text-center pt-0.5">
+                  <button
+                    type="button"
+                    onclick="handleCancelInquiry()"
+                    class="text-xs text-slate-400 hover:text-rose-600 transition-colors cursor-pointer font-medium inline-flex items-center gap-1 py-1"
+                  >
+                    <span>✕</span> <span>Cancel Inquiry</span>
+                  </button>
+                </div>
+              `}
+            </div>
+          </div>
+        `
+      };
+
+      if (existingTicketIndex >= 0) {
+        conversationHistory[existingTicketIndex] = ticketMsg;
+      } else {
+        conversationHistory.push(ticketMsg);
+      }
+      renderChat();
+    }
+
+    function toggleMeasurementOption() {
+      openMeasurementModal();
+    }
+
+    function handleSubmitInquiry() {
+      if (isInquirySubmitted) return;
+      isInquirySubmitted = true;
+      handleProceedToFinalTicket();
+      updateFloatingQuickActionsUI();
+
+      showTyping(true);
+      setTimeout(() => {
+        showTyping(false);
+        conversationHistory.push({
+          id: `inquiry_success_${Date.now()}`,
+          sender: 'bot',
+          html: `
+            <div class="space-y-3 animate-in fade-in duration-200">
+              
+              <!-- Soft, Light Boutique Confirmation Card -->
+              <div class="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm space-y-3 text-slate-800">
+                
+                <!-- Header with Clean Emerald Success Badge -->
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold shrink-0">
+                      ✓
+                    </div>
+                    <div>
+                      <h4 class="text-xs font-bold text-slate-900 leading-tight">Order Inquiry Confirmed</h4>
+                      <span class="text-[10px] text-slate-400 font-mono tracking-tight">Ref #${submittedTicketId}</span>
+                    </div>
+                  </div>
+                  <span class="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 shrink-0">
+                    ${completedOutfits.length} Outfit${completedOutfits.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                <!-- Friendly Boutique Note -->
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  Thank you, <b class="text-slate-800">Bhuvan</b>! Your custom tailoring request has been forwarded to <b class="text-slate-800">Inba Designer & Boutique</b>. The master tailor will review your necklines, sleeves, and reference materials.
+                </p>
+
+                <!-- Soft Summary Pill Grid -->
+                <div class="grid grid-cols-2 gap-2 pt-1 text-xs">
+                  <div class="bg-slate-50 border border-slate-200/70 rounded-xl p-2.5">
+                    <span class="text-[9.5px] text-slate-400 uppercase font-semibold block">Measurement</span>
+                    <span class="text-xs font-semibold text-slate-800 block truncate mt-0.5">${measurementOption}</span>
+                  </div>
+                  <div class="bg-slate-50 border border-slate-200/70 rounded-xl p-2.5">
+                    <span class="text-[9.5px] text-slate-400 uppercase font-semibold block">Target Delivery</span>
+                    <span class="text-xs font-semibold text-slate-800 block truncate mt-0.5">${chosenDeliveryTimeline}</span>
+                  </div>
+                </div>
+
+                <!-- Clean, Light Action -->
+                <div class="pt-1.5 space-y-2">
+                  <button
+                    type="button"
+                    onclick="alert('Receipt downloaded for #${submittedTicketId}')"
+                    class="w-full h-10 px-4 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl font-semibold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  >
+                    <span class="text-slate-500">📄</span>
+                    <span>Download Inquiry Receipt (PDF)</span>
+                  </button>
+                  <p class="text-[10px] text-center text-slate-400">
+                    Need to add another outfit to this booking? Use <span class="text-[#5B43EE] font-semibold">+ Add Outfit</span> below anytime.
+                  </p>
+                </div>
+
+              </div>
+
+            </div>
+          `
+        });
+        renderChat();
+      }, 500);
+    }
+
+    // Render Conversation History
+    function renderChat(shouldScrollToBottom = true) {
+      const chatBox = document.getElementById('chatMessages');
+      chatBox.innerHTML = '';
+
+      chatBox.innerHTML += `
+        <div class="flex justify-center my-1 select-none">
+          <span class="bg-[#e1f3fb] text-[#2c6579] text-[10px] font-semibold px-2.5 py-0.5 rounded-md shadow-2xs">
+            Today • Guided Stitching Inquiry Session
+          </span>
+        </div>
+      `;
+
+      conversationHistory.forEach(msg => {
+        if (!msg) return;
+        if (msg.sender === 'user') {
+          chatBox.innerHTML += `
+            <div class="flex justify-end animate-in fade-in duration-150">
+              <div class="bg-[#5B43EE] text-white rounded-2xl rounded-tr-sm px-3.5 py-1.5 shadow-xs text-xs font-medium max-w-[85%]">
+                ${msg.text || ''}
+              </div>
+            </div>
+          `;
+        } else if (msg.type === 'stepper_card') {
+          if (currentOutfit && !currentOutfit.isCompleted) {
+            chatBox.innerHTML += renderStepperCardHtml();
+          }
+        } else if (msg.html || msg.text) {
+          const content = (msg.html || msg.text || '').trim();
+          if (content) {
+            const isTicket = msg.id && (msg.id.startsWith('final_ticket') || msg.id.startsWith('inquiry_success'));
+            chatBox.innerHTML += `
+              <div class="flex justify-start animate-in fade-in duration-150">
+                <div class="bg-white rounded-2xl rounded-tl-sm p-3.5 sm:p-4 shadow-sm ${isTicket ? 'w-full' : 'max-w-[88%]'} space-y-1.5 border border-slate-200/80">
+                  ${content}
+                </div>
+              </div>
+            `;
+          }
+        }
+      });
+
+      if (shouldScrollToBottom) {
+        requestAnimationFrame(() => {
+          chatBox.scrollTop = chatBox.scrollHeight;
+        });
+      }
+
+      updateFloatingQuickActionsUI();
+    }
+
+    function updateFloatingQuickActionsUI() {
+      const tabOutfitsLabel = document.getElementById('tabOutfitsLabel');
+      const tabAddOutfitBtn = document.getElementById('tabAddOutfitBtn');
+      const floatingQuickActions = document.getElementById('floatingQuickActions');
+
+      const totalOutfits = completedOutfits.length || (currentOutfit ? 1 : 0);
+
+      if (tabOutfitsLabel) {
+        tabOutfitsLabel.innerText = `Current Outfits (${totalOutfits})`;
+      }
+
+      if (tabAddOutfitBtn) {
+        tabAddOutfitBtn.classList.remove('hidden');
+      }
+    }
+
+    function scrollToCurrentOutfits() {
+      const ticket = document.querySelector("[id^='final_ticket_']") || document.getElementById("activeStepperCard");
+      if (ticket) {
+        ticket.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        handleProceedToFinalTicket();
+      }
+    }
+
+    // FULL 4-STEP STEPPER CARD RENDERER
+    function renderStepperCardHtml() {
+      const step = currentOutfit.activeStep || 1;
+
+      return `
+        <div id="activeStepperCard" class="flex justify-start animate-in fade-in duration-200">
+          <div class="bg-white border border-purple-200/90 rounded-2xl p-3.5 shadow-sm w-full space-y-3">
+            
+            <!-- Card Header: Clean Boutique Brand Harmony -->
+            <div class="flex items-start justify-between border-b border-purple-100/80 pb-2.5 gap-2">
+              <div class="min-w-0 flex-1 space-y-1">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-[#5B43EE] bg-[#EDE9FE] px-2 py-0.5 rounded-md border border-purple-200 whitespace-nowrap shrink-0">
+                    Outfit #${currentOutfit.number}
+                  </span>
+                  <span class="text-xs font-semibold text-slate-800 truncate">
+                    ${currentOutfit.category} (${currentOutfit.categoryCut})
+                  </span>
+                </div>
+                <h3 class="font-bold text-slate-900 text-sm leading-tight">Design Customization</h3>
+              </div>
+              <div class="flex items-center shrink-0 pt-0.5">
+                <button
+                  type="button"
+                  onclick="cancelActiveOutfit()"
+                  class="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1.5 active:scale-95"
+                  title="Cancel this outfit"
+                >
+                  <span class="text-xs">✕</span>
+                  <span>Cancel</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Stepper Progress: Neat Connected Tracks with Titles -->
+            <div class="py-1 border-b border-purple-100/70">
+              <div class="grid grid-cols-4 gap-2">
+                ${[
+                  { s: 1, title: 'Front' },
+                  { s: 2, title: 'Back' },
+                  { s: 3, title: 'Sleeves' },
+                  { s: 4, title: 'Confirm' }
+                ].map(item => {
+                  const isActive = item.s === step;
+                  const isPassed = item.s < step;
+                  return `
+                    <div
+                      ${isPassed ? `onclick="setStep(${item.s})"` : ''}
+                      class="flex flex-col items-center gap-1.5 ${isPassed ? 'cursor-pointer group' : ''}"
+                    >
+                      <div class="w-full h-1.5 rounded-full transition-all ${
+                        isActive
+                          ? 'bg-[#5B43EE] shadow-xs'
+                          : isPassed
+                            ? 'bg-[#5B43EE]/50 group-hover:bg-[#5B43EE]'
+                            : 'bg-slate-200'
+                      }"></div>
+                      <span class="text-[10px] font-bold tracking-tight text-center whitespace-nowrap ${
+                        isActive
+                          ? 'text-[#5B43EE]'
+                          : isPassed
+                            ? 'text-slate-700 group-hover:text-[#5B43EE]'
+                            : 'text-slate-400'
+                      }">
+                        ${isPassed ? '✓ ' : ''}${item.title}
+                      </span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <!-- STEP 1: Front Neck Style (Box-type Cards with Exact Reference Image from Image 2) -->
+            ${step === 1 ? `
+              <div class="border border-purple-200/90 rounded-2xl p-3 space-y-3 bg-white shadow-2xs">
+                <div>
+                  <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <span class="w-2.5 h-2.5 rounded-full bg-[#5B43EE]"></span>
+                      1. Front Neck Style
+                    </span>
+                  </div>
+                  <p class="text-[10.5px] text-slate-500 mt-1">Select preferred front neck design or choose Others below:</p>
+                </div>
+
+                <!-- Box Type Grid: Clean Image Crop with Real Crisp CSS Font Pills -->
+                <div class="grid grid-cols-3 gap-2">
+                  ${frontNeckOptions.map(opt => {
+                    const isSelected = currentOutfit.frontNeck === opt.name;
+                    return `
+                      <button
+                        type="button"
+                        onclick="selectFrontNeck('${opt.name}')"
+                        class="rounded-2xl p-2 transition-all cursor-pointer relative group active:scale-95 flex flex-col items-center justify-between text-center ${
+                          isSelected
+                            ? 'border-2 border-[#5B43EE] bg-purple-50/70 shadow-sm'
+                            : 'border border-slate-200/90 hover:border-purple-300 bg-white hover:shadow-xs'
+                        }"
+                      >
+                        ${isSelected ? `
+                          <div class="absolute top-1.5 right-1.5 z-10 w-4 h-4 rounded-full bg-[#5B43EE] text-white flex items-center justify-center text-[9px] font-bold shadow-xs">
+                            ✓
+                          </div>
+                        ` : ''}
+
+                        <div class="w-full aspect-[340/232] p-0.5 flex items-center justify-center overflow-hidden rounded-xl">
+                          <img src="${opt.img}" alt="${opt.name}" class="w-full h-full object-contain transition-transform group-hover:scale-105" />
+                        </div>
+
+                        <!-- Real Crisp CSS Font Pill (Large, Bold, High-Contrast) -->
+                        <div class="w-full pt-1.5 pb-0.5 flex justify-center">
+                          <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-bold tracking-tight text-center ${
+                            isSelected
+                              ? 'bg-[#5B43EE] text-white shadow-2xs'
+                              : 'bg-purple-50 text-[#5B43EE] border border-purple-200/90 group-hover:bg-purple-100'
+                          }">
+                            ${opt.name}
+                          </span>
+                        </div>
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+
+                <!-- IF THEY CHOOSE OTHER: Ask input field to enter custom neck name -->
+                ${currentOutfit.frontNeck === 'Others' ? `
+                  <div class="p-3 bg-purple-50/90 border border-purple-200 rounded-xl space-y-2 animate-in fade-in duration-200">
+                    <label class="block text-[11px] font-bold text-[#5B43EE]">
+                      ✏️ Name your Custom Front Neck Style:
+                    </label>
+                    <input
+                      type="text"
+                      id="frontNeckCustomNameInput"
+                      placeholder="e.g. Sweetheart Neck, Scalloped Border, Queen Anne, Asymmetric..."
+                      value="${currentOutfit.frontNeckCustomName || ''}"
+                      oninput="handleFrontNeckCustomName(this.value)"
+                      class="w-full bg-white border border-purple-300 rounded-lg px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 font-semibold outline-none focus:ring-2 focus:ring-[#5B43EE]/30 shadow-inner"
+                      autofocus
+                    />
+                  </div>
+                ` : ''}
+
+                <!-- Photo Upload, Voice Note & Tailor Description (For EVERY Selection) -->
+                ${renderDesignAttachmentsAndNotesBlock('front')}
+              </div>
+
+              <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="cancelActiveOutfit()" class="w-24 h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-xs flex items-center justify-center transition-colors shrink-0 cursor-pointer">
+                  Cancel
+                </button>
+                <button type="button" onclick="setStep(2)" class="flex-1 h-10 bg-[#5B43EE] hover:bg-[#4a35d4] text-white rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-[#5B43EE]/25 transition-all cursor-pointer active:scale-98 whitespace-nowrap">
+                  <span>Next: Back Neck Style</span> <span>→</span>
+                </button>
+              </div>
+            ` : ''}
+
+            <!-- STEP 2: Back Neck Style (Exact Same Blouse Style as Front - Only Back Neckline Changes) -->
+            ${step === 2 ? `
+              <div class="border border-purple-200/90 rounded-2xl p-3 space-y-3 bg-white shadow-2xs">
+                <div>
+                  <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <span class="w-2.5 h-2.5 rounded-full bg-[#5B43EE] shadow-2xs"></span>
+                      2. Back Neck Style
+                    </span>
+                  </div>
+                  <p class="text-[10.5px] text-slate-500 mt-1">Select preferred rear neckline and dori/tassel cutouts:</p>
+                </div>
+
+                <!-- Box Type Grid: Matching Blouse Back Neck Images with Real Crisp CSS Font Pills -->
+                <div class="grid grid-cols-3 gap-2">
+                  ${backNeckOptions.map(opt => {
+                    const isSelected = currentOutfit.backNeck === opt.name;
+                    return `
+                      <button
+                        type="button"
+                        onclick="selectBackNeck('${opt.name}')"
+                        class="rounded-2xl p-2 transition-all cursor-pointer relative group active:scale-95 flex flex-col items-center justify-between text-center ${
+                          isSelected
+                            ? 'border-2 border-[#5B43EE] bg-purple-50/70 shadow-sm'
+                            : 'border border-slate-200/90 hover:border-purple-300 bg-white hover:shadow-xs'
+                        }"
+                      >
+                        ${isSelected ? `
+                          <div class="absolute top-1.5 right-1.5 z-10 w-4 h-4 rounded-full bg-[#5B43EE] text-white flex items-center justify-center text-[9px] font-bold shadow-xs">
+                            ✓
+                          </div>
+                        ` : ''}
+
+                        <div class="w-full aspect-[340/232] p-0.5 flex items-center justify-center overflow-hidden rounded-xl">
+                          <img src="${opt.img}" alt="${opt.name}" class="w-full h-full object-contain transition-transform group-hover:scale-105" />
+                        </div>
+
+                        <!-- Real Crisp CSS Font Pill (Large, Bold, High-Contrast) -->
+                        <div class="w-full pt-1.5 pb-0.5 flex justify-center">
+                          <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-bold tracking-tight text-center ${
+                            isSelected
+                              ? 'bg-[#5B43EE] text-white shadow-2xs'
+                              : 'bg-purple-50 text-[#5B43EE] border border-purple-200/90 group-hover:bg-purple-100'
+                          }">
+                            ${opt.name}
+                          </span>
+                        </div>
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+
+                <!-- IF THEY CHOOSE OTHER: Ask input field to enter custom back neck name -->
+                ${currentOutfit.backNeck === 'Others' ? `
+                  <div class="p-3 bg-purple-50/90 border border-purple-200 rounded-xl space-y-2 animate-in fade-in duration-200">
+                    <label class="block text-[11px] font-bold text-[#5B43EE]">
+                      ✏️ Name your Custom Back Neck Cut / Style:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Cut-out Bow Back, Sheer Net Back, Diamond Cut, Criss-Cross..."
+                      value="${currentOutfit.backNeckCustomName || ''}"
+                      oninput="handleBackNeckCustomName(this.value)"
+                      class="w-full bg-white border border-purple-300 rounded-lg px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 font-semibold outline-none focus:ring-2 focus:ring-[#5B43EE]/30 shadow-inner"
+                      autofocus
+                    />
+                  </div>
+                ` : ''}
+
+                <!-- Photo Upload, Voice Note & Tailor Description (For EVERY Selection) -->
+                ${renderDesignAttachmentsAndNotesBlock('back')}
+              </div>
+
+              <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="setStep(1)" class="w-24 h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shrink-0 cursor-pointer">
+                  <span>←</span> <span>Back</span>
+                </button>
+                <button type="button" onclick="setStep(3)" class="flex-1 h-10 bg-[#5B43EE] hover:bg-[#4a35d4] text-white rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-[#5B43EE]/25 transition-all cursor-pointer active:scale-98 whitespace-nowrap">
+                  <span>Next: Sleeves & Opening</span> <span>→</span>
+                </button>
+              </div>
+            ` : ''}
+
+            <!-- STEP 3: Sleeves & Hook Opening (Spacious 2-Column Grid, Clean Breathing Space) -->
+            ${step === 3 ? `
+              <div class="border border-purple-200/90 rounded-2xl p-4 space-y-4 bg-white shadow-2xs">
+                
+                <!-- Step 3 Header -->
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                  <div>
+                    <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <span class="w-2.5 h-2.5 rounded-full bg-[#5B43EE] shadow-xs"></span>
+                      3. Sleeves & Opening Fastening
+                    </span>
+                    <p class="text-[10.5px] text-slate-500 mt-1">Choose comfortable sleeve length and hook placement:</p>
+                  </div>
+                </div>
+
+                <!-- Sleeve Options: Clean 2-Column Spacious Grid -->
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-800 flex items-center gap-1">
+                      <span>📏</span> <span>Choose Sleeve Length:</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-medium">Comfortable touch cards</span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    ${[
+                      { name: 'Elbow Length', desc: 'Standard 10-11"' },
+                      { name: 'Short Sleeve (4-5")', desc: 'Classic traditional' },
+                      { name: '3/4th Sleeve', desc: 'Graceful 14-16"' },
+                      { name: 'Full Sleeve', desc: 'Wrist length 20-22"' },
+                      { name: 'Puff Sleeve', desc: 'Pleated shoulder' },
+                      { name: 'Sleeveless', desc: 'Clean armhole' },
+                      { name: 'Others', desc: 'Custom sleeve cut' }
+                    ].map((slv, idx) => {
+                      const isSel = currentOutfit.sleeve === slv.name;
+                      const isLastCol = idx === 6;
+                      return `
+                        <button
+                          type="button"
+                          onclick="selectSleeve('${slv.name}')"
+                          class="p-2.5 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer active:scale-98 ${isLastCol ? 'col-span-2' : ''} ${
+                            isSel
+                              ? 'border-2 border-[#5B43EE] bg-purple-50/80 shadow-xs'
+                              : 'border border-slate-200 hover:border-purple-300 bg-white hover:bg-purple-50/20'
+                          }"
+                        >
+                          ${isSel ? `
+                            <span class="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#5B43EE] text-white flex items-center justify-center text-[9px] font-bold shadow-2xs">
+                              ✓
+                            </span>
+                          ` : ''}
+                          <span class="text-xs font-bold ${isSel ? 'text-[#5B43EE]' : 'text-slate-800'} block">
+                            ${slv.name}
+                          </span>
+                          <span class="text-[10px] ${isSel ? 'text-[#5B43EE]/75 font-medium' : 'text-slate-400'} block mt-0.5">
+                            ${slv.desc}
+                          </span>
+                        </button>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+
+                <!-- IF THEY CHOOSE OTHER SLEEVE: Input field -->
+                ${currentOutfit.sleeve === 'Others' ? `
+                  <div class="p-3 bg-purple-50/90 border border-purple-200 rounded-xl space-y-1.5 animate-in fade-in duration-200">
+                    <label class="block text-[11px] font-bold text-[#5B43EE]">
+                      ✏️ Name your Custom Sleeve Design:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Cold Shoulder, Balloon Puff, Tulip Sleeve, Flared Cape..."
+                      value="${currentOutfit.sleeveCustomName || ''}"
+                      oninput="currentOutfit.sleeveCustomName = this.value; updateSpecUI();"
+                      class="w-full bg-white border border-purple-300 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 font-semibold outline-none focus:ring-2 focus:ring-[#5B43EE]/30 shadow-inner"
+                      autofocus
+                    />
+                  </div>
+                ` : ''}
+
+                <!-- Hook / Opening Options: Clean 2-Column Spacious Grid -->
+                <div class="space-y-2 pt-3 border-t border-slate-100">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-800 flex items-center gap-1">
+                      <span>🪝</span> <span>Hook & Fastening Placement:</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-medium">Boutique finish</span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    ${[
+                      { name: 'Front Hook', desc: 'Standard front placket' },
+                      { name: 'Back Hook', desc: 'Clean seamless front' },
+                      { name: 'Side Concealed Zipper', desc: 'Invisible side zip' },
+                      { name: 'Side Hook', desc: 'Traditional side hooks' }
+                    ].map(hk => {
+                      const isSel = currentOutfit.hook === hk.name;
+                      return `
+                        <button
+                          type="button"
+                          onclick="selectHook('${hk.name}')"
+                          class="p-2.5 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer active:scale-98 ${
+                            isSel
+                              ? 'border-2 border-[#5B43EE] bg-purple-50/80 shadow-xs'
+                              : 'border border-slate-200 hover:border-purple-300 bg-white hover:bg-purple-50/20'
+                          }"
+                        >
+                          ${isSel ? `
+                            <span class="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#5B43EE] text-white flex items-center justify-center text-[9px] font-bold shadow-2xs">
+                              ✓
+                            </span>
+                          ` : ''}
+                          <span class="text-xs font-bold ${isSel ? 'text-[#5B43EE]' : 'text-slate-800'} block">
+                            ${hk.name}
+                          </span>
+                          <span class="text-[10px] ${isSel ? 'text-[#5B43EE]/75 font-medium' : 'text-slate-400'} block mt-0.5">
+                            ${hk.desc}
+                          </span>
+                        </button>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+
+                <!-- Photo Upload, Voice Note & Tailor Description (For EVERY Selection) -->
+                ${renderDesignAttachmentsAndNotesBlock('sleeve')}
+              </div>
+
+              <!-- Navigation Footer -->
+              <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="setStep(2)" class="w-24 h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shrink-0 cursor-pointer">
+                  <span>←</span> <span>Back</span>
+                </button>
+                <button type="button" onclick="setStep(4)" class="flex-1 h-10 bg-[#5B43EE] hover:bg-[#4a35d4] text-white rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-[#5B43EE]/25 transition-all cursor-pointer active:scale-98 whitespace-nowrap">
+                  <span>Next: Review & Confirm</span> <span>→</span>
+                </button>
+              </div>
+            ` : ''}
+
+            <!-- STEP 4: Review Design & Complete Outfit (High-End Boutique Review Card) -->
+            ${step === 4 ? `
+              <div class="border border-purple-200/90 rounded-2xl p-4 space-y-4 bg-white shadow-2xs">
+                
+                <!-- Fabric Material & Sample Measurement Dress Section (Clean & Spacious) -->
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <span class="w-2 h-2 rounded-full bg-[#5B43EE]"></span>
+                      <span>Fabric & Sample Garment Reference</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-semibold bg-slate-100 px-2 py-0.5 rounded-full">Optional</span>
+                  </div>
+
+                  <div class="space-y-2.5">
+                    <!-- Item 1: Fabric / Saree Material Cloth -->
+                    <div class="bg-white rounded-xl p-3 border border-slate-200/90 hover:border-purple-300 transition-all shadow-2xs space-y-2.5">
+                      <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                          <div class="w-8 h-8 rounded-lg bg-purple-50 text-[#5B43EE] flex items-center justify-center text-sm shrink-0 border border-purple-100">
+                            🧵
+                          </div>
+                          <div class="min-w-0">
+                            <span class="text-xs font-bold text-slate-900 block truncate">Fabric / Saree Material</span>
+                            <span class="text-[10px] text-slate-400 block truncate">Attach cloth photo for border & motif placement</span>
+                          </div>
+                        </div>
+                        <div class="shrink-0">
+                          ${(currentOutfit.fabricPhotos && currentOutfit.fabricPhotos.length > 0) ? `
+                            <div class="flex items-center gap-1.5">
+                              <div class="relative w-9 h-9 rounded-lg overflow-hidden border border-purple-200 shrink-0 shadow-2xs">
+                                <img src="${currentOutfit.fabricPhotos[0]}" class="w-full h-full object-cover" />
+                              </div>
+                              <button type="button" onclick="openCropModal('fabric')" class="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-[#5B43EE] border border-purple-200 rounded-lg text-[10.5px] font-bold cursor-pointer transition-colors">Edit</button>
+                              <button type="button" onclick="removeFabricPhoto()" class="w-6 h-6 rounded-lg hover:bg-rose-50 text-rose-500 font-bold text-xs flex items-center justify-center cursor-pointer transition-colors" title="Remove photo">✕</button>
+                            </div>
+                          ` : `
+                            <button
+                              type="button"
+                              onclick="openCropModal('fabric')"
+                              class="px-3 py-1.5 bg-white hover:bg-purple-50 text-[#5B43EE] border border-purple-200 hover:border-[#5B43EE] rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap"
+                            >
+                              <span>📷</span> <span>+ Add Photo</span>
+                            </button>
+                          `}
+                        </div>
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="Fabric remarks (e.g. Pure silk material, 1m lining cloth provided)"
+                        value="${currentOutfit.fabricNote || ''}"
+                        oninput="currentOutfit.fabricNote = this.value; updateSpecUI();"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all shadow-inner"
+                      />
+                    </div>
+
+                    <!-- Item 2: Sample Measurement Dress -->
+                    <div class="bg-white rounded-xl p-3 border border-slate-200/90 hover:border-purple-300 transition-all shadow-2xs space-y-2.5">
+                      <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                          <div class="w-8 h-8 rounded-lg bg-purple-50 text-[#5B43EE] flex items-center justify-center text-sm shrink-0 border border-purple-100">
+                            👗
+                          </div>
+                          <div class="min-w-0">
+                            <span class="text-xs font-bold text-slate-900 block truncate">Sample Measurement Garment</span>
+                            <span class="text-[10px] text-slate-400 block truncate">Photo of best-fitting sample blouse/garment</span>
+                          </div>
+                        </div>
+                        <div class="shrink-0">
+                          ${(currentOutfit.sampleDressPhotos && currentOutfit.sampleDressPhotos.length > 0) ? `
+                            <div class="flex items-center gap-1.5">
+                              <div class="relative w-9 h-9 rounded-lg overflow-hidden border border-purple-200 shrink-0 shadow-2xs">
+                                <img src="${currentOutfit.sampleDressPhotos[0]}" class="w-full h-full object-cover" />
+                              </div>
+                              <button type="button" onclick="openCropModal('sampleDress')" class="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-[#5B43EE] border border-purple-200 rounded-lg text-[10.5px] font-bold cursor-pointer transition-colors">Edit</button>
+                              <button type="button" onclick="removeSampleDressPhoto()" class="w-6 h-6 rounded-lg hover:bg-rose-50 text-rose-500 font-bold text-xs flex items-center justify-center cursor-pointer transition-colors" title="Remove photo">✕</button>
+                            </div>
+                          ` : `
+                            <button
+                              type="button"
+                              onclick="openCropModal('sampleDress')"
+                              class="px-3 py-1.5 bg-white hover:bg-purple-50 text-[#5B43EE] border border-purple-200 hover:border-[#5B43EE] rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap"
+                            >
+                              <span>👗</span> <span>+ Add Photo</span>
+                            </button>
+                          `}
+                        </div>
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="Sample garment remarks (e.g. Copy bust & armhole fit, 1 inch loose on waist)"
+                        value="${currentOutfit.sampleDressNote || ''}"
+                        oninput="currentOutfit.sampleDressNote = this.value; updateSpecUI();"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white transition-all shadow-inner"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tailor Notes / Fit Instructions -->
+                <div class="space-y-2 pt-3.5 mt-2.5 border-t border-slate-100">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <span>✏️</span> <span>Special Fit & Tailor Instructions:</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-medium">Optional</span>
+                  </div>
+                  <textarea
+                    rows="2"
+                    placeholder="E.g., Keep 2-inch margin inside for alterations, lining cloth already provided, cup padding required..."
+                    oninput="currentOutfit.tailorNotes = this.value; updateSpecUI();"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#5B43EE] focus:bg-white resize-none transition-colors"
+                  >${currentOutfit.tailorNotes || ''}</textarea>
+                </div>
+
+              </div>
+
+              <!-- Bottom Actions -->
+              <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="setStep(3)" class="w-24 h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shrink-0 cursor-pointer">
+                  <span>←</span> <span>Back</span>
+                </button>
+                <button type="button" onclick="handleSaveAndCompleteOutfit()" class="flex-1 h-10 bg-[#5B43EE] hover:bg-[#4a35d4] text-white rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-[#5B43EE]/25 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 whitespace-nowrap">
+                  <span>Confirm & View Inquiry</span> <span>→</span>
+                </button>
+              </div>
+            ` : ''}
+
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleVoiceNoteSim() {
+      currentOutfit.hasVoiceNote = true;
+      document.getElementById('txtVoiceNote').innerText = 'Voice Note Recorded (0:15) ✓';
+      document.getElementById('btnVoiceNote').className = 'w-full py-2.5 bg-purple-50 border border-purple-300 rounded-xl text-xs font-bold text-[#5B43EE] flex items-center justify-center gap-2';
+      updateSpecUI();
+    }
+
+    // Interactive 4-Corner Crop & Rotate Controller
+    let cropImgPosX = 0;
+    let cropImgPosY = 0;
+    let cropBox = { x: 50, y: 30, width: 220, height: 150 };
+
+    let activeCropDragMode = null; // 'nw', 'ne', 'sw', 'se', 'n', 's', 'w', 'e', 'box-move', 'img-pan'
+    let cropDragStartPointer = { x: 0, y: 0 };
+    let cropDragStartBox = { x: 0, y: 0, width: 0, height: 0 };
+    let cropDragStartImg = { x: 0, y: 0 };
+
+    function updateCropBoxUI() {
+      const box = document.getElementById('cropOverlayBox');
+      const badge = document.getElementById('cropDimBadge');
+      if (box) {
+        box.style.left = `${cropBox.x}px`;
+        box.style.top = `${cropBox.y}px`;
+        box.style.width = `${cropBox.width}px`;
+        box.style.height = `${cropBox.height}px`;
+      }
+      if (badge) {
+        badge.innerText = `${Math.round(cropBox.width)} × ${Math.round(cropBox.height)}`;
+      }
+    }
+
+    function initCropBoxPosition() {
+      const container = document.getElementById('cropFrameContainer');
+      const cw = (container && container.clientWidth) ? container.clientWidth : 340;
+      const ch = (container && container.clientHeight) ? container.clientHeight : 224;
+
+      cropBox.width = Math.min(260, Math.round(cw * 0.76));
+      cropBox.height = Math.min(155, Math.round(ch * 0.72));
+      cropBox.x = Math.round((cw - cropBox.width) / 2);
+      cropBox.y = Math.round((ch - cropBox.height) / 2);
+      updateCropBoxUI();
+    }
+
+    function openCropModal(target) {
+      activeCropTarget = target;
+      currentRotation = 0;
+      currentZoom = 1;
+      cropImgPosX = 0;
+      cropImgPosY = 0;
+
+      const titles = {
+        front: 'Front Neck Design Reference',
+        back: 'Back Neck Design Reference',
+        cut: 'Blouse Cut & Pattern Reference',
+        sleeve: 'Sleeve & Border Reference',
+        fabric: 'Fabric / Saree Material Photo',
+        sampleDress: 'Sample Measurement Garment Photo',
+        extra: 'Fabric Material & Color Sample'
+      };
+      document.getElementById('cropModalTitle').innerText = titles[target] || 'Design Reference Photo';
+
+      const previewImg = document.getElementById('cropPreviewImg');
+      if (previewImg) {
+        if (target === 'fabric') {
+          previewImg.src = 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80';
+        } else if (target === 'sampleDress') {
+          previewImg.src = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80';
+        } else if (target === 'sleeve') {
+          previewImg.src = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80';
+        } else {
+          previewImg.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80';
+        }
+      }
+      updateCropImgTransform();
+      const zoomSlider = document.getElementById('cropZoomRange');
+      if (zoomSlider) zoomSlider.value = 1;
+
+      document.getElementById('cropModal').classList.remove('hidden');
+
+      setTimeout(() => {
+        initCropBoxPosition();
+      }, 40);
+
+      initCropDragListeners();
+    }
+
+    function closeCropModal() {
+      document.getElementById('cropModal').classList.add('hidden');
+    }
+
+    function updateCropImgTransform() {
+      const img = document.getElementById('cropPreviewImg');
+      if (img) {
+        img.style.transform = `translate(${cropImgPosX}px, ${cropImgPosY}px) scale(${currentZoom}) rotate(${currentRotation}deg)`;
+      }
+    }
+
+    function rotateImage(deg) {
+      currentRotation += deg;
+      updateCropImgTransform();
+    }
+
+    function handleZoom(z) {
+      currentZoom = parseFloat(z);
+      updateCropImgTransform();
+    }
+
+    function resetCropTransform() {
+      currentZoom = 1;
+      currentRotation = 0;
+      cropImgPosX = 0;
+      cropImgPosY = 0;
+      const zoomSlider = document.getElementById('cropZoomRange');
+      if (zoomSlider) zoomSlider.value = 1;
+      updateCropImgTransform();
+      initCropBoxPosition();
+    }
+
+    function handleCropFileSelect(event) {
+      const file = event.target.files && event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const img = document.getElementById('cropPreviewImg');
+          if (img) {
+            img.src = evt.target.result;
+            resetCropTransform();
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function loadSamplePhoto(sampleKey) {
+      const samples = {
+        blouse_ref: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
+        embroidery_ref: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80'
+      };
+      const img = document.getElementById('cropPreviewImg');
+      if (img) {
+        img.src = samples[sampleKey] || samples.blouse_ref;
+        resetCropTransform();
+      }
+    }
+
+    function initCropDragListeners() {
+      const container = document.getElementById('cropFrameContainer');
+      if (!container || container.dataset.cropDragInit) return;
+      container.dataset.cropDragInit = 'true';
+
+      function handlePointerStart(e) {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        const handle = e.target.closest('[data-handle]');
+        const box = e.target.closest('#cropOverlayBox');
+
+        if (handle) {
+          activeCropDragMode = handle.getAttribute('data-handle');
+        } else if (box) {
+          activeCropDragMode = 'box-move';
+        } else {
+          activeCropDragMode = 'img-pan';
+        }
+
+        cropDragStartPointer = { x: clientX, y: clientY };
+        cropDragStartBox = { ...cropBox };
+        cropDragStartImg = { x: cropImgPosX, y: cropImgPosY };
+
+        if (e.cancelable && (handle || box)) {
+          e.preventDefault();
+        }
+      }
+
+      function handlePointerMove(e) {
+        if (!activeCropDragMode) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const dx = clientX - cropDragStartPointer.x;
+        const dy = clientY - cropDragStartPointer.y;
+
+        const cw = container.clientWidth;
+        const ch = container.clientHeight;
+        const minW = 45;
+        const minH = 45;
+
+        if (activeCropDragMode === 'box-move') {
+          let nx = cropDragStartBox.x + dx;
+          let ny = cropDragStartBox.y + dy;
+          nx = Math.max(0, Math.min(cw - cropDragStartBox.width, nx));
+          ny = Math.max(0, Math.min(ch - cropDragStartBox.height, ny));
+          cropBox.x = nx;
+          cropBox.y = ny;
+          updateCropBoxUI();
+        } else if (activeCropDragMode === 'img-pan') {
+          cropImgPosX = cropDragStartImg.x + dx;
+          cropImgPosY = cropDragStartImg.y + dy;
+          updateCropImgTransform();
+        } else if (activeCropDragMode === 'se') {
+          // Bottom-Right Corner
+          let nw = Math.max(minW, Math.min(cw - cropDragStartBox.x, cropDragStartBox.width + dx));
+          let nh = Math.max(minH, Math.min(ch - cropDragStartBox.y, cropDragStartBox.height + dy));
+          cropBox.width = nw;
+          cropBox.height = nh;
+          updateCropBoxUI();
+        } else if (activeCropDragMode === 'nw') {
+          // Top-Left Corner
+          let maxDx = cropDragStartBox.width - minW;
+          let maxDy = cropDragStartBox.height - minH;
+          let cdx = Math.min(maxDx, Math.max(-cropDragStartBox.x, dx));
+          let cdy = Math.min(maxDy, Math.max(-cropDragStartBox.y, dy));
+          cropBox.x = cropDragStartBox.x + cdx;
+          cropBox.y = cropDragStartBox.y + cdy;
+          cropBox.width = cropDragStartBox.width - cdx;
+          cropBox.height = cropDragStartBox.height - cdy;
+          updateCropBoxUI();
+        } else if (activeCropDragMode === 'ne') {
+          // Top-Right Corner
+          let maxDy = cropDragStartBox.height - minH;
+          let cdy = Math.min(maxDy, Math.max(-cropDragStartBox.y, dy));
+          let nw = Math.max(minW, Math.min(cw - cropDragStartBox.x, cropDragStartBox.width + dx));
+          cropBox.y = cropDragStartBox.y + cdy;
+          cropBox.height = cropDragStartBox.height - cdy;
+          cropBox.width = nw;
+          updateCropBoxUI();
+        } else if (activeCropDragMode === 'sw') {
+          // Bottom-Left Corner
+          let maxDx = cropDragStartBox.width - minW;
+          let cdx = Math.min(maxDx, Math.max(-cropDragStartBox.x, dx));
+          let nh = Math.max(minH, Math.min(ch - cropDragStartBox.y, cropDragStartBox.height + dy));
+          cropBox.x = cropDragStartBox.x + cdx;
+          cropBox.width = cropDragStartBox.width - cdx;
+          cropBox.height = nh;
+          updateCropBoxUI();
+        } else if (activeCropDragMode === 'n') {
+          // Top Edge
+          let maxDy = cropDragStartBox.height - minH;
+          let cdy = Math.min(maxDy, Math.max(-cropDragStartBox.y, dy));
+          cropBox.y = cropDragStartBox.y + cdy;
+          cropBox.height = cropDragStartBox.height - cdy;
+          updateCropBoxUI();
+        } else if (activeCropDragMode === 's') {
+          // Bottom Edge
+          let nh = Math.max(minH, Math.min(ch - cropDragStartBox.y, cropDragStartBox.height + dy));
+          cropBox.height = nh;
+          updateCropBoxUI();
+        } else if (activeCropDragMode === 'w') {
+          // Left Edge
+          let maxDx = cropDragStartBox.width - minW;
+          let cdx = Math.min(maxDx, Math.max(-cropDragStartBox.x, dx));
+          cropBox.x = cropDragStartBox.x + cdx;
+          cropBox.width = cropDragStartBox.width - cdx;
+          updateCropBoxUI();
+        } else if (activeCropDragMode === 'e') {
+          // Right Edge
+          let nw = Math.max(minW, Math.min(cw - cropDragStartBox.x, cropDragStartBox.width + dx));
+          cropBox.width = nw;
+          updateCropBoxUI();
+        }
+
+        if (e.cancelable && activeCropDragMode !== 'img-pan') {
+          e.preventDefault();
+        }
+      }
+
+      function handlePointerEnd() {
+        activeCropDragMode = null;
+      }
+
+      container.addEventListener('mousedown', handlePointerStart);
+      window.addEventListener('mousemove', handlePointerMove);
+      window.addEventListener('mouseup', handlePointerEnd);
+
+      container.addEventListener('touchstart', handlePointerStart, { passive: false });
+      window.addEventListener('touchmove', handlePointerMove, { passive: false });
+      window.addEventListener('touchend', handlePointerEnd);
+    }
+
+    function saveCropPhoto() {
+      const img = document.getElementById('cropPreviewImg');
+      const container = document.getElementById('cropFrameContainer');
+      
+      let finalPhotoUrl = img ? img.src : 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=500&q=80';
+
+      // Attempt client-side canvas crop of the exact 4-corner crop area
+      try {
+        if (img && container && img.naturalWidth && img.naturalHeight) {
+          const canvas = document.createElement('canvas');
+          const cropW = Math.max(1, Math.round(cropBox.width));
+          const cropH = Math.max(1, Math.round(cropBox.height));
+          canvas.width = cropW * 2;
+          canvas.height = cropH * 2;
+          const ctx = canvas.getContext('2d');
+          ctx.scale(2, 2);
+
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, cropW, cropH);
+
+          const cw = container.clientWidth;
+          const ch = container.clientHeight;
+
+          ctx.save();
+          ctx.translate(-cropBox.x, -cropBox.y);
+          ctx.translate(cw / 2 + cropImgPosX, ch / 2 + cropImgPosY);
+          ctx.rotate((currentRotation * Math.PI) / 180);
+          ctx.scale(currentZoom, currentZoom);
+
+          const containerRatio = cw / ch;
+          const imgRatio = img.naturalWidth / img.naturalHeight;
+          let renderW = cw;
+          let renderH = ch;
+          if (imgRatio > containerRatio) {
+            renderW = ch * imgRatio;
+            renderH = ch;
+          } else {
+            renderW = cw;
+            renderH = cw / imgRatio;
+          }
+
+          ctx.drawImage(img, -renderW / 2, -renderH / 2, renderW, renderH);
+          ctx.restore();
+
+          finalPhotoUrl = canvas.toDataURL('image/jpeg', 0.92);
+        }
+      } catch (err) {
+        console.warn('Canvas crop fallback:', err);
+      }
+
+      closeCropModal();
+      if (!currentOutfit) return;
+
+      // Attach cropped photo to targeted design section
+      if (activeCropTarget === 'front') {
+        currentOutfit.frontNeckPhotos = [finalPhotoUrl];
+      } else if (activeCropTarget === 'back') {
+        currentOutfit.backNeckPhotos = [finalPhotoUrl];
+      } else if (activeCropTarget === 'cut') {
+        currentOutfit.cutPhotos = [finalPhotoUrl];
+      } else if (activeCropTarget === 'sleeve') {
+        currentOutfit.sleevePhotos = [finalPhotoUrl];
+      } else if (activeCropTarget === 'fabric') {
+        currentOutfit.fabricPhotos = [finalPhotoUrl];
+      } else if (activeCropTarget === 'sampleDress') {
+        currentOutfit.sampleDressPhotos = [finalPhotoUrl];
+      } else {
+        currentOutfit.extraPhotos = [finalPhotoUrl];
+      }
+      updateSpecUI();
+      renderChat();
+    }
+
+    // TARGET DELIVERY DATE MODAL (Matching Boutique Brand Aesthetic)
+    function openDeliveryDateModal() {
+      document.getElementById('deliveryDateModal').classList.remove('hidden');
+    }
+
+    function closeDeliveryDateModal() {
+      document.getElementById('deliveryDateModal').classList.add('hidden');
+    }
+
+    function selectPresetDays(days, label, dateStr) {
+      chosenDeliveryTimeline = `${dateStr} (${label} ${days} Days)`;
+      chosenDeliveryDate = `2026-11-${days === 7 ? '15' : days === 14 ? '22' : days === 21 ? '29' : '30'}`;
+
+      // Highlight active card
+      ['preset_7', 'preset_14', 'preset_21', 'preset_30'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.className = 'cursor-pointer border border-slate-200 p-2.5 rounded-xl transition-all space-y-0.5 bg-slate-50 hover:bg-purple-50/50';
+        }
+      });
+      const activeEl = document.getElementById(`preset_${days}`);
+      if (activeEl) {
+        activeEl.className = 'cursor-pointer border-2 border-[#5B43EE] p-2.5 rounded-xl transition-all space-y-0.5 bg-[#EDE9FE]/50';
+      }
+    }
+
+    function handleCustomDateChange(val) {
+      chosenDeliveryDate = val;
+      chosenDeliveryTimeline = `${val} (Custom Date)`;
+    }
+
+    function confirmSelectedDeliveryDate() {
+      closeDeliveryDateModal();
+      updateSpecUI();
+      if (conversationHistory.some(m => m.id && m.id.startsWith('final_ticket'))) {
+        handleProceedToFinalTicket();
+      }
+    }
+
+    // MEASUREMENT MODAL HELPERS
+    function openMeasurementModal() {
+      document.getElementById('measurementModal').classList.remove('hidden');
+    }
+
+    function closeMeasurementModal() {
+      document.getElementById('measurementModal').classList.add('hidden');
+    }
+
+    function selectMeasurementOption(opt) {
+      measurementOption = opt;
+      closeMeasurementModal();
+      updateSpecUI();
+      if (conversationHistory.some(m => m.id && m.id.startsWith('final_ticket'))) {
+        handleProceedToFinalTicket();
+      }
+    }
+
+    // Chat Input Intelligence
+    function handleInputSubmit() {
+      const input = document.getElementById('chatInput');
+      const val = input.value.trim();
+      if (!val) return;
+      input.value = '';
+
+      conversationHistory.push({
+        id: `user_manual_${Date.now()}`,
+        sender: 'user',
+        text: val
+      });
+      renderChat();
+
+      showTyping(true);
+      setTimeout(() => {
+        showTyping(false);
+        const lower = val.toLowerCase();
+        let botText = '';
+
+        if (/(price|cost|charge|fees|how much|evlo)/i.test(lower)) {
+          botText = `💰 <b>Blouse Stitching:</b> ₹450 – ₹1,200 | <b>Gowns:</b> ₹1,500 – ₹2,800. Final quote confirmed upon reviewing fabric!`;
+        } else if (/(delivery|days|when|urgent|time)/i.test(lower)) {
+          botText = `⏱️ Standard delivery is <b>5 to 7 business days</b>. Priority express available in <b>2 to 3 days</b>!`;
+        } else if (/(measurement|sample|size|alavu)/i.test(lower)) {
+          botText = `📐 We recommend <b>🏬 In-Store Measurement</b> at Inba Boutique, or courier a sample dress! 100% Fit Guarantee included.`;
+        } else if (/(neck|sleeve|pad|dori|latkan|tight|loose|inch)/i.test(lower)) {
+          if (currentOutfit) {
+            currentOutfit.backNeckNote = currentOutfit.backNeckNote ? `${currentOutfit.backNeckNote}; ${val}` : val;
+            updateSpecUI();
+          }
+          botText = `✨ Noted instruction: <i>"${val}"</i>. Saved directly to your tailor cutting notes!`;
+        } else {
+          botText = `Got your note: <i>"${val}"</i>. I've noted this for the master tailor at Inba Boutique!`;
+        }
+
+        conversationHistory.push({
+          id: `bot_reply_${Date.now()}`,
+          sender: 'bot',
+          html: `
+            <div class="space-y-1">
+              <p class="font-bold text-[#5B43EE] text-[11px]">Inba Assistant 🤖</p>
+              <div class="text-xs text-slate-800">${botText}</div>
+            </div>
+          `
+        });
+        renderChat();
+      }, 400);
+    }
+
+    function showTyping(show = true) {
+      document.getElementById('typingIndicator').classList.toggle('hidden', !show);
+      const chatBox = document.getElementById('chatMessages');
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function updateSpecUI() {
+      const activeOrLast = currentOutfit || (completedOutfits.length > 0 ? completedOutfits[completedOutfits.length - 1] : null);
+      if (activeOrLast) {
+        document.getElementById('specCategory').innerText = activeOrLast.category || '—';
+        document.getElementById('specCut').innerText = activeOrLast.categoryCut || '—';
+        document.getElementById('specFront').innerText = (activeOrLast.frontNeck === 'Others' ? (activeOrLast.frontNeckCustomName ? `Custom: ${activeOrLast.frontNeckCustomName}` : 'Custom Neck') : activeOrLast.frontNeck) || '—';
+        document.getElementById('specBack').innerText = (activeOrLast.backNeck === 'Others' ? (activeOrLast.backNeckCustomName ? `Custom: ${activeOrLast.backNeckCustomName}` : 'Custom Back') : activeOrLast.backNeck) || '—';
+        document.getElementById('specSleeve').innerText = `${activeOrLast.sleeve} (${activeOrLast.hook})`;
+        document.getElementById('specMeasurement').innerText = measurementOption;
+        document.getElementById('specNotes').innerText = activeOrLast.tailorNotes || activeOrLast.backNeckNote || '—';
+        document.getElementById('specDeliveryDate').innerText = chosenDeliveryTimeline;
+      }
+
+      const allOutfitsList = [...completedOutfits];
+      if (currentOutfit && !completedOutfits.some(o => o.number === currentOutfit.number)) {
+        allOutfitsList.push(currentOutfit);
+      }
+
+      const payload = {
+        order_type: 'STITCHING_REQUEST',
+        customer_mobile: '+919840423231',
+        customer_name: 'Bhuvan',
+        company_id: 1,
+        measurement_option: measurementOption,
+        expected_delivery_date: chosenDeliveryDate,
+        outfits: allOutfitsList.map(o => ({
+          name: `${o.category} (${o.categoryCut || 'Standard'})`,
+          pattern_cut: o.categoryCut,
+          front_neck: o.frontNeck,
+          back_neck: o.backNeck,
+          sleeve: o.sleeve,
+          hook: o.hook,
+          customer_notes: `Front: ${o.frontNeck} | Back: ${o.backNeck} | Notes: ${o.tailorNotes || ''}`,
+          fabric_notes: o.fabricNote || '',
+          sample_dress_notes: o.sampleDressNote || '',
+          photos: [
+            ...(o.frontNeckPhotos?.[0] ? [{ label: 'Front Neck', url: o.frontNeckPhotos[0] }] : []),
+            ...(o.backNeckPhotos?.[0] ? [{ label: 'Back Neck', url: o.backNeckPhotos[0] }] : []),
+            ...(o.sleevePhotos?.[0] ? [{ label: 'Sleeve', url: o.sleevePhotos[0] }] : []),
+            ...(o.fabricPhotos?.[0] ? [{ label: 'Fabric / Material', url: o.fabricPhotos[0] }] : []),
+            ...(o.sampleDressPhotos?.[0] ? [{ label: 'Sample Dress', url: o.sampleDressPhotos[0] }] : [])
+          ]
+        }))
+      };
+
+      document.getElementById('apiPayloadJson').innerText = JSON.stringify(payload, null, 2);
+    }
+
+    function drawCollageEmpty() {
+      const canvas = document.getElementById('collageCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#0F172A';
+      ctx.fillRect(0, 0, 400, 200);
+
+      ctx.fillStyle = '#64748B';
+      ctx.font = '12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Master Collage will generate upon step completion', 200, 105);
+      document.getElementById('collageStatus').innerText = 'Awaiting Step Completion';
+      document.getElementById('collageStatus').className = 'text-[11px] font-semibold text-slate-400';
+    }
+
+    function drawCollageMaster() {
+      const canvas = document.getElementById('collageCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#0F172A';
+      ctx.fillRect(0, 0, 400, 200);
+
+      ctx.fillStyle = '#F472B6';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('SEWVEE WORKSHOP COLLAGE • OUTFIT #1 (CUTTORI BLOUSE)', 12, 18);
+
+      const tiles = [
+        { title: '1. FABRIC / MATERIAL', val: 'Pure Silk', x: 10, y: 30 },
+        { title: '2. FRONT NECK', val: currentOutfit ? (currentOutfit.frontNeck === 'Others' ? (currentOutfit.frontNeckCustomName || 'Custom Neck') : currentOutfit.frontNeck) : 'Normal Neck', x: 205, y: 30 },
+        { title: '3. BACK NECK', val: currentOutfit ? currentOutfit.backNeck : 'Pot Neck', x: 10, y: 115 },
+        { title: '4. SLEEVE & HOOK', val: currentOutfit ? `${currentOutfit.sleeve} • ${currentOutfit.hook}` : 'Elbow Length', x: 205, y: 115 },
+      ];
+
+      tiles.forEach(t => {
+        ctx.fillStyle = '#1E293B';
+        ctx.fillRect(t.x, t.y, 185, 75);
+        ctx.strokeStyle = '#334155';
+        ctx.strokeRect(t.x, t.y, 185, 75);
+
+        ctx.fillStyle = '#F472B6';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.fillText(t.title, t.x + 10, t.y + 20);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillText(t.val, t.x + 10, t.y + 42);
+
+        ctx.fillStyle = '#94A3B8';
+        ctx.font = '9px sans-serif';
+        ctx.fillText('Workshop Verified ✓', t.x + 10, t.y + 62);
+      });
+
+      document.getElementById('collageStatus').innerText = 'Generated ✓';
+      document.getElementById('collageStatus').className = 'text-[11px] font-semibold text-emerald-400';
+    }
+
+    // 1-Click Fast Forward Demo
+    function runAutoWalkthrough() {
+      resetToStart();
+      setTimeout(() => {
+        handleUserSelectCategory('Blouse');
+        setTimeout(() => {
+          handleUserSelectCut('Cuttori blouse');
+          setTimeout(() => {
+            setStep(2);
+            setTimeout(() => {
+              setStep(3);
+              setTimeout(() => {
+                setStep(4);
+                setTimeout(() => {
+                  handleSaveAndCompleteOutfit();
+                }, 1200);
+              }, 1000);
+            }, 1000);
+          }, 1000);
+        }, 1000);
+      }, 500);
+    }
+
+    // 1-Click "Other" Custom Cut Pattern Demo
+    function runCustomOtherCutDemo() {
+      resetToStart();
+      setTimeout(() => {
+        handleUserSelectCategory('Blouse');
+        setTimeout(() => {
+          handleUserSelectCut('Others');
+          setTimeout(() => {
+            setCustomCutSuggestion('Sabyasachi Cut');
+          }, 500);
+        }, 700);
+      }, 400);
+    }
+
+    // Header Back Action
+    function handleHeaderBack() {
+      if (window.parent && window.parent !== window) {
+        window.parent.location.href = '/home';
+      } else if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = '/home';
+      }
+    }
+
+    // Embedded Mode Check (When rendered inside /stitching iframe)
+    (function checkEmbeddedMode() {
+      if (window.location.search.includes('embedded=true')) {
+        document.body.className = 'bg-[#EFEAE2] p-0 m-0 h-screen overflow-hidden antialiased';
+        const hdr = document.querySelector('header');
+        if (hdr) hdr.style.display = 'none';
+        const inspector = document.getElementById('agentInspectorPanel');
+        if (inspector) inspector.style.display = 'none';
+        const mainGrid = document.querySelector('main');
+        if (mainGrid) {
+          mainGrid.className = 'w-full h-screen p-0 m-0 flex flex-col';
+        }
+        const sec = document.getElementById('phoneContainerSection');
+        if (sec) sec.className = 'w-full h-full flex flex-col';
+        const frame = document.getElementById('phoneSimulatorFrame');
+        if (frame) {
+          frame.className = 'w-full h-full max-w-none rounded-none border-0 shadow-none flex flex-col relative text-slate-900 bg-white';
+        }
+        const notch = document.getElementById('phoneTopNotch');
+        if (notch) notch.style.display = 'none';
+      }
+    })();
+  </script>
+</body>
+</html>

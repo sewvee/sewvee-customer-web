@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sewvee Business App - Inquiry & Tailor Workspace</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-3 sm:p-6 antialiased">
+
+  <!-- TOP HEADER -->
+  <header class="max-w-6xl mx-auto mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <span class="w-3 h-3 rounded-full bg-[#5B43EE] animate-pulse"></span>
+        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+          <span>🏬 Sewvee Business App</span>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-500/40">Inquiry & Chat Workspace</span>
+        </h1>
+      </div>
+      <p class="text-slate-400 text-xs sm:text-sm mt-1">
+        This is the real-time screen boutique owners & master tailors see when a customer submits an inquiry from WhatsApp.
+      </p>
+    </div>
+
+    <!-- Quick Navigation Buttons -->
+    <div class="flex flex-wrap items-center gap-2.5">
+      <a href="/whatsapp-prototype.html" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all flex items-center gap-1.5 shadow-sm">
+        <span>💬 Switch to Customer WhatsApp View</span>
+      </a>
+      <button onclick="toggleDeviceView()" id="deviceToggleBtn" class="px-3.5 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 text-purple-200 text-xs font-semibold border border-purple-500/40 transition-all">
+        📱 Toggle Mobile / Tablet Frame
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-6xl mx-auto flex flex-col lg:flex-row items-start justify-center gap-6">
+
+    <!-- MOBILE SIMULATOR FRAME -->
+    <div id="deviceFrame" class="w-full max-w-[420px] mx-auto bg-white text-slate-900 rounded-[36px] shadow-2xl border-[8px] border-slate-800 overflow-hidden flex flex-col h-[820px] relative transition-all duration-300">
+      
+      <!-- Phone Top Notch / Status Bar -->
+      <div class="bg-white px-6 pt-3 pb-2 flex justify-between items-center text-xs font-semibold text-slate-800 select-none border-b border-slate-50 shrink-0">
+        <span>9:41</span>
+        <div class="w-20 h-4 bg-slate-900 rounded-full"></div>
+        <div class="flex items-center gap-1.5 text-[11px]">
+          <span>5G</span>
+          <span>100%</span>
+        </div>
+      </div>
+
+      <!-- BUSINESS APP HEADER (Matches Sewvee-Business-Mobile ChatScreen.js) -->
+      <div class="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between gap-2 shrink-0 z-10 shadow-2xs">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <button onclick="alert('Navigating back to Business Messages List...')" class="p-1 rounded-full hover:bg-slate-100 text-slate-700 cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+          </button>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <h2 class="font-bold text-sm text-slate-900 truncate">Bhuvaneshwari</h2>
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            </div>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="text-[11px] font-mono font-bold text-slate-500">#INQ-8821</span>
+              <span id="headerStatusBadge" class="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-purple-50 text-[#5B43EE] border border-purple-200 uppercase tracking-wider">
+                INQUIRY
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Primary Action: Convert to Order Button -->
+        <button
+          id="btnConvertToOrder"
+          onclick="openConvertModal()"
+          class="px-3 py-1.5 bg-[#5B43EE] hover:bg-[#4a35d4] text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
+        >
+          <span>Convert to Order</span>
+          <span>→</span>
+        </button>
+      </div>
+
+      <!-- MULTI-OUTFIT HORIZONTAL TABS (Matches ChatScreen.js) -->
+      <div class="bg-white border-b border-slate-200 px-4 pt-2.5 flex items-center gap-4 overflow-x-auto shrink-0 select-none">
+        <button
+          onclick="switchOutfit(1)"
+          id="tabOutfit1"
+          class="pb-2 border-b-2 border-[#5B43EE] text-xs font-bold text-[#5B43EE] flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+        >
+          <span>Outfit 1: Blouse</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-[#5B43EE]"></span>
+        </button>
+        <button
+          onclick="switchOutfit(2)"
+          id="tabOutfit2"
+          class="pb-2 border-b-2 border-transparent text-xs font-medium text-slate-400 hover:text-slate-600 flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+        >
+          <span>Outfit 2: Kurti</span>
+          <span class="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.2 rounded">+ Add</span>
+        </button>
+      </div>
+
+      <!-- SCROLLABLE BODY AREA -->
+      <div id="scrollContent" class="flex-1 overflow-y-auto bg-slate-50 p-3.5 space-y-3.5">
+
+        <!-- PINNED SPECIFICATIONS CARD (Exact Replica of Mobile outfitCard) -->
+        <div id="outfitCard" class="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-sm space-y-3">
+          
+          <!-- Card Title & Cut Badge -->
+          <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="text-sm">✂️</span>
+              <h3 id="cardOutfitTitle" class="font-bold text-xs sm:text-sm text-slate-900">
+                Outfit 1: Blouse Specifications
+              </h3>
+            </div>
+            <span id="cardCutBadge" class="text-[10px] font-bold text-[#5B43EE] bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+              PRINCESS CUT
+            </span>
+          </div>
+
+          <!-- Key Neck & Sleeve Specs Table -->
+          <div class="divide-y divide-slate-100 text-xs">
+            <div class="flex justify-between items-center py-1.5">
+              <span class="text-slate-400 font-medium">Front Neck</span>
+              <span class="font-semibold text-slate-800 flex items-center gap-1.5">
+                <span>Sweetheart Neck</span>
+                <span class="w-4 h-4 rounded bg-purple-50 text-[10px] flex items-center justify-center border border-purple-200">🪡</span>
+              </span>
+            </div>
+            <div class="flex justify-between items-center py-1.5">
+              <span class="text-slate-400 font-medium">Back Neck</span>
+              <span class="font-semibold text-slate-800">Deep U-Cut with Tie Dori</span>
+            </div>
+            <div class="flex justify-between items-center py-1.5">
+              <span class="text-slate-400 font-medium">Sleeve & Hook</span>
+              <span class="font-semibold text-slate-800">Elbow Length • Back Hooks</span>
+            </div>
+            <div class="flex justify-between items-center py-1.5">
+              <span class="text-slate-400 font-medium">Measurement</span>
+              <span class="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] border border-emerald-200">
+                👗 Sample Garment Given
+              </span>
+            </div>
+            <div class="flex justify-between items-center py-1.5">
+              <span class="text-slate-400 font-medium">Target Delivery</span>
+              <span class="font-semibold text-slate-800">23 Nov 2026 (Standard 7-Day)</span>
+            </div>
+          </div>
+
+          <!-- Customer Instructions -->
+          <div class="bg-amber-50/70 border border-amber-200/80 rounded-xl p-2.5 text-xs text-amber-950 flex items-start gap-2">
+            <span class="text-xs shrink-0 mt-0.5">📝</span>
+            <div>
+              <span class="font-bold block text-[10.5px] uppercase tracking-wider text-amber-800">Customer Fit Note:</span>
+              <p class="text-[11px] text-amber-900 mt-0.5 italic">
+                "Keep 2-inch margin inside for alterations, cup padding required, lining cloth provided."
+              </p>
+            </div>
+          </div>
+
+          <!-- Attached Photos Grid (Fabric & Sample Dress) -->
+          <div class="pt-1 border-t border-slate-100">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                Attached Reference Photos (2)
+              </span>
+              <span class="text-[10px] text-slate-400">Tap to Zoom</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div onclick="openPhotoPreview('Fabric Cloth Photo', 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80')" class="group relative rounded-xl border border-slate-200 overflow-hidden bg-slate-100 cursor-pointer shadow-2xs hover:border-[#5B43EE]">
+                <img src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80" class="w-full h-24 object-cover group-hover:scale-105 transition-transform" />
+                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-1.5 text-[10px] text-white font-medium">
+                  🧵 Saree Fabric
+                </div>
+              </div>
+              <div onclick="openPhotoPreview('Sample Garment Dress', 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80')" class="group relative rounded-xl border border-slate-200 overflow-hidden bg-slate-100 cursor-pointer shadow-2xs hover:border-[#5B43EE]">
+                <img src="https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=400&q=80" class="w-full h-24 object-cover group-hover:scale-105 transition-transform" />
+                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-1.5 text-[10px] text-white font-medium">
+                  👗 Sample Dress
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- CHAT CONVERSATION STREAM -->
+        <div class="space-y-2.5 pt-1">
+          <div class="text-center">
+            <span class="text-[10px] text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded-full shadow-2xs">
+              Today • Inquiry from WhatsApp Bot
+            </span>
+          </div>
+
+          <!-- WhatsApp Bot Automated Intake Bubble -->
+          <div class="flex items-start gap-2">
+            <div class="w-7 h-7 rounded-full bg-purple-100 text-[#5B43EE] flex items-center justify-center text-xs font-bold shrink-0">
+              🤖
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-none p-3 text-xs text-slate-700 shadow-2xs max-w-[85%] space-y-1">
+              <span class="font-bold text-[10px] text-[#5B43EE] block">Sewvee WhatsApp Bot</span>
+              <p>New Stitching Inquiry submitted by Bhuvaneshwari. Necklines, sleeves, fabric & sample garment photos captured.</p>
+              <span class="text-[9.5px] text-slate-400 block text-right">9:38 AM</span>
+            </div>
+          </div>
+
+          <!-- Customer Message Bubble -->
+          <div class="flex items-start gap-2">
+            <div class="w-7 h-7 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-bold shrink-0">
+              B
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-none p-3 text-xs text-slate-800 shadow-2xs max-w-[85%] space-y-1">
+              <span class="font-bold text-[10px] text-slate-500 block">Bhuvaneshwari</span>
+              <p>Hi Master, please check the fabric photo. Can you give gold piping around the sweetheart neckline?</p>
+              <span class="text-[9.5px] text-slate-400 block text-right">9:40 AM</span>
+            </div>
+          </div>
+
+          <!-- Boutique Tailor Response Bubble -->
+          <div id="tailorReplyBubble" class="hidden flex justify-end">
+            <div class="bg-[#5B43EE] text-white rounded-2xl rounded-tr-none p-3 text-xs shadow-2xs max-w-[85%] space-y-1">
+              <span class="font-bold text-[10px] text-purple-200 block">Inba Boutique (You)</span>
+              <p id="tailorReplyText">Yes Bhuvan! Gold piping will look lovely with this maroon zari border. I have updated the work notes.</p>
+              <span class="text-[9.5px] text-purple-200 block text-right">Just now • Sent to WhatsApp ✓✓</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- QUICK REPLY CHIPS & TAILOR INPUT BAR -->
+      <div class="bg-white border-t border-slate-200 shrink-0">
+        <!-- Quick Action Chips -->
+        <div class="px-3 pt-2 pb-1 flex items-center gap-1.5 overflow-x-auto select-none">
+          <button onclick="sendQuickReply('Feasibility Confirmed: Design and sweetheart neckline can be stitched perfectly!')" class="px-2.5 py-1 bg-slate-50 hover:bg-purple-50 text-slate-700 hover:text-[#5B43EE] border border-slate-200 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors cursor-pointer">
+            ✓ Confirm Feasibility
+          </button>
+          <button onclick="sendQuickReply('Yes, gold piping is possible with this fabric! Quoted rate: ₹850.')" class="px-2.5 py-1 bg-slate-50 hover:bg-purple-50 text-slate-700 hover:text-[#5B43EE] border border-slate-200 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors cursor-pointer">
+            💰 Send Quote (₹850)
+          </button>
+          <button onclick="sendQuickReply('Please bring the sample dress when handing over the cloth.')" class="px-2.5 py-1 bg-slate-50 hover:bg-purple-50 text-slate-700 hover:text-[#5B43EE] border border-slate-200 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors cursor-pointer">
+            👗 Ask Sample Dress
+          </button>
+        </div>
+
+        <!-- Chat Input Bar -->
+        <div class="px-3 py-2 flex items-center gap-2">
+          <button onclick="alert('Camera / Photo attachment picker')" class="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          </button>
+          <input
+            type="text"
+            id="businessInput"
+            placeholder="Type message to Bhuvan (syncs to WhatsApp)..."
+            class="flex-1 bg-slate-100 border border-slate-200 rounded-full px-3.5 py-2 text-xs text-slate-900 outline-none focus:border-[#5B43EE] focus:bg-white transition-all"
+            onkeydown="if(event.key === 'Enter') handleTailorSend()"
+          />
+          <button
+            onclick="handleTailorSend()"
+            class="w-8 h-8 rounded-full bg-[#5B43EE] hover:bg-[#4a35d4] text-white flex items-center justify-center shadow-sm cursor-pointer active:scale-95 transition-all shrink-0"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14M12 5l7 7-7 7"></path></svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SIDE PANEL: WORKFLOW EXPLANATION & ARCHITECTURE -->
+    <div class="flex-1 max-w-xl space-y-4">
+      
+      <!-- Card 1: Key Differences & Synergy -->
+      <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-lg space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🔄</span>
+          <h3 class="font-bold text-white text-base">WhatsApp Bot ↔ Business App Bridge</h3>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          When the customer finishes customizing on WhatsApp, Sewvee’s backend creates an inquiry ticket (<span class="font-mono text-purple-300">#INQ-8821</span>). The boutique gets notified instantly and sees all structured tailoring data without having to ask repeated questions.
+        </p>
+
+        <div class="grid grid-cols-2 gap-3 pt-2 text-xs">
+          <div class="bg-slate-900/80 border border-slate-700 p-3 rounded-xl space-y-1">
+            <span class="font-bold text-purple-300 block">Customer View (WhatsApp)</span>
+            <p class="text-[11px] text-slate-400">Casual conversational interface, 4-step neckline visual picker, receipt download.</p>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-700 p-3 rounded-xl space-y-1">
+            <span class="font-bold text-emerald-400 block">Business App (Tailor View)</span>
+            <p class="text-[11px] text-slate-400">Production specs, fabric feasibility review, 1-click conversion to billed order.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Interactive Test Actions -->
+      <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-lg space-y-3">
+        <h4 class="font-bold text-white text-sm flex items-center gap-2">
+          <span>⚡ Try Business Actions in Prototype</span>
+        </h4>
+        <div class="space-y-2">
+          <button onclick="openConvertModal()" class="w-full py-2.5 px-4 bg-[#5B43EE] hover:bg-[#4a35d4] text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-between cursor-pointer">
+            <span>1. Open "Convert to Order" Form</span>
+            <span>→</span>
+          </button>
+          <button onclick="sendQuickReply('Yes, gold piping is possible! Quoted price: ₹850.')" class="w-full py-2.5 px-4 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-xs font-medium transition-all flex items-center justify-between cursor-pointer">
+            <span>2. Simulate Tailor Replying via WhatsApp</span>
+            <span>💬</span>
+          </button>
+          <button onclick="switchOutfit(2)" class="w-full py-2.5 px-4 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-xs font-medium transition-all flex items-center justify-between cursor-pointer">
+            <span>3. View Multi-Outfit Switcher (Outfit #2)</span>
+            <span>👗</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Card 3: Backend Data Contract -->
+      <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-lg space-y-2 text-xs">
+        <h4 class="font-bold text-white text-sm">Backend Data Preservation</h4>
+        <p class="text-slate-400 leading-relaxed text-[11px]">
+          Complies with <span class="text-purple-300 font-mono">Strict Identity Integrity</span>: Inquiry ID <span class="font-mono text-purple-300">#INQ-8821</span> remains consistent across Web, Mobile, and WhatsApp. Converting generates official order <span class="font-mono text-emerald-300">#ORD-2026-8821</span> without losing reference history.
+        </p>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODAL: CONVERT TO ORDER (Matches Sewvee CreateOrderFlowScreen.js) -->
+  <div id="convertModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-md p-5 text-slate-900 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+      
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+            Convert Inquiry → Stitching Bill
+          </span>
+          <h3 class="text-base font-bold text-slate-900 mt-1">Generate Official Order</h3>
+        </div>
+        <button onclick="closeConvertModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-sm cursor-pointer">✕</button>
+      </div>
+
+      <!-- Pre-filled Specs Summary -->
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs space-y-1.5">
+        <div class="flex justify-between">
+          <span class="text-slate-500">Customer:</span>
+          <span class="font-semibold text-slate-800">Bhuvaneshwari (+91 98765 43210)</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-500">Garment:</span>
+          <span class="font-semibold text-slate-800">Blouse (Princess Cut, Sweetheart Neck)</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-500">Delivery Deadline:</span>
+          <span class="font-semibold text-[#5B43EE]">23 Nov 2026 (7 Days)</span>
+        </div>
+      </div>
+
+      <!-- Pricing & Billing Inputs (Tailor Fills Here) -->
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Standard Stitching Base Rate (₹)</label>
+          <input type="number" id="inputBaseRate" value="650" oninput="calculateTotal()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-[#5B43EE] focus:bg-white" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-medium text-slate-600 mb-1">Lining & Padding (₹)</label>
+            <input type="number" id="inputPadding" value="150" oninput="calculateTotal()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 outline-none focus:border-[#5B43EE]" />
+          </div>
+          <div>
+            <label class="block font-medium text-slate-600 mb-1">Custom Gold Piping (₹)</label>
+            <input type="number" id="inputPiping" value="50" oninput="calculateTotal()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 outline-none focus:border-[#5B43EE]" />
+          </div>
+        </div>
+
+        <div class="bg-purple-50/70 border border-purple-200 rounded-xl p-3 flex items-center justify-between">
+          <div>
+            <span class="text-[10px] text-purple-700 uppercase font-bold block">Total Quoted Bill:</span>
+            <span class="text-lg font-bold text-[#5B43EE]" id="lblTotalBill">₹850</span>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] text-slate-500 block">Generated Order ID:</span>
+            <span class="font-mono font-bold text-xs text-slate-800">#ORD-2026-8821</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Bottom Actions -->
+      <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+        <button onclick="closeConvertModal()" class="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs cursor-pointer">
+          Cancel
+        </button>
+        <button onclick="confirmOrderConversion()" class="w-2/3 py-2.5 bg-[#5B43EE] hover:bg-[#4a35d4] text-white rounded-xl font-bold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-98">
+          <span>✓ Confirm & Start Stitching</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: PHOTO FULLSCREEN PREVIEW -->
+  <div id="photoModal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="relative max-w-md w-full bg-slate-900 rounded-2xl overflow-hidden shadow-2xl p-3 space-y-2">
+      <div class="flex justify-between items-center text-white text-xs px-2">
+        <span id="photoModalTitle" class="font-bold">Photo Preview</span>
+        <button onclick="closePhotoPreview()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+      <img id="photoModalImg" src="" class="w-full h-80 object-contain rounded-xl bg-black" />
+    </div>
+  </div>
+
+  <script>
+    let isConverted = false;
+
+    function toggleDeviceView() {
+      const frame = document.getElementById('deviceFrame');
+      if (frame.classList.contains('max-w-[420px]')) {
+        frame.classList.remove('max-w-[420px]');
+        frame.classList.add('max-w-[700px]');
+        document.getElementById('deviceToggleBtn').innerText = '📱 Switch to Phone Frame';
+      } else {
+        frame.classList.remove('max-w-[700px]');
+        frame.classList.add('max-w-[420px]');
+        document.getElementById('deviceToggleBtn').innerText = '📱 Toggle Mobile / Tablet Frame';
+      }
+    }
+
+    function switchOutfit(num) {
+      const tab1 = document.getElementById('tabOutfit1');
+      const tab2 = document.getElementById('tabOutfit2');
+      const title = document.getElementById('cardOutfitTitle');
+      const badge = document.getElementById('cardCutBadge');
+
+      if (num === 1) {
+        tab1.className = 'pb-2 border-b-2 border-[#5B43EE] text-xs font-bold text-[#5B43EE] flex items-center gap-1.5 whitespace-nowrap cursor-pointer';
+        tab2.className = 'pb-2 border-b-2 border-transparent text-xs font-medium text-slate-400 hover:text-slate-600 flex items-center gap-1.5 whitespace-nowrap cursor-pointer';
+        title.innerText = 'Outfit 1: Blouse Specifications';
+        badge.innerText = 'PRINCESS CUT';
+      } else {
+        tab2.className = 'pb-2 border-b-2 border-[#5B43EE] text-xs font-bold text-[#5B43EE] flex items-center gap-1.5 whitespace-nowrap cursor-pointer';
+        tab1.className = 'pb-2 border-b-2 border-transparent text-xs font-medium text-slate-400 hover:text-slate-600 flex items-center gap-1.5 whitespace-nowrap cursor-pointer';
+        title.innerText = 'Outfit 2: Kurti Specifications';
+        badge.innerText = 'STRAIGHT CUT A-LINE';
+      }
+    }
+
+    function openPhotoPreview(title, url) {
+      document.getElementById('photoModalTitle').innerText = title;
+      document.getElementById('photoModalImg').src = url;
+      document.getElementById('photoModal').classList.remove('hidden');
+    }
+
+    function closePhotoPreview() {
+      document.getElementById('photoModal').classList.add('hidden');
+    }
+
+    function sendQuickReply(text) {
+      document.getElementById('tailorReplyBubble').classList.remove('hidden');
+      document.getElementById('tailorReplyText').innerText = text;
+      const scroll = document.getElementById('scrollContent');
+      scroll.scrollTop = scroll.scrollHeight;
+    }
+
+    function handleTailorSend() {
+      const input = document.getElementById('businessInput');
+      const val = input.value.trim();
+      if (!val) return;
+      sendQuickReply(val);
+      input.value = '';
+    }
+
+    function openConvertModal() {
+      document.getElementById('convertModal').classList.remove('hidden');
+      calculateTotal();
+    }
+
+    function closeConvertModal() {
+      document.getElementById('convertModal').classList.add('hidden');
+    }
+
+    function calculateTotal() {
+      const base = parseFloat(document.getElementById('inputBaseRate').value) || 0;
+      const pad = parseFloat(document.getElementById('inputPadding').value) || 0;
+      const pipe = parseFloat(document.getElementById('inputPiping').value) || 0;
+      const total = base + pad + pipe;
+      document.getElementById('lblTotalBill').innerText = `₹${total}`;
+    }
+
+    function confirmOrderConversion() {
+      isConverted = true;
+      closeConvertModal();
+
+      // Update Header Status Badge
+      const badge = document.getElementById('headerStatusBadge');
+      badge.innerText = 'ORDER CONFIRMED';
+      badge.className = 'text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-300 uppercase tracking-wider';
+
+      // Update Top Button
+      const btn = document.getElementById('btnConvertToOrder');
+      btn.innerText = 'View Order #ORD-2026-8821';
+      btn.className = 'px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer whitespace-nowrap shrink-0';
+
+      // Push confirmation message in chat
+      sendQuickReply('🎉 Order #ORD-2026-8821 Confirmed! Stitching job has been queued with Master Ramesh. Expected delivery: 23 Nov 2026.');
+      alert('Success! Inquiry #INQ-8821 has been converted into Official Order #ORD-2026-8821 in Sewvee Business App.');
+    }
+  </script>
+
+</body>
+</html>
