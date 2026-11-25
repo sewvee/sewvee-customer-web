@@ -25,6 +25,9 @@
     .wave-bar {
       animation: pulse-wave 1.2s ease-in-out infinite;
     }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-900 text-slate-100 antialiased p-3 sm:p-6 min-h-screen">
@@ -127,32 +130,10 @@
         <!-- WhatsApp Bottom Container (Grey Area: Tabs Row + Chat Input Row) -->
         <div class="bg-[#F0F2F5] border-t border-slate-200/90 z-20 shrink-0">
           
-          <!-- Top Row inside Grey Area: Quick Outfits / Add Outfit Tab -->
-          <div id="floatingQuickActions" class="px-3 pt-2 pb-1 flex justify-center">
-            <div id="floatingTabBar" class="bg-white border border-slate-200/90 rounded-full p-1 shadow-2xs flex items-center gap-1">
-              <!-- Tab 1: Current Outfits in this Order -->
-              <button
-                type="button"
-                id="tabCurrentOutfitsBtn"
-                onclick="scrollToCurrentOutfits()"
-                class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer text-slate-700 hover:text-slate-900 hover:bg-slate-50 active:scale-95"
-              >
-                <span>👗</span>
-                <span id="tabOutfitsLabel">Current Outfits (1)</span>
-              </button>
-
-              <span class="w-px h-3.5 bg-slate-200"></span>
-
-              <!-- Tab 2: Add Another Outfit in Same Order -->
-              <button
-                type="button"
-                id="tabAddOutfitBtn"
-                onclick="handlePromptAddAnother()"
-                class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer bg-purple-50 hover:bg-purple-100 text-[#5B43EE] border border-purple-200/80 shadow-2xs active:scale-95"
-              >
-                <span class="text-xs font-bold leading-none">＋</span>
-                <span>Add Outfit</span>
-              </button>
+          <!-- Top Row inside Grey Area: Browser-like Tabs for Active Outfits + Add Outfit -->
+          <div id="floatingQuickActions" class="px-2 pt-2 pb-1 flex items-center justify-center overflow-hidden">
+            <div id="floatingTabBar" class="flex items-center gap-1.5 overflow-x-auto max-w-full py-0.5 px-1 no-scrollbar scroll-smooth">
+              <!-- Rendered dynamically by updateFloatingQuickActionsUI() -->
             </div>
           </div>
 
@@ -963,14 +944,8 @@
     }
 
     function cancelActiveOutfit() {
-      if (completedOutfits.length > 0) {
-        currentOutfit = null;
-        conversationHistory = conversationHistory.filter(m => m.type !== 'stepper_card');
-        handlePromptAddAnother();
-      } else {
-        currentOutfit = null;
-        resetToStart();
-      }
+      if (!currentOutfit) return;
+      handleCloseOutfitTab(currentOutfit.number);
     }
 
     function handleCancelInquiry() {
@@ -1275,9 +1250,104 @@
     }
 
     function handleDeleteOutfit(idx) {
-      if (!confirm('Delete this outfit?')) return;
-      completedOutfits.splice(idx, 1);
-      resetToStart();
+      const target = completedOutfits && completedOutfits[idx];
+      if (!target) return;
+      handleCloseOutfitTab(target.number);
+    }
+
+    // Switch active outfit by tapping its browser-like tab
+    function handleSelectOutfitTab(outfitNum) {
+      // 1. If clicking the outfit that is currently being edited in stepper card, scroll to it
+      if (currentOutfit && currentOutfit.number === outfitNum) {
+        const stepper = document.getElementById('activeStepperCard');
+        if (stepper) {
+          stepper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        return;
+      }
+
+      // 2. If an outfit is currently active/unsaved, save it to completedOutfits first so work isn't lost
+      if (currentOutfit) {
+        const existIdx = completedOutfits.findIndex(o => o.number === currentOutfit.number);
+        if (existIdx >= 0) {
+          completedOutfits[existIdx] = { ...currentOutfit };
+        } else {
+          completedOutfits.push({ ...currentOutfit });
+        }
+      }
+
+      // 3. Find target outfit in completedOutfits
+      const targetIdx = completedOutfits.findIndex(o => o.number === outfitNum);
+      if (targetIdx >= 0) {
+        // If already submitted, scroll to it in the ticket
+        if (isInquirySubmitted) {
+          const el = document.getElementById(`ticket_outfit_${outfitNum}`) || document.querySelector("[id^='final_ticket_']");
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+
+        // Switch to editing this outfit
+        currentOutfit = { ...completedOutfits[targetIdx], activeStep: 1 };
+        completedOutfits.splice(targetIdx, 1);
+
+        conversationHistory = conversationHistory.filter(m => m.type !== 'stepper_card');
+        conversationHistory.push({
+          id: 'stepper_card',
+          sender: 'bot',
+          type: 'stepper_card'
+        });
+
+        renderChat();
+
+        setTimeout(() => {
+          const stepper = document.getElementById('activeStepperCard');
+          if (stepper) {
+            stepper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      }
+    }
+
+    // Close / Delete outfit from tab (Browser Tab Close Experience)
+    function handleCloseOutfitTab(outfitNum, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      const totalOutfitsCount = completedOutfits.length + (currentOutfit && !completedOutfits.some(o => o.number === currentOutfit.number) ? 1 : 0);
+
+      if (totalOutfitsCount <= 1) {
+        if (!confirm(`Remove Outfit #${outfitNum}? This will reset the customization.`)) return;
+        resetToStart();
+        return;
+      }
+
+      if (!confirm(`Are you sure you want to remove Outfit #${outfitNum} from this order?`)) return;
+
+      // Remove from completedOutfits if present
+      completedOutfits = completedOutfits.filter(o => o.number !== outfitNum);
+
+      // If this outfit was currently being edited
+      if (currentOutfit && currentOutfit.number === outfitNum) {
+        conversationHistory = conversationHistory.filter(m => m.type !== 'stepper_card');
+
+        // If other completed outfits exist, switch to the last one or show ticket
+        if (completedOutfits.length > 0) {
+          currentOutfit = null;
+          handleProceedToFinalTicket();
+        } else {
+          resetToStart();
+        }
+      } else {
+        // If ticket is visible, re-render it
+        if (conversationHistory.some(m => m.id && m.id.startsWith('final_ticket'))) {
+          handleProceedToFinalTicket();
+        }
+      }
+
+      updateFloatingQuickActionsUI();
+      renderChat();
     }
 
     function handlePromptAddAnother() {
@@ -1343,7 +1413,7 @@
                 const frontImg = getFrontNeckImg(o.frontNeck);
                 const backImg = getBackNeckImg(o.backNeck);
                 return `
-                  <div class="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5">
+                  <div id="ticket_outfit_${o.number || (idx + 1)}" class="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5">
                     <!-- Title & Edit/Delete Row (Spacious, Un-truncated) -->
                     <div class="flex items-center justify-between border-b border-slate-100 pb-2 gap-2">
                       <div class="flex items-center gap-2 min-w-0 flex-1">
@@ -1695,19 +1765,95 @@
     }
 
     function updateFloatingQuickActionsUI() {
-      const tabOutfitsLabel = document.getElementById('tabOutfitsLabel');
-      const tabAddOutfitBtn = document.getElementById('tabAddOutfitBtn');
-      const floatingQuickActions = document.getElementById('floatingQuickActions');
+      const container = document.getElementById('floatingTabBar');
+      if (!container) return;
 
-      const totalOutfits = completedOutfits.length || (currentOutfit ? 1 : 0);
+      // Gather all distinct outfits in this session
+      const outfitsMap = new Map();
 
-      if (tabOutfitsLabel) {
-        tabOutfitsLabel.innerText = `Current Outfits (${totalOutfits})`;
+      // 1. Add completed outfits
+      completedOutfits.forEach(o => {
+        outfitsMap.set(o.number, { ...o, isSaved: true });
+      });
+
+      // 2. Add current active outfit being configured
+      if (currentOutfit) {
+        outfitsMap.set(currentOutfit.number, { ...currentOutfit, isSaved: false, isCurrentlyEditing: true });
       }
 
-      if (tabAddOutfitBtn) {
-        tabAddOutfitBtn.classList.remove('hidden');
+      const allOutfits = Array.from(outfitsMap.values()).sort((a, b) => a.number - b.number);
+
+      // If no outfits started yet
+      if (allOutfits.length === 0) {
+        container.innerHTML = `
+          <button
+            type="button"
+            onclick="handlePromptAddAnother()"
+            class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white hover:bg-purple-50 text-[#5B43EE] border border-purple-200 shadow-2xs active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+          >
+            <span class="text-xs font-bold leading-none">＋</span>
+            <span>Start Outfit</span>
+          </button>
+        `;
+        return;
       }
+
+      const categoryIcons = {
+        'Blouse': '👚',
+        'Kurti / Kurta': '👗',
+        'Kurti': '👗',
+        'Co-ord Set': '✨',
+        'Salwar / Chudithar': '✨',
+        'Lehenga': '💃',
+        'Dress / Gown': '👘',
+        'Pants / Trousers': '👖',
+        'Other': '✂️'
+      };
+
+      const tabsHtml = allOutfits.map(o => {
+        const isEditingThis = currentOutfit && currentOutfit.number === o.number;
+        const icon = categoryIcons[o.category] || '👗';
+        const label = `Outfit #${o.number}: ${o.category || 'Outfit'}`;
+
+        return `
+          <div
+            onclick="handleSelectOutfitTab(${o.number})"
+            class="group flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-xs transition-all cursor-pointer select-none whitespace-nowrap shrink-0 shadow-2xs ${
+              isEditingThis
+                ? 'bg-white text-[#5B43EE] font-bold border-2 border-[#5B43EE] shadow-xs ring-2 ring-purple-100'
+                : 'bg-white hover:bg-purple-50/60 text-slate-700 hover:text-slate-900 font-semibold border border-slate-200/90'
+            }"
+            title="${isEditingThis ? 'Currently Editing' : 'Switch to'} ${label}"
+          >
+            <span class="text-xs shrink-0">${icon}</span>
+            <span class="truncate max-w-[125px] sm:max-w-[160px] leading-none">${label}</span>
+            <button
+              type="button"
+              onclick="handleCloseOutfitTab(${o.number}, event)"
+              class="w-4 h-4 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0 ml-0.5 active:scale-90"
+              title="Close & delete Outfit #${o.number}"
+            >
+              <span class="text-[10px] font-bold leading-none">✕</span>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      // Add "+" Browser New Tab Button
+      const addTabBtnHtml = `
+        <button
+          type="button"
+          id="tabAddOutfitBtn"
+          onclick="handlePromptAddAnother()"
+          class="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-[#5B43EE] border border-purple-200/80 shadow-2xs active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0 ml-0.5"
+          title="Add another outfit (New Tab)"
+        >
+          <span class="text-xs font-bold leading-none">＋</span>
+          <span>Add Outfit</span>
+        </button>
+      `;
+
+      container.innerHTML = tabsHtml + addTabBtnHtml;
     }
 
     function scrollToCurrentOutfits() {
