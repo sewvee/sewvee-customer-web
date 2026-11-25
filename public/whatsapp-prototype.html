@@ -506,12 +506,129 @@
     </div>
   </div>
 
+  
+  <!-- MANAGE OUTFITS & DRAFTS MODAL (Pop-up Experience for Drafts, Pending Steps & Deleting Outfits) -->
+  <div id="manageOutfitsModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-lg w-full p-4 sm:p-5 text-slate-900 shadow-2xl flex flex-col max-h-[90vh] sm:max-h-[82vh]">
+      
+      <!-- Top Handle Bar for mobile drawer feel -->
+      <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto sm:hidden mb-2 shrink-0"></div>
+
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center border-b border-slate-100 pb-2.5 shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-xl bg-purple-100 text-[#5B43EE] flex items-center justify-center text-xs font-bold shrink-0">📋</span>
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm sm:text-base">Outfits & Drafts Manager</h3>
+            <p class="text-slate-500 text-[10.5px]">Review completed designs, pending draft steps, or delete outfits</p>
+          </div>
+        </div>
+        <button onclick="closeManageOutfitsModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs cursor-pointer">
+          ✕
+        </button>
+      </div>
+
+      <!-- Alert Banner (shown when attempting to submit with pending steps) -->
+      <div id="manageOutfitsWarningBanner" class="hidden my-2.5 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2 shrink-0">
+        <span class="text-base shrink-0">⚠️</span>
+        <div>
+          <span class="font-bold block">Unfinished Draft Outfits</span>
+          <span class="text-[11px] leading-tight block">You have outfits with pending steps. Please complete them or delete the draft outfit to proceed with your booking.</span>
+        </div>
+      </div>
+
+      <!-- Modal Content: Scrollable list of outfits -->
+      <div id="manageOutfitsModalList" class="flex-1 overflow-y-auto py-2.5 space-y-3 pr-0.5">
+        <!-- Rendered dynamically by renderManageOutfitsModal() -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="pt-3 border-t border-slate-100 shrink-0 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onclick="openAddOutfitModal()"
+          class="h-9 px-3 bg-white hover:bg-purple-50 text-[#5B43EE] border border-purple-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap"
+        >
+          <span>＋</span> <span>Add Another Outfit</span>
+        </button>
+        <button
+          type="button"
+          onclick="handleContinueFromModal()"
+          class="h-9 px-4 bg-[#5B43EE] hover:bg-[#4a35d4] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap"
+        >
+          <span>Done & Close</span> <span>→</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ADD OUTFIT PICKER MODAL (Choose Garment Type for Fresh Next Outfit Tab) -->
+  <div id="addOutfitModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-sm w-full p-4 sm:p-5 text-slate-900 shadow-2xl space-y-3">
+      <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto sm:hidden mb-1"></div>
+      <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+        <div>
+          <h3 class="font-bold text-slate-900 text-sm sm:text-base">Add Another Outfit</h3>
+          <p class="text-slate-500 text-[11px]">Select garment type to start a new design tab:</p>
+        </div>
+        <button onclick="closeAddOutfitModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs cursor-pointer">✕</button>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-1 max-h-[60vh] overflow-y-auto">
+        <button onclick="handleSelectNewOutfitCategory('Blouse')" class="p-2.5 rounded-xl border border-slate-200 hover:border-[#5B43EE] bg-white hover:bg-purple-50/40 text-left transition-all active:scale-95 group cursor-pointer shadow-2xs">
+          <span class="text-base">👚</span>
+          <span class="font-bold text-xs text-slate-800 group-hover:text-[#5B43EE] block mt-1">Blouse</span>
+          <span class="text-[9.5px] text-slate-400 block">Saree blouses & cuts</span>
+        </button>
+        <button onclick="handleSelectNewOutfitCategory('Co-ord Set')" class="p-2.5 rounded-xl border border-slate-200 hover:border-[#5B43EE] bg-white hover:bg-purple-50/40 text-left transition-all active:scale-95 group cursor-pointer shadow-2xs">
+          <span class="text-base">✨</span>
+          <span class="font-bold text-xs text-slate-800 group-hover:text-[#5B43EE] block mt-1">Co-ord Set</span>
+          <span class="text-[9.5px] text-slate-400 block">Matching tops & pants</span>
+        </button>
+        <button onclick="handleSelectNewOutfitCategory('Kurti / Kurta')" class="p-2.5 rounded-xl border border-slate-200 hover:border-[#5B43EE] bg-white hover:bg-purple-50/40 text-left transition-all active:scale-95 group cursor-pointer shadow-2xs">
+          <span class="text-base">👗</span>
+          <span class="font-bold text-xs text-slate-800 group-hover:text-[#5B43EE] block mt-1">Kurti / Kurta</span>
+          <span class="text-[9.5px] text-slate-400 block">Daily & festive tunics</span>
+        </button>
+        <button onclick="handleSelectNewOutfitCategory('Salwar / Chudithar')" class="p-2.5 rounded-xl border border-slate-200 hover:border-[#5B43EE] bg-white hover:bg-purple-50/40 text-left transition-all active:scale-95 group cursor-pointer shadow-2xs">
+          <span class="text-base">✨</span>
+          <span class="font-bold text-xs text-slate-800 group-hover:text-[#5B43EE] block mt-1">Salwar Set</span>
+          <span class="text-[9.5px] text-slate-400 block">Traditional suit sets</span>
+        </button>
+        <button onclick="handleSelectNewOutfitCategory('Lehenga')" class="p-2.5 rounded-xl border border-slate-200 hover:border-[#5B43EE] bg-white hover:bg-purple-50/40 text-left transition-all active:scale-95 group cursor-pointer shadow-2xs">
+          <span class="text-base">💃</span>
+          <span class="font-bold text-xs text-slate-800 group-hover:text-[#5B43EE] block mt-1">Lehenga</span>
+          <span class="text-[9.5px] text-slate-400 block">Bridal & party wear</span>
+        </button>
+        <button onclick="handleSelectNewOutfitCategory('Dress / Gown')" class="p-2.5 rounded-xl border border-slate-200 hover:border-[#5B43EE] bg-white hover:bg-purple-50/40 text-left transition-all active:scale-95 group cursor-pointer shadow-2xs">
+          <span class="text-base">👘</span>
+          <span class="font-bold text-xs text-slate-800 group-hover:text-[#5B43EE] block mt-1">Dress / Gown</span>
+          <span class="text-[9.5px] text-slate-400 block">Western & evening</span>
+        </button>
+        <button onclick="handleSelectNewOutfitCategory('Pants / Trousers')" class="p-2.5 rounded-xl border border-slate-200 hover:border-[#5B43EE] bg-white hover:bg-purple-50/40 text-left transition-all active:scale-95 group cursor-pointer shadow-2xs">
+          <span class="text-base">👖</span>
+          <span class="font-bold text-xs text-slate-800 group-hover:text-[#5B43EE] block mt-1">Pants / Bottoms</span>
+          <span class="text-[9.5px] text-slate-400 block">Palazzo, trousers, pants</span>
+        </button>
+        <button onclick="handleSelectNewOutfitCategory('Other')" class="p-2.5 rounded-xl border border-slate-200 hover:border-[#5B43EE] bg-white hover:bg-purple-50/40 text-left transition-all active:scale-95 group cursor-pointer shadow-2xs">
+          <span class="text-base">✂️</span>
+          <span class="font-bold text-xs text-slate-800 group-hover:text-[#5B43EE] block mt-1">Other Style</span>
+          <span class="text-[9.5px] text-slate-400 block">Custom tailored outfit</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT ENGINE: FULL 4-STEP CUSTOMIZATION + ATTACHMENTS + MODALS -->
   <script>
-    // State
-    let conversationHistory = [];
-    let currentOutfit = null;
-    let completedOutfits = [];
+    // =========================================================================
+    // MULTI-OUTFIT ISOLATED ARCHITECTURE + DRAFT & PENDING STEP MANAGER
+    // =========================================================================
+
+    // Single source of truth for all outfits in this session
+    let outfitsList = [];
+    let activeOutfitId = null;
+    let welcomeChatHistory = [];
     let isInquirySubmitted = false;
     let submittedTicketId = 'INQ-8821';
     let measurementOption = 'Use Saved Profile Measurements';
@@ -521,54 +638,90 @@
     let currentRotation = 0;
     let currentZoom = 1;
 
+    // Helper: returns the currently active outfit
+    function getCurrentOutfit() {
+      if (!activeOutfitId || outfitsList.length === 0) return null;
+      return outfitsList.find(o => o.id === activeOutfitId) || outfitsList[0];
+    }
+
+    // Keep global currentOutfit pointing to getCurrentOutfit()
+    let currentOutfit = null;
+    function syncCurrentOutfit() {
+      currentOutfit = getCurrentOutfit();
+    }
+
     // Start fresh on Load
     window.addEventListener('DOMContentLoaded', () => {
       resetToStart();
     });
 
     function resetToStart() {
-      conversationHistory = [];
+      outfitsList = [];
+      activeOutfitId = null;
       currentOutfit = null;
-      completedOutfits = [];
       isInquirySubmitted = false;
       measurementOption = 'Use Saved Profile Measurements';
       chosenDeliveryTimeline = '22 Nov (Standard 14 Days)';
 
-      // Initial Welcome (Screenshot 1)
-      conversationHistory.push({
-        id: 'msg_welcome',
-        sender: 'bot',
-        type: 'category_picker',
-        html: `
-          <div class="space-y-2">
-            <p class="font-bold text-slate-900 text-xs">Hello Bhuvan! 👋</p>
-            <p class="text-slate-600 text-[11px] leading-relaxed">
-              Welcome to Inba Designer & Boutique. What outfit would you like to stitch today?
-            </p>
-            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 pt-1">Choose Outfit Type:</p>
-            <div class="flex flex-wrap gap-1.5 pt-0.5">
-              ${[
-                { name: 'Blouse', icon: '👚' },
-                { name: 'Co-ord Set', icon: '✨' },
-                { name: 'Kurti / Kurta', icon: '👗' },
-                { name: 'Salwar / Chudithar', icon: '✨' },
-                { name: 'Lehenga', icon: '💃' },
-                { name: 'Dress / Gown', icon: '👘' },
-                { name: 'Pants / Trousers', icon: '👖' },
-                { name: 'Other', icon: '✂️' }
-              ].map(c => `
-                <button onclick="handleUserSelectCategory('${c.name}')" class="px-2.5 py-1.5 bg-white hover:bg-[#EDE9FE]/50 text-slate-700 hover:text-[#5B43EE] border border-slate-200 hover:border-[#5B43EE] rounded-xl text-xs font-semibold shadow-2xs transition-all active:scale-95 flex items-center gap-1">
-                  <span>${c.icon}</span> <span>${c.name}</span>
-                </button>
-              `).join('')}
+      // Initial Welcome Message
+      welcomeChatHistory = [
+        {
+          id: 'msg_welcome',
+          sender: 'bot',
+          type: 'category_picker',
+          html: `
+            <div class="space-y-2">
+              <p class="font-bold text-slate-900 text-xs">Hello Bhuvan! 👋</p>
+              <p class="text-slate-600 text-[11px] leading-relaxed">
+                Welcome to Inba Designer & Boutique. What outfit would you like to stitch today?
+              </p>
+              <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 pt-1">Choose Outfit Type:</p>
+              <div class="flex flex-wrap gap-1.5 pt-0.5">
+                ${[
+                  { name: 'Blouse', icon: '👚' },
+                  { name: 'Co-ord Set', icon: '✨' },
+                  { name: 'Kurti / Kurta', icon: '👗' },
+                  { name: 'Salwar / Chudithar', icon: '✨' },
+                  { name: 'Lehenga', icon: '💃' },
+                  { name: 'Dress / Gown', icon: '👘' },
+                  { name: 'Pants / Trousers', icon: '👖' },
+                  { name: 'Other', icon: '✂️' }
+                ].map(c => `
+                  <button onclick="handleUserSelectCategory('${c.name}')" class="px-2.5 py-1.5 bg-white hover:bg-[#EDE9FE]/50 text-slate-700 hover:text-[#5B43EE] border border-slate-200 hover:border-[#5B43EE] rounded-xl text-xs font-semibold shadow-2xs transition-all active:scale-95 flex items-center gap-1 cursor-pointer">
+                    <span>${c.icon}</span> <span>${c.name}</span>
+                  </button>
+                `).join('')}
+              </div>
             </div>
-          </div>
-        `
-      });
+          `
+        }
+      ];
 
       renderChat();
       updateSpecUI();
       drawCollageEmpty();
+    }
+
+    // Helper: Detect pending draft steps for any outfit
+    function getOutfitPendingSteps(o) {
+      if (!o) return [];
+      const pending = [];
+      if (!o.categoryCut) {
+        pending.push({ name: 'Pattern Cut', step: 0 });
+      }
+      if (!o.frontNeck) {
+        pending.push({ name: 'Front Neck Style', step: 1 });
+      }
+      if (!o.backNeck) {
+        pending.push({ name: 'Back Neck Style', step: 2 });
+      }
+      if (!o.sleeve) {
+        pending.push({ name: 'Sleeve Length', step: 3 });
+      }
+      if (!o.hook) {
+        pending.push({ name: 'Hook Fastening', step: 3 });
+      }
+      return pending;
     }
 
     // Audio Recording & Playback State
@@ -654,7 +807,6 @@
         return;
       }
 
-      // Play soft web audio chime / tone for genuine audio feedback
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (AudioCtx) {
@@ -706,30 +858,39 @@
       updateSpecUI();
     }
 
-    // Step 1: User Picks Outfit Category (e.g. Blouse)
+    // Step 1: User Picks Outfit Category (Spawns a new independent outfit with its own isolated chat!)
     function handleUserSelectCategory(catName) {
-      currentOutfit = {
-        number: completedOutfits.length + 1,
+      const newId = 'outfit_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+      const newNum = outfitsList.length + 1;
+
+      const cuts = catName === 'Blouse' 
+        ? ['Cuttori blouse', 'Princesscut with pad', 'Princess cut with patti', 'Princesscut', 'Cupshape', 'Others']
+        : ['Straight Cut', 'A-Line Flared', 'Anarkali Pattern', 'Palazzo Style', 'Others'];
+
+      const newOutfit = {
+        id: newId,
+        number: newNum,
         category: catName,
         categoryCut: '',
         categoryCutCustomName: '',
-        activeStep: 1, // Steps 1 to 4!
-        frontNeck: 'Normal Neck',
+        activeStep: 1, // Steps 1 to 4
+        // ZERO PRE-SELECTION: clean empty defaults as requested!
+        frontNeck: '',
         frontNeckCustomName: '',
         frontNeckNote: '',
         frontNeckPhotos: [],
         frontNeckAudio: null,
-        backNeck: 'Normal Neck',
+        backNeck: '',
         backNeckCustomName: '',
         backNeckNote: '',
         backNeckPhotos: [],
         backNeckAudio: null,
-        sleeve: 'Elbow Length',
+        sleeve: '',
         sleeveCustomName: '',
         sleeveNote: '',
         sleevePhotos: [],
         sleeveAudio: null,
-        hook: 'Front Hook',
+        hook: '',
         cutPhotos: [],
         cutAudio: null,
         cutNote: '',
@@ -740,71 +901,71 @@
         extraPhotos: [],
         hasVoiceNote: false,
         voiceNoteDuration: '0:15',
-        tailorNotes: 'Extra margin inside, tight fit on waist, lining cloth already provided...',
+        tailorNotes: '',
         isCompleted: false,
+        // Fresh isolated chat thread for this specific outfit!
+        chatHistory: [
+          {
+            id: `user_pick_cat_${Date.now()}`,
+            sender: 'user',
+            text: `I want to stitch ${catName}`
+          },
+          {
+            id: `bot_cut_picker_${Date.now()}`,
+            sender: 'bot',
+            html: `
+              <div class="space-y-2.5">
+                <div class="border-b border-purple-100/80 pb-2 space-y-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="w-7 h-7 rounded-lg bg-purple-100 text-[#5B43EE] flex items-center justify-center text-xs font-bold shrink-0">
+                        ${catName === 'Blouse' ? '👚' : '👗'}
+                      </span>
+                      <h4 class="font-bold text-slate-900 text-xs sm:text-sm whitespace-nowrap truncate">
+                        Choose ${catName} Cut
+                      </h4>
+                    </div>
+                    <span class="text-[10.5px] bg-purple-50 text-[#5B43EE] font-bold px-2.5 py-0.5 rounded-full border border-purple-200 whitespace-nowrap shrink-0">
+                      Outfit #${newNum}
+                    </span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 whitespace-nowrap truncate">
+                    Select your preferred tailored pattern cut:
+                  </p>
+                </div>
+
+                <div class="flex flex-wrap gap-1.5 pt-0.5">
+                  ${cuts.map(cut => `
+                    <button onclick="handleUserSelectCut('${cut}')" class="px-2.5 py-1.5 bg-white hover:bg-purple-50 text-slate-700 hover:text-[#5B43EE] border border-slate-200 hover:border-purple-300 rounded-xl text-xs font-semibold shadow-2xs transition-all flex items-center gap-1 active:scale-95 cursor-pointer ${cut === 'Others' ? 'border-purple-300 text-[#5B43EE] bg-purple-50/60' : ''}">
+                      <span>${cut === 'Others' ? '✨' : '✂️'}</span> <span>${cut}</span>
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+            `
+          }
+        ]
       };
 
-      // User Message
-      conversationHistory.push({
-        id: `user_pick_cat_${Date.now()}`,
-        sender: 'user',
-        text: `I want to stitch ${catName}`
-      });
-
-      // Streamlined Welcome Card (Direct & Simplified: No redundant welcome messages or separate 'Chosen: Blouse' bubble!)
-      const cuts = catName === 'Blouse' 
-        ? ['Cuttori blouse', 'Princesscut with pad', 'Princess cut with patti', 'Princesscut', 'Cupshape', 'Others']
-        : ['Straight Cut', 'A-Line Flared', 'Anarkali Pattern', 'Palazzo Style', 'Others'];
-
-      conversationHistory.push({
-        id: `bot_cut_picker_${Date.now()}`,
-        sender: 'bot',
-        html: `
-          <div class="space-y-2.5">
-            <div class="border-b border-purple-100/80 pb-2 space-y-1">
-              <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class="w-7 h-7 rounded-lg bg-purple-100 text-[#5B43EE] flex items-center justify-center text-xs font-bold shrink-0">
-                    ${catName === 'Blouse' ? '👚' : '👗'}
-                  </span>
-                  <h4 class="font-bold text-slate-900 text-xs sm:text-sm whitespace-nowrap truncate">
-                    Choose ${catName} Cut
-                  </h4>
-                </div>
-                <span class="text-[10.5px] bg-purple-50 text-[#5B43EE] font-bold px-2.5 py-0.5 rounded-full border border-purple-200 whitespace-nowrap shrink-0">
-                  Outfit #${currentOutfit.number}
-                </span>
-              </div>
-              <p class="text-[11px] text-slate-500 whitespace-nowrap truncate">
-                Select your preferred tailored pattern cut:
-              </p>
-            </div>
-
-            <div class="flex flex-wrap gap-1.5 pt-0.5">
-              ${cuts.map(cut => `
-                <button onclick="handleUserSelectCut('${cut}')" class="px-2.5 py-1.5 bg-white hover:bg-purple-50 text-slate-700 hover:text-[#5B43EE] border border-slate-200 hover:border-purple-300 rounded-xl text-xs font-semibold shadow-2xs transition-all flex items-center gap-1 active:scale-95 ${cut === 'Others' ? 'border-purple-300 text-[#5B43EE] bg-purple-50/60' : ''}">
-                  <span>${cut === 'Others' ? '✨' : '✂️'}</span> <span>${cut}</span>
-                </button>
-              `).join('')}
-            </div>
-          </div>
-        `
-      });
-
+      outfitsList.push(newOutfit);
+      activeOutfitId = newOutfit.id;
+      syncCurrentOutfit();
       updateSpecUI();
       renderChat();
     }
 
     // Step 2: User Selects Cut (e.g. Cuttori blouse or Others)
     function handleUserSelectCut(cutName) {
+      if (!currentOutfit) return;
+
       if (cutName === 'Others' || cutName === 'Other') {
-        conversationHistory.push({
+        currentOutfit.chatHistory.push({
           id: `user_pick_cut_${Date.now()}`,
           sender: 'user',
           text: `Style / Pattern Cut: Others (Custom Pattern)`
         });
 
-        conversationHistory.push({
+        currentOutfit.chatHistory.push({
           id: `bot_custom_cut_prompt_${Date.now()}`,
           sender: 'bot',
           html: `
@@ -834,19 +995,18 @@
                 </div>
               </div>
 
-              <!-- Attachments for Cut Pattern -->
               <div class="grid grid-cols-2 gap-2 pt-1 border-t border-purple-200/60">
-                <button type="button" onclick="openCropModal('cut')" class="py-1.5 px-2 bg-white hover:bg-purple-100/50 border border-dashed border-purple-300 rounded-xl text-[11px] font-bold text-[#5B43EE] flex items-center justify-center gap-1 shadow-2xs">
+                <button type="button" onclick="openCropModal('cut')" class="py-1.5 px-2 bg-white hover:bg-purple-100/50 border border-dashed border-purple-300 rounded-xl text-[11px] font-bold text-[#5B43EE] flex items-center justify-center gap-1 shadow-2xs cursor-pointer">
                   <span>📷</span> <span>+ Add Cut Photo</span>
                 </button>
-                <button type="button" onclick="simulateRecordAudio('cut')" class="py-1.5 px-2 bg-white hover:bg-purple-100/50 border border-purple-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1 shadow-2xs">
+                <button type="button" onclick="simulateRecordAudio('cut')" class="py-1.5 px-2 bg-white hover:bg-purple-100/50 border border-purple-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1 shadow-2xs cursor-pointer">
                   <span>🎙️</span> <span>Record Voice</span>
                 </button>
               </div>
 
               <button 
                 onclick="handleConfirmCustomCut()" 
-                class="w-full py-2 bg-[#5B43EE] hover:bg-[#4a35d4] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 active:scale-98">
+                class="w-full py-2 bg-[#5B43EE] hover:bg-[#4a35d4] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 active:scale-98 cursor-pointer">
                 <span>Next: Choose Front Neck, Back & Sleeves →</span>
               </button>
             </div>
@@ -879,18 +1039,19 @@
     }
 
     function confirmCutSelection(cutName) {
+      if (!currentOutfit) return;
       currentOutfit.categoryCut = cutName;
 
-      // Remove the custom cut prompt if it exists so chat remains clean
-      conversationHistory = conversationHistory.filter(m => !m.id.startsWith('bot_custom_cut_prompt_'));
+      // Clean prompt
+      currentOutfit.chatHistory = currentOutfit.chatHistory.filter(m => !m.id.startsWith('bot_custom_cut_prompt_'));
 
-      conversationHistory.push({
+      currentOutfit.chatHistory.push({
         id: `user_pick_cut_confirmed_${Date.now()}`,
         sender: 'user',
         text: `Style / Pattern Cut: ${cutName}`
       });
 
-      conversationHistory.push({
+      currentOutfit.chatHistory.push({
         id: `bot_ack_cut_${Date.now()}`,
         sender: 'bot',
         html: `
@@ -904,12 +1065,11 @@
         `
       });
 
-      // Remove any existing stepper card before adding new one
-      conversationHistory = conversationHistory.filter(m => m.type !== 'stepper_card');
+      // Remove any existing stepper card before adding fresh stepper
+      currentOutfit.chatHistory = currentOutfit.chatHistory.filter(m => m.type !== 'stepper_card');
 
-      // Append Live Stepper Card starting at Step 1 (Front Neck)
       currentOutfit.activeStep = 1;
-      conversationHistory.push({
+      currentOutfit.chatHistory.push({
         id: 'stepper_card',
         sender: 'bot',
         type: 'stepper_card'
@@ -932,6 +1092,7 @@
       }, 40);
     }
 
+    // Fix: Short Sleeve & Hook Selection (100% bug free without quotes breaking attributes)
     function selectSleeve(slvName) {
       if (!currentOutfit) return;
       currentOutfit.sleeve = slvName;
@@ -948,7 +1109,7 @@
 
     function cancelActiveOutfit() {
       if (!currentOutfit) return;
-      handleCloseOutfitTab(currentOutfit.number);
+      handleCloseOutfitTab(currentOutfit.id);
     }
 
     function handleCancelInquiry() {
@@ -957,12 +1118,12 @@
       }
     }
 
-    // BACK NECK SILHOUETTE GENERATOR (100% Matching Pink Blouse Aesthetic of Image 2)
+    // BACK NECK SILHOUETTE GENERATOR
     function getBackNeckSilhouette(neckType) {
       const skin = '#FDF0E6';
-      const blouse = '#FFAEC0'; // Exact pink blouse body matching Image 2
-      const stroke = '#7A1D36'; // Burgundy wine stroke matching Image 2
-      const highlight = '#D97706'; // Gold dori
+      const blouse = '#FFAEC0';
+      const stroke = '#7A1D36';
+      const highlight = '#D97706';
 
       let cutoutPath = '';
       let extraElements = '';
@@ -991,7 +1152,6 @@
         cutoutPath = 'M 35 26 L 35 62 L 65 62 L 65 26 Z';
         extraElements = '<line x1="35" y1="26" x2="65" y2="26" stroke="#D97706" stroke-width="1.2" stroke-dasharray="2 2" />';
       } else {
-        // Others (Keyhole Back Neck matching Image 2's Others card!)
         cutoutPath = 'M 36 26 C 42 32 58 32 64 26 Z';
         extraElements = `
           <path d="M 50 34 C 46 34 44 42 50 48 C 56 42 54 34 50 34 Z" fill="${skin}" stroke="${stroke}" stroke-width="1.2" />
@@ -1019,7 +1179,7 @@
       `;
     }
 
-    // FRONT NECK OPTIONS (Using clean cropped blouse cards without double frame lines)
+    // FRONT NECK OPTIONS
     const frontNeckOptions = [
       { name: 'Close Neck', img: '/blouse_necks/clean_close_neck.png' },
       { name: 'Collar Neck', img: '/blouse_necks/clean_collar_neck.png' },
@@ -1029,7 +1189,7 @@
       { name: 'Others', img: '/blouse_necks/clean_others_neck.png' }
     ];
 
-    // BACK NECK OPTIONS (Matching Image 2 exact aesthetic - only back neck cut changes)
+    // BACK NECK OPTIONS
     const backNeckOptions = [
       { name: 'Normal Neck', img: '/blouse_necks/back_normal_neck.png' },
       { name: 'Boat Neck', img: '/blouse_necks/back_boat_neck.png' },
@@ -1081,7 +1241,7 @@
       updateSpecUI();
     }
 
-    // REUSABLE DESIGN ATTACHMENTS & DESCRIPTION BLOCK (Photo + Voice + Notes for EVERY selection)
+    // REUSABLE DESIGN ATTACHMENTS & DESCRIPTION BLOCK
     function renderDesignAttachmentsAndNotesBlock(target) {
       if (!currentOutfit) return '';
       let photos = [];
@@ -1115,10 +1275,7 @@
 
       return `
         <div class="space-y-2 pt-2.5 border-t border-slate-100">
-          <!-- Attachments Row: Photo + Audio (Clean & Minimal - No cluttering headers) -->
           <div class="grid grid-cols-2 gap-2">
-            
-            <!-- Photo Upload Box -->
             <div>
               ${photos.length === 0 ? `
                 <button
@@ -1142,7 +1299,6 @@
               `}
             </div>
 
-            <!-- Voice / Audio Note Box -->
             <div>
               ${isRecording ? `
                 <div class="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl p-1.5 shadow-2xs">
@@ -1182,10 +1338,8 @@
                 </button>
               `}
             </div>
-
           </div>
 
-          <!-- Description / Instructions Input -->
           <div>
             <input
               type="text"
@@ -1220,42 +1374,46 @@
       renderChat();
     }
 
-    // STEP 4 SAVE & COMPLETE OUTFIT -> DIRECTLY COMBINED WITH CONSOLIDATED INQUIRY TICKET
+    // STEP 4 SAVE & COMPLETE OUTFIT
     function handleSaveAndCompleteOutfit() {
+      if (!currentOutfit) return;
       currentOutfit.isCompleted = true;
-      const existingIdx = completedOutfits.findIndex(o => o.number === currentOutfit.number);
-      if (existingIdx >= 0) {
-        completedOutfits[existingIdx] = { ...currentOutfit };
-      } else {
-        completedOutfits.push({ ...currentOutfit });
-      }
 
-      // Remove active stepper card
-      conversationHistory = conversationHistory.filter(m => m.type !== 'stepper_card');
+      // Remove active stepper card from outfit's chat
+      currentOutfit.chatHistory = currentOutfit.chatHistory.filter(m => m.type !== 'stepper_card');
 
-      // Combined directly: Proceed to Consolidated Inquiry Booking Card
       handleProceedToFinalTicket();
       updateSpecUI();
       drawCollageMaster();
     }
 
-    function handleEditOutfit(idx) {
-      if (!completedOutfits || !completedOutfits[idx]) return;
-      currentOutfit = { ...completedOutfits[idx], isCompleted: false, activeStep: 1 };
-      completedOutfits.splice(idx, 1);
-      conversationHistory = conversationHistory.filter(m => m.type !== 'stepper_card');
-      conversationHistory.push({
+    function handleEditOutfitFromTicket(outfitId) {
+      const target = outfitsList.find(o => o.id === outfitId);
+      if (!target) return;
+
+      activeOutfitId = outfitId;
+      syncCurrentOutfit();
+      currentOutfit.isCompleted = false;
+      currentOutfit.activeStep = 1;
+
+      currentOutfit.chatHistory = currentOutfit.chatHistory.filter(m => m.type !== 'stepper_card');
+      currentOutfit.chatHistory.push({
         id: 'stepper_card',
         sender: 'bot',
         type: 'stepper_card'
       });
+
       renderChat();
+      setTimeout(() => {
+        const stepper = document.getElementById('activeStepperCard');
+        if (stepper) {
+          stepper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
     }
 
-    function handleDeleteOutfit(idx) {
-      const target = completedOutfits && completedOutfits[idx];
-      if (!target) return;
-      handleCloseOutfitTab(target.number);
+    function handleDeleteOutfitFromTicket(outfitId) {
+      handleCloseOutfitTab(outfitId);
     }
 
     // Mouse Wheel to Horizontal Scroll + Click-Drag Scroll for Outfit Tabs
@@ -1269,7 +1427,6 @@
       if (!tabBar || tabBar._scrollInitialized) return;
       tabBar._scrollInitialized = true;
 
-      // Mouse Wheel -> Horizontal Scroll
       tabBar.addEventListener('wheel', (e) => {
         if (e.deltaY !== 0 || e.deltaX !== 0) {
           e.preventDefault();
@@ -1277,7 +1434,6 @@
         }
       }, { passive: false });
 
-      // Click & Drag to Scroll on Desktop
       tabBar.addEventListener('mousedown', (e) => {
         isTabMouseDown = true;
         hasDraggedDistance = false;
@@ -1304,13 +1460,13 @@
     }
 
     // Switch active outfit by tapping its browser-like tab
-    function handleSelectOutfitTab(outfitNum) {
+    function handleSelectOutfitTab(outfitId) {
       if (hasDraggedDistance) {
         hasDraggedDistance = false;
         return;
       }
-      // 1. If clicking the outfit that is currently being edited in stepper card, scroll to it
-      if (currentOutfit && currentOutfit.number === outfitNum) {
+
+      if (activeOutfitId === outfitId) {
         const stepper = document.getElementById('activeStepperCard');
         if (stepper) {
           stepper.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1318,370 +1474,543 @@
         return;
       }
 
-      // 2. If an outfit is currently active/unsaved, save it to completedOutfits first so work isn't lost
-      if (currentOutfit) {
-        const existIdx = completedOutfits.findIndex(o => o.number === currentOutfit.number);
-        if (existIdx >= 0) {
-          completedOutfits[existIdx] = { ...currentOutfit };
-        } else {
-          completedOutfits.push({ ...currentOutfit });
+      activeOutfitId = outfitId;
+      syncCurrentOutfit();
+      updateSpecUI();
+      renderChat();
+
+      setTimeout(() => {
+        const stepper = document.getElementById('activeStepperCard');
+        if (stepper) {
+          stepper.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-      }
-
-      // 3. Find target outfit in completedOutfits
-      const targetIdx = completedOutfits.findIndex(o => o.number === outfitNum);
-      if (targetIdx >= 0) {
-        // If already submitted, scroll to it in the ticket
-        if (isInquirySubmitted) {
-          const el = document.getElementById(`ticket_outfit_${outfitNum}`) || document.querySelector("[id^='final_ticket_']");
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          return;
-        }
-
-        // Switch to editing this outfit
-        currentOutfit = { ...completedOutfits[targetIdx], activeStep: 1 };
-        completedOutfits.splice(targetIdx, 1);
-
-        conversationHistory = conversationHistory.filter(m => m.type !== 'stepper_card');
-        conversationHistory.push({
-          id: 'stepper_card',
-          sender: 'bot',
-          type: 'stepper_card'
-        });
-
-        renderChat();
-
-        setTimeout(() => {
-          const stepper = document.getElementById('activeStepperCard');
-          if (stepper) {
-            stepper.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 100);
-      }
+      }, 100);
     }
 
-    // Close / Delete outfit from tab (Browser Tab Close Experience)
-    function handleCloseOutfitTab(outfitNum, event) {
+    // Close / Delete outfit from tab
+    function handleCloseOutfitTab(outfitId, event) {
       if (event) {
         event.preventDefault();
         event.stopPropagation();
       }
 
-      const totalOutfitsCount = completedOutfits.length + (currentOutfit && !completedOutfits.some(o => o.number === currentOutfit.number) ? 1 : 0);
+      const target = outfitsList.find(o => o.id === outfitId);
+      const targetNum = target ? target.number : '';
 
-      if (totalOutfitsCount <= 1) {
-        if (!confirm(`Remove Outfit #${outfitNum}? This will reset the customization.`)) return;
+      if (outfitsList.length <= 1) {
+        if (!confirm(`Remove Outfit #${targetNum}? This will reset the customization session.`)) return;
         resetToStart();
         return;
       }
 
-      if (!confirm(`Are you sure you want to remove Outfit #${outfitNum} from this order?`)) return;
+      if (!confirm(`Are you sure you want to remove Outfit #${targetNum} from this order?`)) return;
 
-      // Remove from completedOutfits if present
-      completedOutfits = completedOutfits.filter(o => o.number !== outfitNum);
+      outfitsList = outfitsList.filter(o => o.id !== outfitId);
 
-      // If this outfit was currently being edited
-      if (currentOutfit && currentOutfit.number === outfitNum) {
-        conversationHistory = conversationHistory.filter(m => m.type !== 'stepper_card');
+      // Renumber remaining outfits
+      outfitsList.forEach((o, idx) => {
+        o.number = idx + 1;
+      });
 
-        // If other completed outfits exist, switch to the last one or show ticket
-        if (completedOutfits.length > 0) {
-          currentOutfit = null;
-          handleProceedToFinalTicket();
-        } else {
-          resetToStart();
-        }
-      } else {
-        // If ticket is visible, re-render it
-        if (conversationHistory.some(m => m.id && m.id.startsWith('final_ticket'))) {
-          handleProceedToFinalTicket();
-        }
+      if (activeOutfitId === outfitId) {
+        activeOutfitId = outfitsList[outfitsList.length - 1].id;
       }
 
+      syncCurrentOutfit();
+      updateSpecUI();
       updateFloatingQuickActionsUI();
       renderChat();
+
+      // Refresh modal if open
+      const modal = document.getElementById('manageOutfitsModal');
+      if (modal && !modal.classList.contains('hidden')) {
+        renderManageOutfitsModal();
+      }
+    }
+
+    // Open/Close Add Outfit Modal
+    function openAddOutfitModal() {
+      closeManageOutfitsModal();
+      const modal = document.getElementById('addOutfitModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeAddOutfitModal() {
+      const modal = document.getElementById('addOutfitModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function handleSelectNewOutfitCategory(catName) {
+      closeAddOutfitModal();
+      handleUserSelectCategory(catName);
     }
 
     function handlePromptAddAnother() {
-      conversationHistory.push({
-        id: `add_another_picker_${Date.now()}`,
-        sender: 'bot',
-        html: `
-          <div class="space-y-2">
-            <p class="font-bold text-slate-900 text-xs">Add Another Outfit:</p>
-            <p class="text-slate-600 text-[11px]">Select which outfit you would like to design next:</p>
-            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Choose Outfit Type:</p>
-            <div class="flex flex-wrap gap-1.5 pt-0.5">
-              ${[
-                { name: 'Blouse', icon: '👚' },
-                { name: 'Co-ord Set', icon: '✨' },
-                { name: 'Kurti / Kurta', icon: '👗' },
-                { name: 'Salwar / Chudithar', icon: '✨' },
-                { name: 'Lehenga', icon: '💃' },
-                { name: 'Dress / Gown', icon: '👘' },
-                { name: 'Pants / Trousers', icon: '👖' },
-                { name: 'Other', icon: '✂️' }
-              ].map(c => `
-                <button onclick="handleUserSelectCategory('${c.name}')" class="px-2.5 py-1.5 bg-white hover:bg-[#EDE9FE]/50 text-slate-700 hover:text-[#5B43EE] border border-slate-200 hover:border-[#5B43EE] rounded-xl text-xs font-semibold shadow-2xs transition-all active:scale-95 flex items-center gap-1 cursor-pointer">
-                  <span>${c.icon}</span> <span>${c.name}</span>
-                </button>
-              `).join('')}
-            </div>
-          </div>
-        `
-      });
-      renderChat();
+      openAddOutfitModal();
     }
 
-    // CONSOLIDATED INQUIRY TICKET (Clean, One-by-One with Divider, Customer-Centric, Double-Submit Guard)
+    // =========================================================================
+    // DRAFTS & OUTFITS MANAGER MODAL (POP-UP EXPERIENCE)
+    // =========================================================================
+    function openManageOutfitsModal(opts = {}) {
+      const modal = document.getElementById('manageOutfitsModal');
+      const banner = document.getElementById('manageOutfitsWarningBanner');
+      if (banner) {
+        banner.classList.toggle('hidden', !opts.isSubmitWarning);
+      }
+      renderManageOutfitsModal();
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeManageOutfitsModal() {
+      const modal = document.getElementById('manageOutfitsModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function handleContinueFromModal() {
+      closeManageOutfitsModal();
+    }
+
+    function renderManageOutfitsModal() {
+      const container = document.getElementById('manageOutfitsModalList');
+      if (!container) return;
+
+      if (outfitsList.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-slate-400 text-xs">
+            No outfits configured yet. Click "Add Another Outfit" below to begin.
+          </div>
+        `;
+        return;
+      }
+
+      const categoryIcons = {
+        'Blouse': '👚',
+        'Kurti / Kurta': '👗',
+        'Kurti': '👗',
+        'Co-ord Set': '✨',
+        'Salwar / Chudithar': '✨',
+        'Lehenga': '💃',
+        'Dress / Gown': '👘',
+        'Pants / Trousers': '👖',
+        'Other': '✂️'
+      };
+
+      container.innerHTML = outfitsList.map(o => {
+        const icon = categoryIcons[o.category] || '👗';
+        const pending = getOutfitPendingSteps(o);
+        const isDraft = pending.length > 0;
+
+        const isCutDone = !!o.categoryCut;
+        const isFrontDone = !!o.frontNeck;
+        const isBackDone = !!o.backNeck;
+        const isSleeveDone = !!o.sleeve;
+        const isHookDone = !!o.hook;
+        const isFabricDone = (o.fabricPhotos?.length > 0 || !!o.fabricNote);
+        const isGarmentDone = (o.sampleDressPhotos?.length > 0 || !!o.sampleDressNote);
+
+        return `
+          <div class="bg-white rounded-2xl p-3.5 border ${isDraft ? 'border-amber-200 bg-amber-50/20' : 'border-slate-200'} shadow-2xs space-y-2.5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2 gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-6 h-6 rounded-lg bg-[#5B43EE]/10 text-[#5B43EE] flex items-center justify-center font-bold text-xs shrink-0">${icon}</span>
+                <div class="min-w-0">
+                  <h4 class="font-bold text-xs sm:text-sm text-slate-900 truncate">Outfit #${o.number}: ${o.category}</h4>
+                  <span class="text-[10px] text-slate-400 font-medium truncate block">${o.categoryCut || 'Pattern Cut Not Selected'}</span>
+                </div>
+              </div>
+              <div class="shrink-0">
+                ${isDraft 
+                  ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">⏳ Draft • ${pending.length} Pending</span>`
+                  : `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">✓ Ready to Stitch</span>`
+                }
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-1.5 text-[11px] pt-0.5">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="${isCutDone ? 'text-emerald-600 font-bold' : 'text-amber-500 font-bold'} shrink-0">${isCutDone ? '✓' : '⚠️'}</span>
+                <span class="text-slate-500 shrink-0">Pattern:</span>
+                <span class="font-semibold text-slate-800 truncate">${o.categoryCut || 'Pending'}</span>
+              </div>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="${isFrontDone ? 'text-emerald-600 font-bold' : 'text-amber-500 font-bold'} shrink-0">${isFrontDone ? '✓' : '⚠️'}</span>
+                <span class="text-slate-500 shrink-0">Front:</span>
+                <span class="font-semibold text-slate-800 truncate">${o.frontNeck || 'Pending'}</span>
+              </div>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="${isBackDone ? 'text-emerald-600 font-bold' : 'text-amber-500 font-bold'} shrink-0">${isBackDone ? '✓' : '⚠️'}</span>
+                <span class="text-slate-500 shrink-0">Back:</span>
+                <span class="font-semibold text-slate-800 truncate">${o.backNeck || 'Pending'}</span>
+              </div>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="${isSleeveDone ? 'text-emerald-600 font-bold' : 'text-amber-500 font-bold'} shrink-0">${isSleeveDone ? '✓' : '⚠️'}</span>
+                <span class="text-slate-500 shrink-0">Sleeve:</span>
+                <span class="font-semibold text-slate-800 truncate">${o.sleeve || 'Pending'}</span>
+              </div>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="${isHookDone ? 'text-emerald-600 font-bold' : 'text-amber-500 font-bold'} shrink-0">${isHookDone ? '✓' : '⚠️'}</span>
+                <span class="text-slate-500 shrink-0">Hook:</span>
+                <span class="font-semibold text-slate-800 truncate">${o.hook || 'Pending'}</span>
+              </div>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="${(isFabricDone || isGarmentDone) ? 'text-emerald-600 font-bold' : 'text-slate-400'} shrink-0">${(isFabricDone || isGarmentDone) ? '✓' : '—'}</span>
+                <span class="text-slate-500 shrink-0">Material:</span>
+                <span class="font-semibold text-slate-800 truncate">${(isFabricDone || isGarmentDone) ? 'Attached' : 'Optional'}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onclick="handleCloseOutfitTab('${o.id}')"
+                class="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <span>🗑️</span> <span>Delete Outfit</span>
+              </button>
+              <button
+                type="button"
+                onclick="handleContinueOutfitFromModal('${o.id}')"
+                class="text-xs font-bold text-[#5B43EE] bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <span>✏️</span> <span>${isDraft ? 'Complete Pending Steps' : 'Edit Outfit'}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleContinueOutfitFromModal(outfitId) {
+      closeManageOutfitsModal();
+      activeOutfitId = outfitId;
+      syncCurrentOutfit();
+
+      const pending = getOutfitPendingSteps(currentOutfit);
+      if (pending.length > 0) {
+        currentOutfit.activeStep = pending[0].step || 1;
+        currentOutfit.isCompleted = false;
+
+        if (!currentOutfit.chatHistory.some(m => m.type === 'stepper_card')) {
+          currentOutfit.chatHistory.push({
+            id: 'stepper_card',
+            sender: 'bot',
+            type: 'stepper_card'
+          });
+        }
+      }
+
+      updateSpecUI();
+      renderChat();
+
+      setTimeout(() => {
+        const stepper = document.getElementById('activeStepperCard');
+        if (stepper) {
+          stepper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+
+    // CONSOLIDATED INQUIRY TICKET HTML
+    function renderFinalTicketHtml() {
+      return `
+        <div class="space-y-3.5">
+          <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full ${isInquirySubmitted ? 'bg-emerald-500' : 'bg-[#5B43EE]'}"></span>
+              <h3 class="font-bold text-slate-900 text-sm tracking-tight">Consolidated Inquiry</h3>
+            </div>
+            <div class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+              isInquirySubmitted
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-2xs'
+                : 'bg-purple-50 text-[#5B43EE] border-purple-200 shadow-2xs'
+            }">
+              <span class="w-2 h-2 rounded-full ${isInquirySubmitted ? 'bg-emerald-500 animate-pulse' : 'bg-[#5B43EE]'}"></span>
+              <span>${isInquirySubmitted ? 'Inquiry Submitted ✓' : `${outfitsList.length} Outfit${outfitsList.length > 1 ? 's' : ''} in Session`}</span>
+            </div>
+          </div>
+
+          <!-- Outfits List -->
+          <div class="space-y-3">
+            ${outfitsList.map((o, idx) => {
+              const frontImg = getFrontNeckImg(o.frontNeck);
+              const backImg = getBackNeckImg(o.backNeck);
+              const pending = getOutfitPendingSteps(o);
+              const isDraft = pending.length > 0;
+
+              return `
+                <div id="ticket_outfit_${o.id}" class="bg-white p-3.5 rounded-2xl border ${isDraft ? 'border-amber-200 bg-amber-50/15' : 'border-slate-200/90'} shadow-2xs space-y-2.5">
+                  <div class="flex items-center justify-between border-b border-slate-100 pb-2 gap-2">
+                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                      <span class="w-5 h-5 rounded-md bg-[#5B43EE] text-white flex items-center justify-center font-bold text-[11px] shrink-0">
+                        ${idx + 1}
+                      </span>
+                      <span class="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                        Outfit #${idx + 1}: ${o.category || 'Blouse'} (${o.categoryCut || 'Pattern Pending'})
+                      </span>
+                      ${isDraft ? `<span class="text-[9.5px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded-md shrink-0">Draft</span>` : ''}
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <button type="button" onclick="handleEditOutfitFromTicket('${o.id}')" class="text-xs font-bold text-[#5B43EE] hover:underline cursor-pointer">
+                        ✏️ Edit
+                      </button>
+                      <button type="button" onclick="handleDeleteOutfitFromTicket('${o.id}')" class="text-xs font-bold text-rose-500 hover:underline cursor-pointer" title="Delete Outfit">
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="divide-y divide-slate-100 text-xs space-y-0">
+                    <div class="flex items-center justify-between py-2 first:pt-0">
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-lg bg-purple-50/60 p-0.5 shrink-0 border border-purple-100 flex items-center justify-center overflow-hidden">
+                          <img src="${frontImg}" class="w-full h-full object-contain" />
+                        </div>
+                        <div class="min-w-0">
+                          <span class="text-[10px] text-slate-400 font-medium block">Front Neck</span>
+                          <span class="font-semibold text-slate-800 truncate block">${o.frontNeck ? o.frontNeck : '<span class="text-amber-600 font-bold">⚠️ Pending selection</span>'}</span>
+                        </div>
+                      </div>
+                      ${o.frontNeckNote ? `<span class="text-[10px] text-slate-500 italic truncate max-w-[130px] text-right">"${o.frontNeckNote}"</span>` : ''}
+                    </div>
+
+                    <div class="flex items-center justify-between py-2">
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-lg bg-purple-50/60 p-0.5 shrink-0 border border-purple-100 flex items-center justify-center overflow-hidden">
+                          <img src="${backImg}" class="w-full h-full object-contain" />
+                        </div>
+                        <div class="min-w-0">
+                          <span class="text-[10px] text-slate-400 font-medium block">Back Neck</span>
+                          <span class="font-semibold text-slate-800 truncate block">${o.backNeck ? o.backNeck : '<span class="text-amber-600 font-bold">⚠️ Pending selection</span>'}</span>
+                        </div>
+                      </div>
+                      ${o.backNeckNote ? `<span class="text-[10px] text-slate-500 italic truncate max-w-[130px] text-right">"${o.backNeckNote}"</span>` : ''}
+                    </div>
+
+                    <div class="flex items-center justify-between py-2">
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-lg bg-purple-50 text-[#5B43EE] shrink-0 border border-purple-100 flex items-center justify-center text-xs">
+                          🪡
+                        </div>
+                        <div class="min-w-0">
+                          <span class="text-[10px] text-slate-400 font-medium block">Sleeve & Fastening</span>
+                          <span class="font-semibold text-slate-800 truncate block">${(o.sleeve && o.hook) ? `${o.sleeve} • ${o.hook}` : '<span class="text-amber-600 font-bold">⚠️ Pending selection</span>'}</span>
+                        </div>
+                      </div>
+                      ${o.sleeveNote ? `<span class="text-[10px] text-slate-500 italic truncate max-w-[130px] text-right">"${o.sleeveNote}"</span>` : ''}
+                    </div>
+
+                    <div class="flex items-center justify-between py-2">
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-lg bg-purple-50 text-[#5B43EE] shrink-0 border border-purple-100 flex items-center justify-center text-xs">
+                          ✂️
+                        </div>
+                        <div class="min-w-0">
+                          <span class="text-[10px] text-slate-400 font-medium block">Pattern Style / Cut</span>
+                          <span class="font-semibold text-slate-800 truncate block">${o.categoryCut || '<span class="text-amber-600 font-bold">⚠️ Pending</span>'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    ${(o.fabricPhotos?.length > 0 || o.sampleDressPhotos?.length > 0 || o.fabricNote || o.sampleDressNote) ? `
+                      <div class="py-2 space-y-1.5">
+                        <span class="text-[10px] font-bold text-[#5B43EE] uppercase tracking-wider block">Attached Material & Garment:</span>
+                        <div class="flex flex-wrap gap-1.5">
+                          ${o.fabricPhotos?.length > 0 ? `
+                            <div class="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
+                              <img src="${o.fabricPhotos[0]}" class="w-5 h-5 rounded object-cover border border-purple-100" />
+                              <span class="text-[10px] font-semibold text-slate-700">🧵 Fabric ${o.fabricNote ? `(${o.fabricNote})` : ''}</span>
+                            </div>
+                          ` : o.fabricNote ? `
+                            <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 text-[10px] font-semibold text-slate-700">
+                              <span>🧵</span> <span>Fabric: ${o.fabricNote}</span>
+                            </div>
+                          ` : ''}
+
+                          ${o.sampleDressPhotos?.length > 0 ? `
+                            <div class="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
+                              <img src="${o.sampleDressPhotos[0]}" class="w-5 h-5 rounded object-cover border border-purple-100" />
+                              <span class="text-[10px] font-semibold text-slate-700">👗 Sample Dress ${o.sampleDressNote ? `(${o.sampleDressNote})` : ''}</span>
+                            </div>
+                          ` : o.sampleDressNote ? `
+                            <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 text-[10px] font-semibold text-slate-700">
+                              <span>👗</span> <span>Sample: ${o.sampleDressNote}</span>
+                            </div>
+                          ` : ''}
+                        </div>
+                      </div>
+                    ` : ''}
+
+                    ${o.tailorNotes ? `
+                      <div class="pt-2">
+                        <div class="bg-slate-50 border border-slate-200/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 flex items-start gap-1.5">
+                          <span class="text-xs shrink-0 mt-0.5">📝</span>
+                          <span class="italic text-[10.5px] leading-relaxed text-slate-600">"${o.tailorNotes}"</span>
+                        </div>
+                      </div>
+                    ` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Measurement Card -->
+          <div ${!isInquirySubmitted ? 'onclick="openMeasurementModal()"' : ''} class="${!isInquirySubmitted ? 'cursor-pointer hover:bg-purple-50/40 hover:border-[#5B43EE]' : ''} bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between transition-all group shadow-2xs">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="text-base shrink-0">📏</span>
+              <div class="min-w-0">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Measurement</span>
+                <span class="text-xs font-bold text-slate-900 block truncate">${measurementOption}</span>
+              </div>
+            </div>
+            ${!isInquirySubmitted ? `
+              <span class="text-xs font-bold text-[#5B43EE] bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200 group-hover:bg-purple-100 transition-colors shrink-0">
+                Change ▾
+              </span>
+            ` : `
+              <span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 shrink-0">
+                Confirmed
+              </span>
+            `}
+          </div>
+
+          <!-- Target Delivery Card -->
+          <div ${!isInquirySubmitted ? 'onclick="openDeliveryDateModal()"' : ''} class="${!isInquirySubmitted ? 'cursor-pointer hover:bg-purple-50/40 hover:border-[#5B43EE]' : ''} bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between transition-all group shadow-2xs">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="text-base shrink-0">📅</span>
+              <div class="min-w-0">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Target Delivery</span>
+                <span id="ticketDeliveryLabel" class="text-xs font-bold text-slate-900 block truncate">${chosenDeliveryTimeline}</span>
+              </div>
+            </div>
+            ${!isInquirySubmitted ? `
+              <span class="text-xs font-bold text-[#5B43EE] bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200 group-hover:bg-purple-100 transition-colors shrink-0">
+                Modify ▾
+              </span>
+            ` : `
+              <span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 shrink-0">
+                Confirmed
+              </span>
+            `}
+          </div>
+
+          <!-- Bottom Actions -->
+          <div class="pt-3 border-t border-slate-100 space-y-2">
+            ${isInquirySubmitted ? `
+              <div class="bg-emerald-50/70 border border-emerald-200/90 rounded-xl p-3 flex items-center justify-between shadow-2xs">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-xs font-bold shrink-0">✓</div>
+                  <div class="min-w-0">
+                    <span class="text-xs font-bold text-slate-800 block">Inquiry Submitted & Confirmed</span>
+                    <span class="text-[10px] text-slate-500 block truncate">Reference #${submittedTicketId} • Sent to boutique</span>
+                  </div>
+                </div>
+                <span class="text-[10px] font-semibold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200 shrink-0">
+                  Active
+                </span>
+              </div>
+            ` : `
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onclick="openAddOutfitModal()"
+                  class="h-10 px-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl font-semibold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-98"
+                >
+                  <span>＋ Add Outfit</span>
+                </button>
+                <button
+                  type="button"
+                  onclick="handleSubmitInquiry()"
+                  class="h-10 px-4 bg-[#5B43EE] hover:bg-[#4a35d4] text-white rounded-xl font-bold text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-98"
+                >
+                  <span>Submit Inquiry</span>
+                  <span>→</span>
+                </button>
+              </div>
+
+              <div class="text-center pt-0.5">
+                <button
+                  type="button"
+                  onclick="handleCancelInquiry()"
+                  class="text-xs text-slate-400 hover:text-rose-600 transition-colors cursor-pointer font-medium inline-flex items-center gap-1 py-1"
+                >
+                  <span>✕</span> <span>Cancel Inquiry</span>
+                </button>
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderInquirySuccessHtml() {
+      return `
+        <div class="space-y-3 animate-in fade-in duration-200">
+          <div class="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm space-y-3 text-slate-800">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold shrink-0">
+                  ✓
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-900 leading-tight">Order Inquiry Confirmed</h4>
+                  <span class="text-[10px] text-slate-400 font-mono tracking-tight">Ref #${submittedTicketId}</span>
+                </div>
+              </div>
+              <span class="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 shrink-0">
+                ${outfitsList.length} Outfit${outfitsList.length > 1 ? 's' : ''}
+              </span>
+            </div>
+
+            <p class="text-xs text-slate-600 leading-relaxed">
+              Thank you, <b class="text-slate-800">Bhuvan</b>! Your custom tailoring request has been forwarded to <b class="text-slate-800">Inba Designer & Boutique</b>. The master tailor will review your necklines, sleeves, and reference materials.
+            </p>
+
+            <div class="grid grid-cols-2 gap-2 pt-1 text-xs">
+              <div class="bg-slate-50 border border-slate-200/70 rounded-xl p-2.5">
+                <span class="text-[9.5px] text-slate-400 uppercase font-semibold block">Measurement</span>
+                <span class="text-xs font-semibold text-slate-800 block truncate mt-0.5">${measurementOption}</span>
+              </div>
+              <div class="bg-slate-50 border border-slate-200/70 rounded-xl p-2.5">
+                <span class="text-[9.5px] text-slate-400 uppercase font-semibold block">Target Delivery</span>
+                <span class="text-xs font-semibold text-slate-800 block truncate mt-0.5">${chosenDeliveryTimeline}</span>
+              </div>
+            </div>
+
+            <div class="pt-1.5 space-y-2">
+              <button
+                type="button"
+                onclick="alert('Receipt downloaded for #${submittedTicketId}')"
+                class="w-full h-10 px-4 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl font-semibold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              >
+                <span class="text-slate-500">📄</span>
+                <span>Download Inquiry Receipt (PDF)</span>
+              </button>
+              <p class="text-[10px] text-center text-slate-400">
+                Need to add another outfit to this booking? Use <span class="text-[#5B43EE] font-semibold">+ Add Outfit</span> below anytime.
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     function handleProceedToFinalTicket() {
-      const existingTicketIndex = conversationHistory.findIndex(m => m.id && m.id.startsWith('final_ticket'));
-      const ticketId = existingTicketIndex >= 0 ? conversationHistory[existingTicketIndex].id : `final_ticket_${Date.now()}`;
+      if (!currentOutfit) return;
+      const existingTicketIndex = currentOutfit.chatHistory.findIndex(m => m.id && m.id.startsWith('final_ticket'));
+      const ticketId = existingTicketIndex >= 0 ? currentOutfit.chatHistory[existingTicketIndex].id : `final_ticket_${Date.now()}`;
 
       const ticketMsg = {
         id: ticketId,
         sender: 'bot',
-        html: `
-          <div class="space-y-3.5">
-            <!-- Clean Header -->
-            <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
-              <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full ${isInquirySubmitted ? 'bg-emerald-500' : 'bg-[#5B43EE]'}"></span>
-                <h3 class="font-bold text-slate-900 text-sm tracking-tight">Consolidated Inquiry</h3>
-              </div>
-              <div class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
-                isInquirySubmitted
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-2xs'
-                  : 'bg-purple-50 text-[#5B43EE] border-purple-200 shadow-2xs'
-              }">
-                <span class="w-2 h-2 rounded-full ${isInquirySubmitted ? 'bg-emerald-500 animate-pulse' : 'bg-[#5B43EE]'}"></span>
-                <span>${isInquirySubmitted ? 'Inquiry Submitted ✓' : `${completedOutfits.length} Outfit${completedOutfits.length > 1 ? 's' : ''} Ready`}</span>
-              </div>
-            </div>
-
-            <!-- Outfits List: One-by-One with Dividers (Clean & Customer-Configured) -->
-            <div class="space-y-3">
-              ${completedOutfits.map((o, idx) => {
-                const frontImg = getFrontNeckImg(o.frontNeck);
-                const backImg = getBackNeckImg(o.backNeck);
-                return `
-                  <div id="ticket_outfit_${o.number || (idx + 1)}" class="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5">
-                    <!-- Title & Edit/Delete Row (Spacious, Un-truncated) -->
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-2 gap-2">
-                      <div class="flex items-center gap-2 min-w-0 flex-1">
-                        <span class="w-5 h-5 rounded-md bg-[#5B43EE] text-white flex items-center justify-center font-bold text-[11px] shrink-0">
-                          ${idx + 1}
-                        </span>
-                        <span class="font-bold text-slate-900 text-xs sm:text-sm truncate">
-                          Outfit #${idx + 1}: ${o.category || 'Blouse'} (${o.categoryCut || 'Standard Cut'})
-                        </span>
-                      </div>
-                      <div class="flex items-center gap-2 shrink-0">
-                        <button type="button" onclick="handleEditOutfit(${idx})" class="text-xs font-bold text-[#5B43EE] hover:underline cursor-pointer">
-                          ✏️ Edit
-                        </button>
-                        <button type="button" onclick="handleDeleteOutfit(${idx})" class="text-xs font-bold text-rose-500 hover:underline cursor-pointer" title="Delete Outfit">
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Configured Specifications: One-by-One with Subtle Dividers -->
-                    <div class="divide-y divide-slate-100 text-xs space-y-0">
-                      <!-- Row 1: Front Neck -->
-                      <div class="flex items-center justify-between py-2 first:pt-0">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                          <div class="w-8 h-8 rounded-lg bg-purple-50/60 p-0.5 shrink-0 border border-purple-100 flex items-center justify-center overflow-hidden">
-                            <img src="${frontImg}" class="w-full h-full object-contain" />
-                          </div>
-                          <div class="min-w-0">
-                            <span class="text-[10px] text-slate-400 font-medium block">Front Neck</span>
-                            <span class="font-semibold text-slate-800 truncate block">${o.frontNeck}</span>
-                          </div>
-                        </div>
-                        ${o.frontNeckNote ? `<span class="text-[10px] text-slate-500 italic truncate max-w-[130px] text-right">"${o.frontNeckNote}"</span>` : ''}
-                      </div>
-
-                      <!-- Row 2: Back Neck -->
-                      <div class="flex items-center justify-between py-2">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                          <div class="w-8 h-8 rounded-lg bg-purple-50/60 p-0.5 shrink-0 border border-purple-100 flex items-center justify-center overflow-hidden">
-                            <img src="${backImg}" class="w-full h-full object-contain" />
-                          </div>
-                          <div class="min-w-0">
-                            <span class="text-[10px] text-slate-400 font-medium block">Back Neck</span>
-                            <span class="font-semibold text-slate-800 truncate block">${o.backNeck}</span>
-                          </div>
-                        </div>
-                        ${o.backNeckNote ? `<span class="text-[10px] text-slate-500 italic truncate max-w-[130px] text-right">"${o.backNeckNote}"</span>` : ''}
-                      </div>
-
-                      <!-- Row 3: Sleeve & Opening -->
-                      <div class="flex items-center justify-between py-2">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                          <div class="w-8 h-8 rounded-lg bg-purple-50 text-[#5B43EE] shrink-0 border border-purple-100 flex items-center justify-center text-xs">
-                            🪡
-                          </div>
-                          <div class="min-w-0">
-                            <span class="text-[10px] text-slate-400 font-medium block">Sleeve & Fastening</span>
-                            <span class="font-semibold text-slate-800 truncate block">${o.sleeve} • ${o.hook}</span>
-                          </div>
-                        </div>
-                        ${o.sleeveNote ? `<span class="text-[10px] text-slate-500 italic truncate max-w-[130px] text-right">"${o.sleeveNote}"</span>` : ''}
-                      </div>
-
-                      <!-- Row 4: Pattern Cut -->
-                      <div class="flex items-center justify-between py-2">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                          <div class="w-8 h-8 rounded-lg bg-purple-50 text-[#5B43EE] shrink-0 border border-purple-100 flex items-center justify-center text-xs">
-                            ✂️
-                          </div>
-                          <div class="min-w-0">
-                            <span class="text-[10px] text-slate-400 font-medium block">Pattern Style / Cut</span>
-                            <span class="font-semibold text-slate-800 truncate block">${o.categoryCut || 'Standard'}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Row 5: Attached Material & Garment (If Provided) -->
-                      ${(o.fabricPhotos?.length > 0 || o.sampleDressPhotos?.length > 0 || o.fabricNote || o.sampleDressNote) ? `
-                        <div class="py-2 space-y-1.5">
-                          <span class="text-[10px] font-bold text-[#5B43EE] uppercase tracking-wider block">Attached Material & Garment:</span>
-                          <div class="flex flex-wrap gap-1.5">
-                            ${o.fabricPhotos?.length > 0 ? `
-                              <div class="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
-                                <img src="${o.fabricPhotos[0]}" class="w-5 h-5 rounded object-cover border border-purple-100" />
-                                <span class="text-[10px] font-semibold text-slate-700">🧵 Fabric ${o.fabricNote ? `(${o.fabricNote})` : ''}</span>
-                              </div>
-                            ` : o.fabricNote ? `
-                              <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 text-[10px] font-semibold text-slate-700">
-                                <span>🧵</span> <span>Fabric: ${o.fabricNote}</span>
-                              </div>
-                            ` : ''}
-
-                            ${o.sampleDressPhotos?.length > 0 ? `
-                              <div class="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
-                                <img src="${o.sampleDressPhotos[0]}" class="w-5 h-5 rounded object-cover border border-purple-100" />
-                                <span class="text-[10px] font-semibold text-slate-700">👗 Sample Dress ${o.sampleDressNote ? `(${o.sampleDressNote})` : ''}</span>
-                              </div>
-                            ` : o.sampleDressNote ? `
-                              <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 text-[10px] font-semibold text-slate-700">
-                                <span>👗</span> <span>Sample: ${o.sampleDressNote}</span>
-                              </div>
-                            ` : ''}
-                          </div>
-                        </div>
-                      ` : ''}
-
-                      <!-- Row 6: Special Tailor Notes (If Provided) -->
-                      ${o.tailorNotes ? `
-                        <div class="pt-2">
-                          <div class="bg-slate-50 border border-slate-200/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 flex items-start gap-1.5">
-                            <span class="text-xs shrink-0 mt-0.5">📝</span>
-                            <span class="italic text-[10.5px] leading-relaxed text-slate-600">"${o.tailorNotes}"</span>
-                          </div>
-                        </div>
-                      ` : ''}
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-
-            <!-- Measurement Card: Clean & Description-Free -->
-            <div ${!isInquirySubmitted ? 'onclick="openMeasurementModal()"' : ''} class="${!isInquirySubmitted ? 'cursor-pointer hover:bg-purple-50/40 hover:border-[#5B43EE]' : ''} bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between transition-all group shadow-2xs">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <span class="text-base shrink-0">📏</span>
-                <div class="min-w-0">
-                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Measurement</span>
-                  <span class="text-xs font-bold text-slate-900 block truncate">${measurementOption}</span>
-                </div>
-              </div>
-              ${!isInquirySubmitted ? `
-                <span class="text-xs font-bold text-[#5B43EE] bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200 group-hover:bg-purple-100 transition-colors shrink-0">
-                  Change ▾
-                </span>
-              ` : `
-                <span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 shrink-0">
-                  Confirmed
-                </span>
-              `}
-            </div>
-
-            <!-- Target Delivery Card: Clean & Description-Free -->
-            <div ${!isInquirySubmitted ? 'onclick="openDeliveryDateModal()"' : ''} class="${!isInquirySubmitted ? 'cursor-pointer hover:bg-purple-50/40 hover:border-[#5B43EE]' : ''} bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between transition-all group shadow-2xs">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <span class="text-base shrink-0">📅</span>
-                <div class="min-w-0">
-                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Target Delivery</span>
-                  <span id="ticketDeliveryLabel" class="text-xs font-bold text-slate-900 block truncate">${chosenDeliveryTimeline}</span>
-                </div>
-              </div>
-              ${!isInquirySubmitted ? `
-                <span class="text-xs font-bold text-[#5B43EE] bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200 group-hover:bg-purple-100 transition-colors shrink-0">
-                  Modify ▾
-                </span>
-              ` : `
-                <span class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 shrink-0">
-                  Confirmed
-                </span>
-              `}
-            </div>
-
-            <!-- Bottom Actions -->
-            <div class="pt-3 border-t border-slate-100 space-y-2">
-              ${isInquirySubmitted ? `
-                <div class="bg-emerald-50/70 border border-emerald-200/90 rounded-xl p-3 flex items-center justify-between shadow-2xs">
-                  <div class="flex items-center gap-2.5 min-w-0">
-                    <div class="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-xs font-bold shrink-0">✓</div>
-                    <div class="min-w-0">
-                      <span class="text-xs font-bold text-slate-800 block">Inquiry Submitted & Confirmed</span>
-                      <span class="text-[10px] text-slate-500 block truncate">Reference #${submittedTicketId} • Sent to boutique</span>
-                    </div>
-                  </div>
-                  <span class="text-[10px] font-semibold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200 shrink-0">
-                    Active
-                  </span>
-                </div>
-              ` : `
-                <div class="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onclick="handlePromptAddAnother()"
-                    class="h-10 px-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl font-semibold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-98"
-                  >
-                    <span>+ Add Outfit</span>
-                  </button>
-                  <button
-                    type="button"
-                    onclick="handleSubmitInquiry()"
-                    class="h-10 px-4 bg-[#5B43EE] hover:bg-[#4a35d4] text-white rounded-xl font-bold text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-98"
-                  >
-                    <span>Submit Inquiry</span>
-                    <span>→</span>
-                  </button>
-                </div>
-
-                <!-- Cancel / Start Over Option -->
-                <div class="text-center pt-0.5">
-                  <button
-                    type="button"
-                    onclick="handleCancelInquiry()"
-                    class="text-xs text-slate-400 hover:text-rose-600 transition-colors cursor-pointer font-medium inline-flex items-center gap-1 py-1"
-                  >
-                    <span>✕</span> <span>Cancel Inquiry</span>
-                  </button>
-                </div>
-              `}
-            </div>
-          </div>
-        `
+        html: renderFinalTicketHtml()
       };
 
       if (existingTicketIndex >= 0) {
-        conversationHistory[existingTicketIndex] = ticketMsg;
+        currentOutfit.chatHistory[existingTicketIndex] = ticketMsg;
       } else {
-        conversationHistory.push(ticketMsg);
+        currentOutfit.chatHistory.push(ticketMsg);
       }
       renderChat();
     }
@@ -1692,6 +2021,14 @@
 
     function handleSubmitInquiry() {
       if (isInquirySubmitted) return;
+
+      // Auto-save check: Check if any outfit has pending draft steps
+      const hasIncomplete = outfitsList.some(o => getOutfitPendingSteps(o).length > 0);
+      if (hasIncomplete) {
+        openManageOutfitsModal({ isSubmitWarning: true });
+        return;
+      }
+
       isInquirySubmitted = true;
       handleProceedToFinalTicket();
       updateFloatingQuickActionsUI();
@@ -1699,75 +2036,22 @@
       showTyping(true);
       setTimeout(() => {
         showTyping(false);
-        conversationHistory.push({
-          id: `inquiry_success_${Date.now()}`,
-          sender: 'bot',
-          html: `
-            <div class="space-y-3 animate-in fade-in duration-200">
-              
-              <!-- Soft, Light Boutique Confirmation Card -->
-              <div class="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm space-y-3 text-slate-800">
-                
-                <!-- Header with Clean Emerald Success Badge -->
-                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold shrink-0">
-                      ✓
-                    </div>
-                    <div>
-                      <h4 class="text-xs font-bold text-slate-900 leading-tight">Order Inquiry Confirmed</h4>
-                      <span class="text-[10px] text-slate-400 font-mono tracking-tight">Ref #${submittedTicketId}</span>
-                    </div>
-                  </div>
-                  <span class="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 shrink-0">
-                    ${completedOutfits.length} Outfit${completedOutfits.length > 1 ? 's' : ''}
-                  </span>
-                </div>
-
-                <!-- Friendly Boutique Note -->
-                <p class="text-xs text-slate-600 leading-relaxed">
-                  Thank you, <b class="text-slate-800">Bhuvan</b>! Your custom tailoring request has been forwarded to <b class="text-slate-800">Inba Designer & Boutique</b>. The master tailor will review your necklines, sleeves, and reference materials.
-                </p>
-
-                <!-- Soft Summary Pill Grid -->
-                <div class="grid grid-cols-2 gap-2 pt-1 text-xs">
-                  <div class="bg-slate-50 border border-slate-200/70 rounded-xl p-2.5">
-                    <span class="text-[9.5px] text-slate-400 uppercase font-semibold block">Measurement</span>
-                    <span class="text-xs font-semibold text-slate-800 block truncate mt-0.5">${measurementOption}</span>
-                  </div>
-                  <div class="bg-slate-50 border border-slate-200/70 rounded-xl p-2.5">
-                    <span class="text-[9.5px] text-slate-400 uppercase font-semibold block">Target Delivery</span>
-                    <span class="text-xs font-semibold text-slate-800 block truncate mt-0.5">${chosenDeliveryTimeline}</span>
-                  </div>
-                </div>
-
-                <!-- Clean, Light Action -->
-                <div class="pt-1.5 space-y-2">
-                  <button
-                    type="button"
-                    onclick="alert('Receipt downloaded for #${submittedTicketId}')"
-                    class="w-full h-10 px-4 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl font-semibold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                  >
-                    <span class="text-slate-500">📄</span>
-                    <span>Download Inquiry Receipt (PDF)</span>
-                  </button>
-                  <p class="text-[10px] text-center text-slate-400">
-                    Need to add another outfit to this booking? Use <span class="text-[#5B43EE] font-semibold">+ Add Outfit</span> below anytime.
-                  </p>
-                </div>
-
-              </div>
-
-            </div>
-          `
-        });
-        renderChat();
+        if (currentOutfit) {
+          currentOutfit.chatHistory.push({
+            id: `inquiry_success_${Date.now()}`,
+            sender: 'bot',
+            html: renderInquirySuccessHtml()
+          });
+          renderChat();
+        }
       }, 500);
     }
 
-    // Render Conversation History
+    // Render Conversation History for Currently Active Outfit
     function renderChat(shouldScrollToBottom = true) {
+      syncCurrentOutfit();
       const chatBox = document.getElementById('chatMessages');
+      if (!chatBox) return;
       chatBox.innerHTML = '';
 
       chatBox.innerHTML += `
@@ -1778,7 +2062,9 @@
         </div>
       `;
 
-      conversationHistory.forEach(msg => {
+      const activeHistory = currentOutfit ? currentOutfit.chatHistory : welcomeChatHistory;
+
+      activeHistory.forEach(msg => {
         if (!msg) return;
         if (msg.sender === 'user') {
           chatBox.innerHTML += `
@@ -1820,27 +2106,11 @@
       const container = document.getElementById('floatingTabBar');
       if (!container) return;
 
-      // Gather all distinct outfits in this session
-      const outfitsMap = new Map();
-
-      // 1. Add completed outfits
-      completedOutfits.forEach(o => {
-        outfitsMap.set(o.number, { ...o, isSaved: true });
-      });
-
-      // 2. Add current active outfit being configured
-      if (currentOutfit) {
-        outfitsMap.set(currentOutfit.number, { ...currentOutfit, isSaved: false, isCurrentlyEditing: true });
-      }
-
-      const allOutfits = Array.from(outfitsMap.values()).sort((a, b) => a.number - b.number);
-
-      // If no outfits started yet
-      if (allOutfits.length === 0) {
+      if (outfitsList.length === 0) {
         container.innerHTML = `
           <button
             type="button"
-            onclick="handlePromptAddAnother()"
+            onclick="openAddOutfitModal()"
             class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white hover:bg-purple-50 text-[#5B43EE] border border-purple-200 shadow-2xs active:scale-95 transition-all cursor-pointer whitespace-nowrap"
           >
             <span class="text-xs font-bold leading-none">＋</span>
@@ -1862,30 +2132,33 @@
         'Other': '✂️'
       };
 
-      const tabsHtml = allOutfits.map(o => {
-        const isEditingThis = currentOutfit && currentOutfit.number === o.number;
+      const tabsHtml = outfitsList.map(o => {
+        const isEditingThis = currentOutfit && currentOutfit.id === o.id;
         const icon = categoryIcons[o.category] || '👗';
         const label = `Outfit #${o.number}: ${o.category || 'Outfit'}`;
+        const pending = getOutfitPendingSteps(o);
+        const isDraft = pending.length > 0;
 
         return `
           <div
-            id="tab_outfit_${o.number}"
+            id="tab_outfit_${o.id}"
             data-active="${isEditingThis ? 'true' : 'false'}"
-            onclick="handleSelectOutfitTab(${o.number})"
+            onclick="handleSelectOutfitTab('${o.id}')"
             class="group flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-xs transition-all cursor-pointer select-none whitespace-nowrap shrink-0 shadow-2xs ${
               isEditingThis
                 ? 'bg-white text-[#5B43EE] font-bold border-2 border-[#5B43EE] shadow-xs ring-2 ring-purple-100'
                 : 'bg-white hover:bg-purple-50/60 text-slate-700 hover:text-slate-900 font-semibold border border-slate-200/90'
             }"
-            title="${isEditingThis ? 'Currently Editing' : 'Switch to'} ${label}"
+            title="${label} • ${isDraft ? `Draft (${pending.length} pending)` : 'Ready'}"
           >
             <span class="text-xs shrink-0">${icon}</span>
-            <span class="truncate max-w-[125px] sm:max-w-[160px] leading-none">${label}</span>
+            <span class="truncate max-w-[120px] sm:max-w-[150px] leading-none">${label}</span>
+            <span class="w-2 h-2 rounded-full shrink-0 ${isDraft ? 'bg-amber-400' : 'bg-emerald-500'}" title="${isDraft ? 'Draft' : 'Ready'}"></span>
             <button
               type="button"
-              onclick="handleCloseOutfitTab(${o.number}, event)"
+              onclick="handleCloseOutfitTab('${o.id}', event)"
               class="w-4 h-4 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0 ml-0.5 active:scale-90"
-              title="Close & delete Outfit #${o.number}"
+              title="Delete Outfit #${o.number}"
             >
               <span class="text-[10px] font-bold leading-none">✕</span>
             </button>
@@ -1893,12 +2166,25 @@
         `;
       }).join('');
 
-      // Add "+" Browser New Tab Button
+      // Review Drafts & Outfits Button
+      const reviewBtnHtml = `
+        <button
+          type="button"
+          onclick="openManageOutfitsModal()"
+          class="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-white hover:bg-purple-50 text-slate-700 hover:text-[#5B43EE] border border-slate-300 shadow-2xs active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0 ml-0.5"
+          title="Review all outfits and draft pending steps"
+        >
+          <span class="text-xs">📋</span>
+          <span>Review All (${outfitsList.length})</span>
+        </button>
+      `;
+
+      // "+" Add Outfit Button
       const addTabBtnHtml = `
         <button
           type="button"
           id="tabAddOutfitBtn"
-          onclick="handlePromptAddAnother()"
+          onclick="openAddOutfitModal()"
           class="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-[#5B43EE] border border-purple-200/80 shadow-2xs active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0 ml-0.5"
           title="Add another outfit (New Tab)"
         >
@@ -1907,14 +2193,12 @@
         </button>
       `;
 
-      container.innerHTML = tabsHtml + addTabBtnHtml;
+      container.innerHTML = tabsHtml + reviewBtnHtml + addTabBtnHtml;
 
-      // Enable drag and wheel scrolling
       initFloatingTabScroll();
 
-      // Auto-scroll active tab into view
       requestAnimationFrame(() => {
-        const activeTab = container.querySelector('[data-active="true"]') || container.lastElementChild;
+        const activeTab = container.querySelector('[data-active="true"]');
         if (activeTab) {
           activeTab.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
         }
@@ -1938,7 +2222,7 @@
         <div id="activeStepperCard" class="flex justify-start animate-in fade-in duration-200">
           <div class="bg-white border border-purple-200/90 rounded-2xl p-3.5 shadow-sm w-full space-y-3">
             
-            <!-- Card Header: Clean Boutique Brand Harmony -->
+            <!-- Card Header -->
             <div class="flex items-start justify-between border-b border-purple-100/80 pb-2.5 gap-2">
               <div class="min-w-0 flex-1 space-y-1">
                 <div class="flex items-center gap-1.5 flex-wrap">
@@ -1946,7 +2230,7 @@
                     Outfit #${currentOutfit.number}
                   </span>
                   <span class="text-xs font-semibold text-slate-800 truncate">
-                    ${currentOutfit.category} (${currentOutfit.categoryCut})
+                    ${currentOutfit.category} (${currentOutfit.categoryCut || 'Cut pending'})
                   </span>
                 </div>
                 <h3 class="font-bold text-slate-900 text-sm leading-tight">Design Customization</h3>
@@ -1964,7 +2248,7 @@
               </div>
             </div>
 
-            <!-- Stepper Progress: Neat Connected Tracks with Titles -->
+            <!-- Stepper Progress Tracks -->
             <div class="py-1 border-b border-purple-100/70">
               <div class="grid grid-cols-4 gap-2">
                 ${[
@@ -1977,8 +2261,8 @@
                   const isPassed = item.s < step;
                   return `
                     <div
-                      ${isPassed ? `onclick="setStep(${item.s})"` : ''}
-                      class="flex flex-col items-center gap-1.5 ${isPassed ? 'cursor-pointer group' : ''}"
+                      onclick="setStep(${item.s})"
+                      class="flex flex-col items-center gap-1.5 cursor-pointer group"
                     >
                       <div class="w-full h-1.5 rounded-full transition-all ${
                         isActive
@@ -2002,7 +2286,7 @@
               </div>
             </div>
 
-            <!-- STEP 1: Front Neck Style (Box-type Cards with Exact Reference Image from Image 2) -->
+            <!-- STEP 1: Front Neck Style -->
             ${step === 1 ? `
               <div class="border border-purple-200/90 rounded-2xl p-3 space-y-3 bg-white shadow-2xs">
                 <div>
@@ -2011,11 +2295,11 @@
                       <span class="w-2.5 h-2.5 rounded-full bg-[#5B43EE]"></span>
                       1. Front Neck Style
                     </span>
+                    ${!currentOutfit.frontNeck ? '<span class="text-[10px] text-slate-400 font-medium">Choose an option</span>' : ''}
                   </div>
                   <p class="text-[10.5px] text-slate-500 mt-1">Select preferred front neck design or choose Others below:</p>
                 </div>
 
-                <!-- Box Type Grid: Clean Image Crop with Real Crisp CSS Font Pills -->
                 <div class="grid grid-cols-3 gap-2">
                   ${frontNeckOptions.map(opt => {
                     const isSelected = currentOutfit.frontNeck === opt.name;
@@ -2039,7 +2323,6 @@
                           <img src="${opt.img}" alt="${opt.name}" class="w-full h-full object-contain transition-transform group-hover:scale-105" />
                         </div>
 
-                        <!-- Real Crisp CSS Font Pill (Large, Bold, High-Contrast) -->
                         <div class="w-full pt-1.5 pb-0.5 flex justify-center">
                           <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-bold tracking-tight text-center ${
                             isSelected
@@ -2054,7 +2337,6 @@
                   }).join('')}
                 </div>
 
-                <!-- IF THEY CHOOSE OTHER: Ask input field to enter custom neck name -->
                 ${currentOutfit.frontNeck === 'Others' ? `
                   <div class="p-3 bg-purple-50/90 border border-purple-200 rounded-xl space-y-2 animate-in fade-in duration-200">
                     <label class="block text-[11px] font-bold text-[#5B43EE]">
@@ -2072,7 +2354,6 @@
                   </div>
                 ` : ''}
 
-                <!-- Photo Upload, Voice Note & Tailor Description (For EVERY Selection) -->
                 ${renderDesignAttachmentsAndNotesBlock('front')}
               </div>
 
@@ -2086,7 +2367,7 @@
               </div>
             ` : ''}
 
-            <!-- STEP 2: Back Neck Style (Exact Same Blouse Style as Front - Only Back Neckline Changes) -->
+            <!-- STEP 2: Back Neck Style -->
             ${step === 2 ? `
               <div class="border border-purple-200/90 rounded-2xl p-3 space-y-3 bg-white shadow-2xs">
                 <div>
@@ -2095,11 +2376,11 @@
                       <span class="w-2.5 h-2.5 rounded-full bg-[#5B43EE] shadow-2xs"></span>
                       2. Back Neck Style
                     </span>
+                    ${!currentOutfit.backNeck ? '<span class="text-[10px] text-slate-400 font-medium">Choose an option</span>' : ''}
                   </div>
                   <p class="text-[10.5px] text-slate-500 mt-1">Select preferred rear neckline and dori/tassel cutouts:</p>
                 </div>
 
-                <!-- Box Type Grid: Matching Blouse Back Neck Images with Real Crisp CSS Font Pills -->
                 <div class="grid grid-cols-3 gap-2">
                   ${backNeckOptions.map(opt => {
                     const isSelected = currentOutfit.backNeck === opt.name;
@@ -2123,7 +2404,6 @@
                           <img src="${opt.img}" alt="${opt.name}" class="w-full h-full object-contain transition-transform group-hover:scale-105" />
                         </div>
 
-                        <!-- Real Crisp CSS Font Pill (Large, Bold, High-Contrast) -->
                         <div class="w-full pt-1.5 pb-0.5 flex justify-center">
                           <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-bold tracking-tight text-center ${
                             isSelected
@@ -2138,7 +2418,6 @@
                   }).join('')}
                 </div>
 
-                <!-- IF THEY CHOOSE OTHER: Ask input field to enter custom back neck name -->
                 ${currentOutfit.backNeck === 'Others' ? `
                   <div class="p-3 bg-purple-50/90 border border-purple-200 rounded-xl space-y-2 animate-in fade-in duration-200">
                     <label class="block text-[11px] font-bold text-[#5B43EE]">
@@ -2155,7 +2434,6 @@
                   </div>
                 ` : ''}
 
-                <!-- Photo Upload, Voice Note & Tailor Description (For EVERY Selection) -->
                 ${renderDesignAttachmentsAndNotesBlock('back')}
               </div>
 
@@ -2169,11 +2447,10 @@
               </div>
             ` : ''}
 
-            <!-- STEP 3: Sleeves & Hook Opening (Spacious 2-Column Grid, Clean Breathing Space) -->
+            <!-- STEP 3: Sleeves & Hook Opening (Fixed Short Sleeve click bug & zero defaults) -->
             ${step === 3 ? `
               <div class="border border-purple-200/90 rounded-2xl p-4 space-y-4 bg-white shadow-2xs">
                 
-                <!-- Step 3 Header -->
                 <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                   <div>
                     <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
@@ -2190,14 +2467,14 @@
                     <span class="text-[11px] font-bold text-slate-800 flex items-center gap-1">
                       <span>📏</span> <span>Choose Sleeve Length:</span>
                     </span>
-                    <span class="text-[10px] text-slate-400 font-medium">Comfortable touch cards</span>
+                    <span class="text-[10px] text-slate-400 font-medium">Select an option</span>
                   </div>
                   <div class="grid grid-cols-2 gap-2">
                     ${[
-                      { name: 'Elbow Length', desc: 'Standard 10-11"' },
-                      { name: 'Short Sleeve (4-5")', desc: 'Classic traditional' },
-                      { name: '3/4th Sleeve', desc: 'Graceful 14-16"' },
-                      { name: 'Full Sleeve', desc: 'Wrist length 20-22"' },
+                      { name: 'Elbow Length', desc: 'Standard 10-11 inch' },
+                      { name: 'Short Sleeve (4-5 inch)', desc: 'Classic traditional' },
+                      { name: '3/4th Sleeve', desc: 'Graceful 14-16 inch' },
+                      { name: 'Full Sleeve', desc: 'Wrist length 20-22 inch' },
                       { name: 'Puff Sleeve', desc: 'Pleated shoulder' },
                       { name: 'Sleeveless', desc: 'Clean armhole' },
                       { name: 'Others', desc: 'Custom sleeve cut' }
@@ -2231,7 +2508,6 @@
                   </div>
                 </div>
 
-                <!-- IF THEY CHOOSE OTHER SLEEVE: Input field -->
                 ${currentOutfit.sleeve === 'Others' ? `
                   <div class="p-3 bg-purple-50/90 border border-purple-200 rounded-xl space-y-1.5 animate-in fade-in duration-200">
                     <label class="block text-[11px] font-bold text-[#5B43EE]">
@@ -2248,7 +2524,7 @@
                   </div>
                 ` : ''}
 
-                <!-- Hook / Opening Options: Clean 2-Column Spacious Grid -->
+                <!-- Hook / Opening Options -->
                 <div class="space-y-2 pt-3 border-t border-slate-100">
                   <div class="flex items-center justify-between">
                     <span class="text-[11px] font-bold text-slate-800 flex items-center gap-1">
@@ -2291,11 +2567,9 @@
                   </div>
                 </div>
 
-                <!-- Photo Upload, Voice Note & Tailor Description (For EVERY Selection) -->
                 ${renderDesignAttachmentsAndNotesBlock('sleeve')}
               </div>
 
-              <!-- Navigation Footer -->
               <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
                 <button type="button" onclick="setStep(2)" class="w-24 h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shrink-0 cursor-pointer">
                   <span>←</span> <span>Back</span>
@@ -2306,11 +2580,10 @@
               </div>
             ` : ''}
 
-            <!-- STEP 4: Review Design & Complete Outfit (High-End Boutique Review Card) -->
+            <!-- STEP 4: Review Design & Complete Outfit -->
             ${step === 4 ? `
               <div class="border border-purple-200/90 rounded-2xl p-4 space-y-4 bg-white shadow-2xs">
                 
-                <!-- Fabric Material & Sample Measurement Dress Section (Clean & Spacious) -->
                 <div class="space-y-3">
                   <div class="flex items-center justify-between">
                     <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -2407,7 +2680,6 @@
                   </div>
                 </div>
 
-                <!-- Tailor Notes / Fit Instructions -->
                 <div class="space-y-2 pt-3.5 mt-2.5 border-t border-slate-100">
                   <div class="flex items-center justify-between">
                     <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -2425,7 +2697,6 @@
 
               </div>
 
-              <!-- Bottom Actions -->
               <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
                 <button type="button" onclick="setStep(3)" class="w-24 h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shrink-0 cursor-pointer">
                   <span>←</span> <span>Back</span>
@@ -2442,11 +2713,13 @@
     }
 
     function toggleVoiceNoteSim() {
+      if (!currentOutfit) return;
       currentOutfit.hasVoiceNote = true;
       document.getElementById('txtVoiceNote').innerText = 'Voice Note Recorded (0:15) ✓';
       document.getElementById('btnVoiceNote').className = 'w-full py-2.5 bg-purple-50 border border-purple-300 rounded-xl text-xs font-bold text-[#5B43EE] flex items-center justify-center gap-2';
       updateSpecUI();
     }
+
 
     // Interactive 4-Corner Crop & Rotate Controller
     let cropImgPosX = 0;
@@ -2826,7 +3099,7 @@
     function confirmSelectedDeliveryDate() {
       closeDeliveryDateModal();
       updateSpecUI();
-      if (conversationHistory.some(m => m.id && m.id.startsWith('final_ticket'))) {
+      if (currentOutfit && currentOutfit.chatHistory.some(m => m.id && m.id.startsWith('final_ticket'))) {
         handleProceedToFinalTicket();
       }
     }
@@ -2844,7 +3117,7 @@
       measurementOption = opt;
       closeMeasurementModal();
       updateSpecUI();
-      if (conversationHistory.some(m => m.id && m.id.startsWith('final_ticket'))) {
+      if (currentOutfit && currentOutfit.chatHistory.some(m => m.id && m.id.startsWith('final_ticket'))) {
         handleProceedToFinalTicket();
       }
     }
@@ -2856,7 +3129,9 @@
       if (!val) return;
       input.value = '';
 
-      conversationHistory.push({
+      const targetHistory = currentOutfit ? currentOutfit.chatHistory : welcomeChatHistory;
+
+      targetHistory.push({
         id: `user_manual_${Date.now()}`,
         sender: 'user',
         text: val
@@ -2885,7 +3160,7 @@
           botText = `Got your note: <i>"${val}"</i>. I've noted this for the master tailor at Inba Boutique!`;
         }
 
-        conversationHistory.push({
+        targetHistory.push({
           id: `bot_reply_${Date.now()}`,
           sender: 'bot',
           html: `
@@ -2906,22 +3181,19 @@
     }
 
     function updateSpecUI() {
-      const activeOrLast = currentOutfit || (completedOutfits.length > 0 ? completedOutfits[completedOutfits.length - 1] : null);
+      const activeOrLast = currentOutfit || (outfitsList.length > 0 ? outfitsList[outfitsList.length - 1] : null);
       if (activeOrLast) {
         document.getElementById('specCategory').innerText = activeOrLast.category || '—';
         document.getElementById('specCut').innerText = activeOrLast.categoryCut || '—';
-        document.getElementById('specFront').innerText = (activeOrLast.frontNeck === 'Others' ? (activeOrLast.frontNeckCustomName ? `Custom: ${activeOrLast.frontNeckCustomName}` : 'Custom Neck') : activeOrLast.frontNeck) || '—';
-        document.getElementById('specBack').innerText = (activeOrLast.backNeck === 'Others' ? (activeOrLast.backNeckCustomName ? `Custom: ${activeOrLast.backNeckCustomName}` : 'Custom Back') : activeOrLast.backNeck) || '—';
-        document.getElementById('specSleeve').innerText = `${activeOrLast.sleeve} (${activeOrLast.hook})`;
+        document.getElementById('specFront').innerText = (activeOrLast.frontNeck === 'Others' ? (activeOrLast.frontNeckCustomName ? `Custom: ${activeOrLast.frontNeckCustomName}` : 'Custom Neck') : activeOrLast.frontNeck) || 'Pending';
+        document.getElementById('specBack').innerText = (activeOrLast.backNeck === 'Others' ? (activeOrLast.backNeckCustomName ? `Custom: ${activeOrLast.backNeckCustomName}` : 'Custom Back') : activeOrLast.backNeck) || 'Pending';
+        document.getElementById('specSleeve').innerText = (activeOrLast.sleeve || activeOrLast.hook) ? `${activeOrLast.sleeve || 'Pending'} (${activeOrLast.hook || 'Pending'})` : 'Pending';
         document.getElementById('specMeasurement').innerText = measurementOption;
         document.getElementById('specNotes').innerText = activeOrLast.tailorNotes || activeOrLast.backNeckNote || '—';
         document.getElementById('specDeliveryDate').innerText = chosenDeliveryTimeline;
       }
 
-      const allOutfitsList = [...completedOutfits];
-      if (currentOutfit && !completedOutfits.some(o => o.number === currentOutfit.number)) {
-        allOutfitsList.push(currentOutfit);
-      }
+      const allOutfitsList = [...outfitsList];
 
       const payload = {
         order_type: 'STITCHING_REQUEST',
