@@ -131,8 +131,8 @@
         <div class="bg-[#F0F2F5] border-t border-slate-200/90 z-20 shrink-0">
           
           <!-- Top Row inside Grey Area: Browser-like Tabs for Active Outfits + Add Outfit -->
-          <div id="floatingQuickActions" class="px-2 pt-2 pb-1 flex items-center justify-center overflow-hidden">
-            <div id="floatingTabBar" class="flex items-center gap-1.5 overflow-x-auto max-w-full py-0.5 px-1 no-scrollbar scroll-smooth">
+          <div id="floatingQuickActions" class="relative w-full px-2 pt-2 pb-1 overflow-hidden">
+            <div id="floatingTabBar" class="flex items-center gap-1.5 overflow-x-auto w-full py-0.5 px-1 no-scrollbar scroll-smooth whitespace-nowrap cursor-grab select-none">
               <!-- Rendered dynamically by updateFloatingQuickActionsUI() -->
             </div>
           </div>
@@ -1255,8 +1255,57 @@
       handleCloseOutfitTab(target.number);
     }
 
+    // Mouse Wheel to Horizontal Scroll + Click-Drag Scroll for Outfit Tabs
+    let isTabMouseDown = false;
+    let tabStartX = 0;
+    let tabScrollLeft = 0;
+    let hasDraggedDistance = false;
+
+    function initFloatingTabScroll() {
+      const tabBar = document.getElementById('floatingTabBar');
+      if (!tabBar || tabBar._scrollInitialized) return;
+      tabBar._scrollInitialized = true;
+
+      // Mouse Wheel -> Horizontal Scroll
+      tabBar.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0 || e.deltaX !== 0) {
+          e.preventDefault();
+          tabBar.scrollLeft += (e.deltaY || e.deltaX);
+        }
+      }, { passive: false });
+
+      // Click & Drag to Scroll on Desktop
+      tabBar.addEventListener('mousedown', (e) => {
+        isTabMouseDown = true;
+        hasDraggedDistance = false;
+        tabStartX = e.pageX - tabBar.offsetLeft;
+        tabScrollLeft = tabBar.scrollLeft;
+      });
+
+      window.addEventListener('mouseup', () => {
+        isTabMouseDown = false;
+        const tb = document.getElementById('floatingTabBar');
+        if (tb) tb.classList.remove('cursor-grabbing');
+      });
+
+      tabBar.addEventListener('mousemove', (e) => {
+        if (!isTabMouseDown) return;
+        const x = e.pageX - tabBar.offsetLeft;
+        const walk = (x - tabStartX) * 1.5;
+        if (Math.abs(walk) > 5) {
+          hasDraggedDistance = true;
+          tabBar.classList.add('cursor-grabbing');
+          tabBar.scrollLeft = tabScrollLeft - walk;
+        }
+      });
+    }
+
     // Switch active outfit by tapping its browser-like tab
     function handleSelectOutfitTab(outfitNum) {
+      if (hasDraggedDistance) {
+        hasDraggedDistance = false;
+        return;
+      }
       // 1. If clicking the outfit that is currently being edited in stepper card, scroll to it
       if (currentOutfit && currentOutfit.number === outfitNum) {
         const stepper = document.getElementById('activeStepperCard');
@@ -1817,6 +1866,8 @@
 
         return `
           <div
+            id="tab_outfit_${o.number}"
+            data-active="${isEditingThis ? 'true' : 'false'}"
             onclick="handleSelectOutfitTab(${o.number})"
             class="group flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-xs transition-all cursor-pointer select-none whitespace-nowrap shrink-0 shadow-2xs ${
               isEditingThis
@@ -1854,6 +1905,17 @@
       `;
 
       container.innerHTML = tabsHtml + addTabBtnHtml;
+
+      // Enable drag and wheel scrolling
+      initFloatingTabScroll();
+
+      // Auto-scroll active tab into view
+      requestAnimationFrame(() => {
+        const activeTab = container.querySelector('[data-active="true"]') || container.lastElementChild;
+        if (activeTab) {
+          activeTab.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+        }
+      });
     }
 
     function scrollToCurrentOutfits() {
